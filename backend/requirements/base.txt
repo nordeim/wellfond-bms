@@ -1,0 +1,39 @@
+# CHA YUAN Backend - Base Requirements
+# Production dependencies only
+
+# Django Core
+Django==6.0.4
+django-cors-headers==4.9.0
+
+# API Layer
+django-ninja==1.6.2
+pydantic==2.12.5
+
+# Database
+psycopg2-binary==2.9.10
+
+# Cache
+redis==6.4.0
+hiredis==3.3.0
+
+# Authentication
+djangorestframework-simplejwt==5.5.1
+PyJWT==2.12.1
+
+# Payment
+stripe==14.4.1
+
+# Utilities
+python-decouple==3.8
+pytz==2025.2
+python-dateutil==2.9.0.post0
+Pillow==12.2.0
+
+# Async Support
+asgiref==3.11.0
+channels==4.3.2
+channels-redis==4.3.0
+
+# Security
+django-ratelimit==4.1.0
+
