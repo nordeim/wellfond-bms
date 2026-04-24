@@ -1,8 +1,17 @@
-# CHA YUAN - Docker Compose Configuration
-# PostgreSQL 17 + Redis 7.4 - LAN Accessible
+# =============================================================================
+# Wellfond BMS - Infrastructure Docker Compose
+# =============================================================================
+# Hybrid Development Environment:
+# - Containerized: PostgreSQL 17, Redis 7.4
+# - Native: Django (localhost:8000), Next.js (localhost:3000), Celery
+#
+# For full containerization (production), see docker-compose.prod.yml
+# =============================================================================
 
 services:
-  # PostgreSQL 17 - Official image with Singapore locale
+  # ============================================================================
+  # PostgreSQL 17 - Database
+  # ============================================================================
   postgres:
     image: postgres:17-trixie
     container_name: wellfond-postgres
@@ -10,24 +19,23 @@ services:
       POSTGRES_DB: wellfond_db
       POSTGRES_USER: wellfond_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:-wellfond_dev_password}
+      POSTGRES_HOST_AUTH_METHOD: trust          # development‑only trust mode
       TZ: Asia/Singapore
       PGDATA: /var/lib/postgresql/data/pgdata
-      LANG: en_SG.utf8
-      LC_ALL: en_SG.utf8
     command: >
       postgres
       -c timezone=Asia/Singapore
       -c log_destination=stderr
       -c logging_collector=off
       -c log_min_messages=warning
-      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c wal_level=replica
+      -c shared_buffers=256MB
+      -c effective_cache_size=768MB
     ports:
-      # Explicitly bind to all interfaces for LAN access
       - "0.0.0.0:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
-      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wellfond_user"]
       interval: 10s
@@ -38,19 +46,22 @@ services:
       - wellfond-network
     restart: unless-stopped
 
-  # Redis 7.4 - Official Alpine image
+  # ============================================================================
+  # Redis 7.4 - Cache, Sessions, Message Broker
+  # ============================================================================
   redis:
     image: redis:7.4-alpine
     container_name: wellfond-redis
+    # Development: no password on Redis. If you need one later, add
+    # REDIS_PASSWORD to .env and append "--requirepass ${REDIS_PASSWORD}" below.
     command: >
       redis-server
-      --maxmemory 256mb
+      --maxmemory 512mb
       --maxmemory-policy allkeys-lru
       --appendonly yes
       --save 60 1000
       --loglevel warning
     ports:
-      # Explicitly bind to all interfaces for LAN access
       - "0.0.0.0:6379:6379"
     volumes:
       - redis_data:/data
@@ -64,69 +75,18 @@ services:
       - wellfond-network
     restart: unless-stopped
 
-  # Backend Django - Development server
-  backend:
-    build:
-      context: ../../backend
-      dockerfile: ../infra/docker/Dockerfile.backend.dev
-    container_name: wellfond-backend
-    environment:
-      DJANGO_SETTINGS_MODULE: wellfond.settings.development
-      DATABASE_URL: postgres://wellfond_user:${DB_PASSWORD:-wellfond_dev_password}@postgres:5432/wellfond_db
-      REDIS_URL: redis://redis:6379/0
-      DEBUG: "true"
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-not-for-production}
-    ports:
-      - "8000:8000"
-    volumes:
-      - ../../backend:/app
-      - backend_static:/app/staticfiles
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - wellfond-network
-    restart: unless-stopped
-    command: >
-      sh -c "python wait_for_db.py &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
-
-  # Frontend Next.js - Development server
-  frontend:
-    build:
-      context: ../../frontend
-      dockerfile: ../infra/docker/Dockerfile.frontend.dev
-    container_name: wellfond-frontend
-    environment:
-      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
-    ports:
-      - "3000:3000"
-    volumes:
-      - ../../frontend:/app
-      - /app/node_modules
-      - /app/.next
-    depends_on:
-      - backend
-    networks:
-      - wellfond-network
-    restart: unless-stopped
-    command: >
-      sh -c "npm install &&
-             npm run dev"
-
+# =============================================================================
+# Named Volumes
+# =============================================================================
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
-  backend_static:
-    driver: local
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   wellfond-network:
     driver: bridge
-    # IPAM config removed - Docker auto-assigns non-conflicting subnet

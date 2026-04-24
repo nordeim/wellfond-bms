@@ -202,15 +202,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
-# Content Security Policy (Django 6.0 native)
+# Content Security Policy
 # ---------------------------------------------------------------------------
-SECURE_CSP_DEFAULT_SRC = ("'self'",)
-SECURE_CSP_SCRIPT_SRC = ("'self'",)
-SECURE_CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Tailwind JIT requires inline
-SECURE_CSP_IMG_SRC = ("'self'", "data:")
-SECURE_CSP_CONNECT_SRC = ("'self'",)
-SECURE_CSP_FONT_SRC = ("'self'",)
-SECURE_CSP_REPORT_ONLY = False
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Tailwind JIT requires inline
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FONT_SRC = ("'self'",)
+CSP_REPORT_ONLY = False
 
 # ---------------------------------------------------------------------------
 # Logging — Structured JSON

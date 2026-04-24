@@ -1,4 +1,5 @@
 """Production settings."""
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = False
@@ -18,5 +19,5 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 # Strict CSP (no unsafe-eval)
-SECURE_CSP_SCRIPT_SRC = ("'self'",)  # noqa: F405
-SECURE_CSP_REPORT_ONLY = False  # noqa: F405
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_REPORT_ONLY = False

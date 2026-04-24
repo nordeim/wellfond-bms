@@ -1,0 +1,1 @@
+pip install -U Django django-cors-headers django-ninja djangorestframework-simplejwt django-ratelimit django-celery-beat opentelemetry-instrumentation-django pytest-django django-stubs django-extensions django-debug-toolbar django-silk

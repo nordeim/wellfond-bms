@@ -1,0 +1,263 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "22"
+  POSTGRES_DB: wellfond_test_db
+  POSTGRES_USER: wellfond_user
+  POSTGRES_PASSWORD: test_password
+
+jobs:
+  # ============================================================================
+  # Backend Tests & Linting
+  # ============================================================================
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/dev.txt
+
+      - name: Run Black check
+        working-directory: ./backend
+        run: black --check --diff .
+
+      - name: Run isort check
+        working-directory: ./backend
+        run: isort --check-only --diff .
+
+      - name: Run flake8
+        working-directory: ./backend
+        run: flake8
+
+      - name: Run mypy
+        working-directory: ./backend
+        run: mypy . --ignore-missing-imports
+
+      - name: Run Django system checks
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          DEBUG: "True"
+        run: |
+          python manage.py check
+          python manage.py migrate
+
+      - name: Run pytest with coverage
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          DEBUG: "True"
+          REDIS_BROKER_URL: redis://localhost:6379/0
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=term-missing -xvs
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # ============================================================================
+  # Frontend Tests & Linting
+  # ============================================================================
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run TypeScript check
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      - name: Run unit tests with coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          name: frontend-coverage
+
+  # ============================================================================
+  # Infrastructure & Security
+  # ============================================================================
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Django image
+        working-directory: ./backend
+        run: |
+          docker build -t wellfond-django:test -f Dockerfile.django .
+
+      - name: Build Next.js image
+        working-directory: ./frontend
+        run: |
+          docker build -t wellfond-nextjs:test -f Dockerfile.nextjs .
+
+      - name: Run Trivy vulnerability scan (Django)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wellfond-django:test
+          format: "sarif"
+          output: "trivy-django-results.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+      - name: Run Trivy vulnerability scan (Next.js)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wellfond-nextjs:test
+          format: "sarif"
+          output: "trivy-nextjs-results.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-django-results.sarif"
+
+  # ============================================================================
+  # E2E Tests (Playwright)
+  # ============================================================================
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wellfond_e2e_db
+          POSTGRES_USER: wellfond_user
+          POSTGRES_PASSWORD: e2e_password
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/dev.txt
+
+      - name: Start backend server
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://wellfond_user:e2e_password@localhost:5432/wellfond_e2e_db
+          SECRET_KEY: e2e-test-secret-key
+          DEBUG: "True"
+          CELERY_TASK_ALWAYS_EAGER: "True"
+        run: |
+          python manage.py migrate
+          python manage.py runserver 0.0.0.0:8000 &
+          sleep 5
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        working-directory: ./frontend
+        env:
+          BACKEND_INTERNAL_URL: http://localhost:8000
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: ./frontend/playwright-report/
+          retention-days: 30
