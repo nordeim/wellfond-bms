@@ -35,7 +35,7 @@ Step 7: Frontend pages (sales list, wizard)
 |------|-------------|------|
 | `backend/apps/sales/services/__init__.py` | Empty | ☐ |
 | `backend/apps/sales/services/agreement.py` | `create_agreement(type, data) -> SalesAgreement`. State machine: DRAFT→SIGNED (on sign), SIGNED→COMPLETED (on send). `extract_gst(price, entity) -> Decimal`: `price * 9 / 109`, `ROUND_HALF_UP`. Thomson entity = 0%. `apply_tc(template_type) -> str`: fetches current TCTemplate version. HDB warning: if housing_type=HDB and breed is large, flag. Deposit non-refundable notice. | ☐ |
-| `backend/apps/sales/services/pdf.py` | `render_agreement_pdf(agreement_id) -> bytes`. HTML template (Jinja2) with agreement data, buyer info, dog details, T&Cs, signature image. POST to Gotenberg `/forms/chromium/convert/html`. A4 paper. Returns PDF bytes. `compute_hash(pdf_bytes) -> str`: SHA-256 hex digest. Stores hash on agreement. Watermark "DRAFT" on unsigned. | ☐ |
+| `backend/apps/sales/services/pdf.py` | `render_agreement_pdf(agreement_id) -> bytes`. HTML template (Jinja2) with agreement data, buyer info, dog details, T&Cs, signature image. **Production**: POST to Gotenberg `/forms/chromium/convert/html` at `GOTENBERG_URL`. **Development**: Mock PDF generation (save HTML as .pdf for testing) or skip if `GOTENBERG_URL` not set. A4 paper. Returns PDF bytes. `compute_hash(pdf_bytes) -> str`: SHA-256 hex digest. Stores hash on agreement. Watermark "DRAFT" on unsigned. | ☐ |
 | `backend/apps/sales/services/avs.py` | `generate_avs_token() -> str`: UUID4. `send_avs_link(agreement)`: creates AVSTransfer, generates unique URL, sends via email/WA. `check_completion(transfer_id)`: checks if transfer done. `escalate_to_staff(transfer)`: if 72h pending, notify management. State: PENDING→SENT (on create)→COMPLETED (on buyer action)→ESCALATED (on 72h timeout). | ☐ |
 
 ### Step 3: Backend Routers
@@ -85,8 +85,9 @@ Step 7: Frontend pages (sales list, wizard)
 - [ ] Rehoming flow: $0 price, transfer form, no invoice
 - [ ] GST: 109→9.00, 218→18.00, 50→4.13 (exact to 2 decimals)
 - [ ] Thomson entity: GST = 0.00
-- [ ] PDF: generated via Gotenberg, SHA-256 hash stored
+- [ ] PDF: generated via Gotenberg (production) or mock HTML→PDF (dev), SHA-256 hash stored
 - [ ] PDF: tamper-evident (hash matches on re-download)
+- [ ] Dev: PDF generation works without Gotenberg container (mock or HTML output)
 - [ ] Signature: coordinates captured, IP logged, timestamp recorded
 - [ ] AVS: unique token per buyer, link sent
 - [ ] AVS: reminder fires at 72h (verify via Celery Beat)

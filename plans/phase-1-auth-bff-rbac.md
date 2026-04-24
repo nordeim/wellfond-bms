@@ -136,7 +136,8 @@ Step 10: BFF proxy
 
 | File | Purpose | Key Content | Done |
 |------|---------|-------------|------|
-| `frontend/app/api/proxy/[...path]/route.ts` | Hardened BFF proxy | `BACKEND_INTERNAL_URL` (server-only env, never NEXT_PUBLIC_). `ALLOWED_PREFIXES` regex: `/api/v1/(dogs|breeding|sales|compliance|customers|finance|operations|auth|users)/`. Strip headers: `host`, `x-forwarded-for`, `x-forwarded-host`, `x-forwarded-proto`. Set `x-forwarded-proto: https`. Stream response body. 403 on non-allowlisted paths. 503 on upstream failure. Export GET/POST/PATCH/DELETE handlers. | ☐ |
+| `frontend/app/api/proxy/[...path]/route.ts` | Hardened BFF proxy | `BACKEND_INTERNAL_URL` (server-only env, never NEXT_PUBLIC_). **Development**: `http://127.0.0.1:8000`. **Production**: `http://django:8000`. `ALLOWED_PREFIXES` regex: `/api/v1/(dogs|breeding|sales|compliance|customers|finance|operations|auth|users)/`. Strip headers: `host`, `x-forwarded-for`, `x-forwarded-host`, `x-forwarded-proto`. Set `x-forwarded-proto: https`. Stream response body. 403 on non-allowlisted paths. 503 on upstream failure. Export GET/POST/PATCH/DELETE handlers. | ☐ |
+| `frontend/next.config.ts` (dev section) | Dev proxy config | `rewrites(): [{ source: '/api/proxy/:path*', destination: 'http://127.0.0.1:8000/api/v1/:path*' }]` for development fallback. Environment detection: `process.env.NODE_ENV`. | ☐ |
 
 ---
 
@@ -150,8 +151,17 @@ Step 10: BFF proxy
 - [ ] Unauthenticated → redirects to /login (not 500)
 - [ ] Session stored in Redis (verify via `redis-cli GET session:*`)
 
-### BFF Proxy
-- [ ] `POST /api/proxy/auth/login` → forwards to Django, returns user
+### BFF Proxy (Development Environment)
+- [ ] `POST /api/proxy/auth/login` → forwards to Django at `127.0.0.1:8000`, returns user
+- [ ] Next.js dev server (`localhost:3000`) → proxies to Django (`127.0.0.1:8000`)
+- [ ] `BACKEND_INTERNAL_URL=http://127.0.0.1:8000` in `.env.local`
+- [ ] Django receives cookies from Next.js proxy correctly
+- [ ] CORS configured for `localhost:3000` in Django dev settings
+
+### BFF Proxy (Production Environment)
+- [ ] `POST /api/proxy/auth/login` → forwards to Django container, returns user
+- [ ] `BACKEND_INTERNAL_URL=http://django:8000` in production env
+- [ ] Container-to-container networking works
 - [ ] `POST /api/proxy/admin/login` → 403 Forbidden (path not allowlisted)
 - [ ] `POST /api/proxy/dogs/` → forwards with cookies, Django validates
 - [ ] `GET /api/proxy/dogs/` → streams response

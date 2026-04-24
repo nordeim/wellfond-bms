@@ -63,7 +63,8 @@ Step 7: Scripts
 | File | Purpose | Key Content | Done |
 |------|---------|-------------|------|
 | `docker-compose.yml` | Production compose (11 services) | **postgres**: `postgres:17-alpine`, `wal_level=replica`, `shared_buffers=256MB`, `effective_cache_size=768MB`, healthcheck `pg_isready`. **pgbouncer**: `edoburu/pgbouncer:1.23.0`, `POOL_MODE=transaction`, `MAX_CLIENT_CONN=1000`. **redis_sessions/broker/cache**: `redis:7.4-alpine`, isolated memory limits (128/256/256mb). **django**: builds from `Dockerfile.django`, env vars for DB/Redis/Gotenberg. **celery_worker**: same image, `celery -A config worker -l info -Q high,default,low,dlq`. **celery_beat**: same image, `celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler`. **gotenberg**: `gotenberg/gotenberg:8`, healthcheck `/health`. **nextjs**: builds from `Dockerfile.nextjs`, `BACKEND_INTERNAL_URL=http://django:8000`, port 3000. **flower**: `mher/flower:2.0`, port 5555. Networks: `backend_net`, `frontend_net`. Volume: `pg_data`. | ☐ |
-| `docker-compose.dev.yml` | Dev overrides | Mount `./backend` and `./frontend` for hot reload. Expose ports: 5432 (PG), 6432 (PgBouncer), 6379 (Redis), 8000 (Django), 3000 (Next.js), 5555 (Flower). `DEBUG=True`. | ☐ |
+| `docker-compose.dev.yml` | Dev compose (2 services only) | **postgres**: `postgres:17-alpine`, port `5432:5432`. **redis**: `redis:7.4-alpine`, port `6379:6379` (single Redis for all 3 purposes in dev). `DEBUG=True`. Django/Next.js/Celery run natively on localhost. | ☐ |
+| `infra/docker/docker-compose.yml` | Infrastructure compose (current) | **postgres**: `postgres:17-trixie`, port `5432`. **redis**: `redis:7.4-alpine`, port `6379`. | ✅ Already running |
 | `backend/Dockerfile.django` | Multi-stage Django build | **Builder stage**: `python:3.13-slim`, install uv, `uv pip install -r requirements/base.txt`. **Runtime stage**: `python:3.13-slim`, non-root user, copy installed packages, `gunicorn` + `uvicorn` entrypoint. **Trivy scan stage**: `aquasec/trivy` for SBOM. | ☐ |
 | `frontend/Dockerfile.nextjs` | Multi-stage Next.js build | **Deps stage**: `node:22-alpine`, `pnpm install`. **Build stage**: `pnpm build`. **Runtime stage**: `node:22-alpine`, standalone output, non-root user, PWA assets precached. Env: `BACKEND_INTERNAL_URL`, `NEXT_PUBLIC_SENTRY_DSN`. | ☐ |
 
@@ -75,7 +76,7 @@ Step 7: Scripts
 | `backend/config/__init__.py` | Package init | Empty or import celery app | ☐ |
 | `backend/config/settings/__init__.py` | Package init | Empty | ☐ |
 | `backend/config/settings/base.py` | Core Django settings | `INSTALLED_APPS`: core, operations, breeding, sales, compliance, customers, finance, ai_sandbox + django defaults. `MIDDLEWARE`: CSP, CORS, common, auth, session, csrf, clickjacking, idempotency. `DATABASES`: PG via PgBouncer (`CONN_MAX_AGE=0`). `CACHES`: 3 Redis instances (default, sessions, idempotency). `SESSION_ENGINE=django.contrib.sessions.backends.cache`. `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`. `SECURE_CSP_*` directives. `LOGGING`: JSON structured. `TIME_ZONE='Asia/Singapore'`. `DEFAULT_AUTO_FIELD='django.db.models.BigAutoField'`. | ☐ |
-| `backend/config/settings/development.py` | Dev settings | `DEBUG=True`. Import base. Debug toolbar. Local DB (direct, not PgBouncer). Relaxed CSP. | ☐ |
+| `backend/config/settings/development.py` | Dev settings | `DEBUG=True`. Import base. **Direct PG connection via `127.0.0.1:5432`** (no PgBouncer). **Single Redis via `127.0.0.1:6379`** (no split instances). `DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'wellfond_db', 'USER': 'wellfond_user', 'PASSWORD': env('DB_PASSWORD'), 'HOST': '127.0.0.1', 'PORT': '5432', 'CONN_MAX_AGE': 0}}`. `CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': 'redis://127.0.0.1:6379/0'}}`. `CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'`. `SESSION_CACHE_ALIAS = 'default'`. Debug toolbar. Relaxed CSP. | ☐ |
 | `backend/config/settings/production.py` | Prod settings | `DEBUG=False`. Import base. Strict CSP. PgBouncer host. OTel exporters. HTTPS-only cookies. HSTS. | ☐ |
 | `backend/config/urls.py` | Root URL conf | `path('api/v1/', api.urls)`. `path('admin/', admin.site.urls)`. `path('health/', health_check)`. `path('api/v1/openapi.json', OpenAPIschema)`. | ☐ |
 | `backend/config/wsgi.py` | WSGI config | Standard Django WSGI. | ☐ |
@@ -121,37 +122,177 @@ Step 7: Scripts
 
 ---
 
+## Development Environment Setup (Hybrid: Native + Containerized)
+
+### Architecture
+This project uses a **hybrid development environment** where:
+- **Containerized**: PostgreSQL 17, Redis 7.4 (via Docker)
+- **Native**: Django 6.0, Next.js 16, Celery (run directly on localhost)
+
+### Prerequisites
+- Python 3.13+ with `uv` or `pip`
+- Node.js 22+ with `pnpm`
+- Docker + Docker Compose
+
+### Step-by-Step Dev Setup
+
+#### 1. Start Infrastructure Containers
+```bash
+# From project root
+docker compose -f infra/docker/docker-compose.yml up -d
+
+# Verify
+ docker ps
+# Should see: wellfond-postgres (5432), wellfond-redis (6379)
+```
+
+#### 2. Setup Backend (Native)
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements/dev.txt
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Run Django development server (native)
+python manage.py runserver 127.0.0.1:8000
+```
+
+#### 3. Setup Frontend (Native)
+```bash
+cd frontend
+
+# Install dependencies
+npm install  # or pnpm install
+
+# Run Next.js dev server (native)
+npm run dev  # Runs on localhost:3000
+```
+
+#### 4. Run Celery Worker (Native)
+```bash
+# In a new terminal, from backend directory
+cd backend
+source venv/bin/activate
+
+# Run Celery worker
+celery -A config worker -l info -Q high,default,low,dlq
+
+# Run Celery beat (scheduler) - in another terminal
+celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+### Environment Variables (`.env`)
+```
+# Database (connects to containerized PG)
+DB_PASSWORD=wellfond_dev_password
+DATABASE_URL=postgresql://wellfond_user:wellfond_dev_password@127.0.0.1:5432/wellfond_db
+DB_NAME=wellfond_db
+DB_USER=wellfond_user
+
+# Redis (connects to containerized Redis)
+REDIS_URL=redis://127.0.0.1:6379/0
+REDIS_SESSIONS_URL=redis://127.0.0.1:6379/1
+REDIS_BROKER_URL=redis://127.0.0.1:6379/2
+
+# Django
+SECRET_KEY=dev-secret-key-change-in-production-2026-wellfond-singapore
+DJANGO_SETTINGS_MODULE=wellfond.settings.development
+DEBUG=True
+
+# Frontend BFF proxy (connects to native Django)
+BACKEND_INTERNAL_URL=http://127.0.0.1:8000
+
+# Gotenberg (optional for dev - PDF generation)
+GOTENBERG_URL=http://localhost:3001  # Or skip for dev
+
+# Testing
+TEST_DB_NAME=wellfond_test_db
+```
+
+### Port Configuration
+| Service | Dev Port | Container/Process | Notes |
+|---------|----------|-------------------|-------|
+| PostgreSQL | `5432` | Docker container `wellfond-postgres` | Direct connection |
+| Redis | `6379` | Docker container `wellfond-redis` | Single instance |
+| Django | `8000` | Native `python manage.py runserver` | No container |
+| Next.js | `3000` | Native `npm run dev` | No container |
+| Celery | N/A | Native `celery worker` | No container |
+| Gotenberg | `3001` | Optional Docker or skip | Dev mock available |
+
+### Dev vs Production Differences
+| Aspect | Development | Production |
+|--------|-------------|------------|
+| Database | Direct PG on `:5432` | Via PgBouncer pool |
+| Redis | Single instance | 3 split instances (sessions/broker/cache) |
+| Django | Native `runserver` | Gunicorn + Uvicorn in container |
+| Next.js | Native dev server | Standalone build in container |
+| Celery | Native execution | Containerized worker/beat |
+| Gotenberg | Optional / mock | Required sidecar |
+| PgBouncer | Not used | Required connection pooler |
+
+---
+
 ## Phase 0 Validation Checklist
 
-### Infrastructure
-- [ ] `docker compose up -d` → all 11 containers healthy within 60s
-- [ ] `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` → dev mode works
-- [ ] `docker exec wellfond-postgres pg_isready` → accepting connections
-- [ ] `docker exec wellfond-pgbouncer psql -h 127.0.0.1 -p 5432 -U wellfond_app -d pgbouncer -c 'SHOW POOLS'` → pool active
-- [ ] Redis isolation: sessions ≠ broker ≠ cache (verify via `docker exec wellfond-redis-sessions redis-cli DBSIZE`)
-- [ ] Gotenberg: `curl http://localhost:3000/health` → 200
+### Development Environment (Hybrid Setup)
 
-### Backend
-- [ ] `curl http://localhost:8000/health/` → 200 OK
-- [ ] `curl http://localhost:8000/api/v1/openapi.json` → valid OpenAPI schema
-- [ ] `python manage.py check` → no errors
-- [ ] `python manage.py migrate` → all migrations apply
-- [ ] `pip install -r requirements/base.txt` → 24+ packages, no conflicts
-- [ ] `pip install -r requirements/dev.txt` → 47+ packages, no conflicts
+#### Infrastructure Containers (Docker)
+- [ ] `docker compose -f infra/docker/docker-compose.yml up -d` → postgres + redis containers healthy
+- [ ] `docker exec wellfond-postgres pg_isready -U wellfond_user` → accepting connections
+- [ ] `docker exec wellfond-redis redis-cli ping` → PONG
+- [ ] `psql postgresql://wellfond_user:wellfond_dev_password@127.0.0.1:5432/wellfond_db -c '\dt'` → connects (no tables yet)
+- [ ] `redis-cli -h 127.0.0.1 -p 6379 ping` → PONG
 
-### Frontend
+#### Backend (Native)
+- [ ] `cd backend && python -m venv venv && source venv/bin/activate` → venv created
+- [ ] `pip install -r requirements/dev.txt` → 70+ packages, no conflicts
+- [ ] `python manage.py check` → System check identified no issues
+- [ ] `python manage.py migrate` → All migrations applied
+- [ ] `python manage.py runserver 127.0.0.1:8000` → Development server running
+- [ ] `curl http://127.0.0.1:8000/health/` → 200 OK
+- [ ] `curl http://127.0.0.1:8000/api/v1/openapi.json` → valid OpenAPI schema
+
+#### Frontend (Native)
+- [ ] `cd frontend && npm install` → 377 packages, 0 vulnerabilities
+- [ ] `npm run dev` → Next.js dev server running on localhost:3000
 - [ ] `curl http://localhost:3000` → Next.js renders
-- [ ] `npm install` → 377 packages, 0 vulnerabilities
-- [ ] `npm run build` → standalone output in `.next/standalone/`
 - [ ] `npm run lint` → no errors
 - [ ] `npm run typecheck` → no errors
 
-### Network
-- [ ] `docker exec wellfond-nextjs curl http://postgres:5432` → connection refused (isolation)
-- [ ] `docker exec wellfond-nextjs curl http://django:8000/health/` → 200 (BFF can reach backend)
-- [ ] `docker exec wellfond-django curl http://pgbouncer:5432` → connection works
+#### Celery (Native)
+- [ ] `celery -A config worker -l info` → Worker starts, connects to Redis at 127.0.0.1:6379
+- [ ] `celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler` → Beat starts
 
-### CI
+#### BFF Proxy (Native → Native)
+- [ ] `curl http://localhost:3000/api/proxy/health/` → proxies to Django, returns 200
+- [ ] Frontend login form → submits to `/api/proxy/auth/login` → Django receives, sets cookie
+- [ ] Cookie visible in DevTools → HttpOnly, Secure (if HTTPS), SameSite=Lax
+
+#### Environment Verification
+- [ ] `grep DB_PASSWORD .env` → matches `docker-compose.yml`
+- [ ] `grep DATABASE_URL .env` → points to `127.0.0.1:5432`
+- [ ] `grep BACKEND_INTERNAL_URL .env` → `http://127.0.0.1:8000`
+- [ ] Django settings → `DATABASES['default']['HOST']` = `'127.0.0.1'`
+- [ ] Django settings → `CELERY_BROKER_URL` = `'redis://127.0.0.1:6379/1'`
+
+### Production Environment (Full Containerization)
+**Note:** Production uses 11 containers including PgBouncer, Gotenberg, and containerized Django/Next.js.
+See `docker-compose.yml` (production) for details. Dev environment skips these.
+
+- [ ] Production: `docker compose up -d` → all 11 containers healthy within 60s
+- [ ] Production: `docker exec wellfond-pgbouncer psql -h 127.0.0.1 -p 5432 -U wellfond_app -d pgbouncer -c 'SHOW POOLS'` → pool active
+- [ ] Production: Redis isolation: sessions ≠ broker ≠ cache (3 separate Redis instances)
+- [ ] Production: Gotenberg: `curl http://localhost:3000/health` → 200
+
+### CI Pipeline
 - [ ] Push to branch → CI pipeline triggers
 - [ ] Backend job: lint + typecheck + test → green
 - [ ] Frontend job: lint + typecheck + test + build → green

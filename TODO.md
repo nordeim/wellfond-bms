@@ -135,7 +135,7 @@
 - [ ] **VALIDATE:** Master list loads <2s
 - [ ] **VALIDATE:** Partial chip search works
 - [ ] **VALIDATE:** Dog profile shows all 7 tabs
-- [ ] **VALIDATE:** Entity scoping enforced
+- [ ] **VALIDATE:** Entity scoping enforced (queryset-level, RLS dropped per v1.1)
 
 ---
 
@@ -180,7 +180,7 @@
 - [ ] `backend/apps/breeding/routers/litters.py` — Litter CRUD
 - [ ] `backend/apps/breeding/services/coi.py` — COI calculator (closure table)
 - [ ] `backend/apps/breeding/services/saturation.py` — Farm saturation
-- [ ] `backend/apps/breeding/tasks.py` — Celery closure rebuild
+- [ ] `backend/apps/breeding/tasks.py` — Celery closure rebuild (NO DB TRIGGERS per v1.1)
 - [ ] `backend/apps/breeding/admin.py` — Django admin
 - [ ] `backend/apps/breeding/tests/test_coi.py` — COI tests
 - [ ] `backend/apps/breeding/tests/test_saturation.py` — Saturation tests
@@ -255,16 +255,18 @@
 - [ ] `backend/apps/customers/routers/customers.py` — Customer CRUD + blast
 - [ ] `backend/apps/customers/services/segmentation.py` — Dynamic Q-object filters
 - [ ] `backend/apps/customers/services/blast.py` — Resend/WA dispatch
-- [ ] `backend/apps/customers/services/comms_router.py` — WA fallback to email
+- [ ] `backend/apps/customers/services/template_manager.py` — WA template approval cache
+- [ ] `backend/apps/customers/services/comms_router.py` — WA template + email fallback router
 - [ ] `backend/apps/customers/tasks.py` — Celery fan-out
 - [ ] `backend/apps/customers/admin.py` — Django admin
 - [ ] `backend/apps/customers/tests/test_segmentation.py` — Segmentation tests
 - [ ] `backend/apps/customers/tests/test_blast.py` — Blast tests
 - [ ] `frontend/app/(protected)/customers/page.tsx` — Customer DB + blast
 - [ ] `frontend/hooks/use-customers.ts` — Customer data hooks
-- [ ] **VALIDATE:** Blast excludes PDPA=false
+- [ ] **VALIDATE:** Blast excludes PDPA=false; warning shows excluded count
+- [ ] **VALIDATE:** WA template fallback to email on unapproved/rejected
 - [ ] **VALIDATE:** Progress bar live via SSE
-- [ ] **VALIDATE:** Comms logged per customer
+- [ ] **VALIDATE:** Comms logged per customer (channel switch logged)
 
 ---
 
