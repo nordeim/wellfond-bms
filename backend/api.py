@@ -72,14 +72,18 @@ def server_error_handler(request, exc):
 
 
 # -----------------------------------------------------------------------------
-# Router Registration Pattern
+# Router Registration
 # -----------------------------------------------------------------------------
-# Routers are registered in each app's urls.py:
-#
-# from .api import router as breeding_router
+from apps.core.routers import auth_router, users_router
+
+# Core routers
+api.add_router("/auth/", auth_router)
+api.add_router("/users/", users_router)
+
+# Additional routers will be registered here as apps are built:
+# api.add_router("/operations/", operations_router, tags=["operations"])
 # api.add_router("/breeding/", breeding_router, tags=["breeding"])
-#
-# Example endpoint registration:
-# @breeding_router.get("/dogs", response=list[DogSchema])
-# def list_dogs(request, entity_id: UUID):
-#     return Dog.objects.filter(entity_id=entity_id)
+# api.add_router("/sales/", sales_router, tags=["sales"])
+# api.add_router("/compliance/", compliance_router, tags=["compliance"])
+# api.add_router("/customers/", customers_router, tags=["customers"])
+# api.add_router("/finance/", finance_router, tags=["finance"])
