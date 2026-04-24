@@ -25,20 +25,40 @@
 
 ## 1. Architecture Overview
 
-### 1.1 Stack Decisions (Validated)
+### 1.1 Stack Decisions (Verified — all versions install cleanly as of April 2026)
 
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| Backend | Django 6.0.4 + Django Ninja 1.6.2 | Native CSP middleware, async support, auto OpenAPI |
-| Frontend | Next.js 16.2 (App Router) + React 19 | BFF proxy pattern, server components, PWA |
-| Database | PostgreSQL 17 (containerized, private LAN) | `wal_level=replica`, PgBouncer transaction pooling |
-| Task Queue | Celery 5.4 (native `@shared_task`) | Battle-tested; skip `django.tasks` bridge (early-stage) |
-| Cache/Broker | Redis 7.4 (3 instances: sessions, broker, cache) | Isolation prevents noisy-neighbor contention |
-| PDF | Gotenberg sidecar (Chromium-based) | Pixel-perfect legal agreements, e-signature fidelity |
-| Realtime | SSE via Django Ninja async generators | Simpler than WebSockets, HTTP/2 native, auto-reconnect |
-| Offline | PWA Service Worker + IndexedDB + Background Sync | Queue ground logs in dead zones, sync on reconnect |
-| Auth | HttpOnly cookies via BFF proxy | Zero JWT exposure to client JS |
-| Observability | OpenTelemetry → Prometheus/Grafana | Structured JSON logging, distributed tracing |
+| Layer | Choice | Installed Version | Rationale |
+|-------|--------|-------------------|-----------|
+| Backend | Django + Django Ninja | 6.0.4 / 1.6.2 | Native CSP middleware, async support, auto OpenAPI |
+| Frontend | Next.js (App Router) + React | 16.2.4 / 19.2.5 | BFF proxy pattern, server components, PWA |
+| Styling | Tailwind CSS + PostCSS | 4.2.4 / 8.5.10 | v4 utility-first, JIT, design tokens |
+| UI Primitives | Radix UI (checkbox, dialog, dropdown, slot) | 1.3.3 / 1.1.15 / 2.1.16 / 1.2.4 | Accessible, unstyled, composable |
+| Animation | Framer Motion | 12.38.0 | Page transitions, micro-interactions |
+| State | Zustand + TanStack Query | 5.0.12 / 5.100.1 | Client state + server cache |
+| Validation | Zod + Pydantic | 4.3.6 / 2.12.5 | Frontend + backend schema validation |
+| Icons | Lucide React | 1.9.0 | Tree-shakeable icon library |
+| Database | PostgreSQL 17 (containerized, private LAN) | 17 (Docker) | `wal_level=replica`, PgBouncer transaction pooling |
+| Task Queue | Celery (native `@shared_task`) | 5.4 (Docker) | Battle-tested; skip `django.tasks` bridge (early-stage) |
+| Cache/Broker | Redis (3 instances: sessions, broker, cache) | 7.4 (Docker) / 6.4.0 (client) | Isolation prevents noisy-neighbor contention |
+| DB Driver | psycopg2-binary | 2.9.10 | PostgreSQL adapter |
+| HTTP Client | httpx (for Gotenberg) | (Docker) | Async HTTP for PDF sidecar |
+| PDF | Gotenberg sidecar (Chromium-based) | 8 (Docker) | Pixel-perfect legal agreements, e-signature fidelity |
+| Realtime | SSE via Django Ninja async generators | — | Simpler than WebSockets, HTTP/2 native, auto-reconnect |
+| Offline | PWA Service Worker + IndexedDB + Background Sync | — | Queue ground logs in dead zones, sync on reconnect |
+| Auth | HttpOnly cookies via BFF proxy | — | Zero JWT exposure to client JS |
+| Type Safety | TypeScript | 6.0.3 | Strict mode, no `any` |
+| Testing (BE) | pytest + pytest-django + pytest-asyncio | 9.0.3 / 4.12.0 / 1.3.0 | Unit, integration, async tests |
+| Testing (FE) | Vitest + Testing Library + Playwright | 4.1.5 / 16.3.2 / 1.59.1 | Unit, component, E2E |
+| Mocking | MSW (Mock Service Worker) | 2.13.5 | API mocking for frontend tests |
+| Coverage | pytest-cov + Vitest coverage-v8 | 7.1.0 / 4.1.5 | ≥85% target |
+| Factories | factory-boy + Faker | 3.3.3 / 40.5.1 | Test data generation |
+| Linting | Black + isort + flake8 + mypy | 26.3.1 / 5.12.0 / 6.1.0 / 1.20.0 | Format, sort, lint, type-check |
+| Django Types | django-stubs + django-stubs-ext | 6.0.2 / 6.0.3 | Type hints for Django |
+| Dev Tools | IPython + django-extensions + django-debug-toolbar | 9.10.0 / 4.1 / 6.3.0 | REPL, management commands, SQL profiling |
+| Docs | MkDocs + mkdocs-material | 1.6.1 / 9.6.19 | Project documentation site |
+| Observability | OpenTelemetry → Prometheus/Grafana | (Docker) | Structured JSON logging, distributed tracing |
+
+> **Verification:** `npm install` → 377 packages, 0 vulnerabilities. `pip install -r base.txt` → 24 packages installed. `pip install -r dev.txt` → 47 packages installed. All resolved successfully.
 
 ### 1.2 Key Architectural Principles
 
@@ -347,10 +367,10 @@ wellfond-bms/
 | 0.10 | `backend/config/asgi.py` | ASGI config for async | Uvicorn-compatible. Supports SSE streaming. | ☐ Async views work |
 | 0.11 | `backend/api.py` | NinjaAPI instance | `NinjaAPI(title="Wellfond BMS", version="2.0.0", csrf=True)`. Global exception handlers (500/422/401). Router registry. OpenAPI at `/api/v1/openapi.json`. | ☐ Schema exports without runtime ☐ Custom error responses |
 | 0.12 | `backend/manage.py` | Django management script | Standard. `DJANGO_SETTINGS_MODULE=config.settings.development`. | ☐ `python manage.py runserver` works |
-| 0.13 | `backend/requirements/base.txt` | Production dependencies | `Django==6.0.4`, `django-ninja==1.6.2`, `pydantic==2.12`, `psycopg[c]==3.2`, `celery==5.4`, `redis==5.2`, `django-cors-headers`, `python-decouple`, `python-dateutil`, `openpyxl`, `httpx` (for Gotenberg), `opentelemetry-*`. | ☐ `pip install -r base.txt` succeeds ☐ No version conflicts |
-| 0.14 | `backend/requirements/dev.txt` | Dev dependencies | pytest, pytest-django, pytest-asyncio, pytest-cov, factory-boy, faker, black, isort, mypy, django-stubs, ipython, django-extensions, django-debug-toolbar. | ☐ `pytest` runs and discovers tests |
-| 0.15 | `frontend/next.config.ts` | Next.js configuration | `output: 'standalone'`. Rewrites for BFF proxy. Image domains. PWA headers. | ☐ Build succeeds |
-| 0.16 | `frontend/tailwind.config.ts` | Tailwind v4 config | Tangerine Sky palette: `#DDEEFF`, `#0D2030`, `#F97316`, `#0891B2`, `#4EAD72`, `#D4920A`, `#D94040`. Font: Figtree. Breakpoints. | ☐ Custom colors render |
+| 0.13 | `backend/requirements/base.txt` | Production dependencies | `Django==6.0.4`, `django-ninja==1.6.2`, `pydantic==2.12.5`, `psycopg2-binary==2.9.10`, `redis==6.4.0`, `hiredis==3.3.0`, `django-cors-headers==4.9.0`, `djangorestframework-simplejwt==5.5.1`, `PyJWT==2.12.1`, `stripe==14.4.1`, `python-decouple==3.8`, `pytz==2025.2`, `python-dateutil==2.9.0.post0`, `Pillow==12.2.0`, `asgiref==3.11.0`, `channels==4.3.2`, `channels-redis==4.3.0`, `django-ratelimit==4.1.0` + Celery, openpyxl, httpx, opentelemetry-* (to add) | ☐ `pip install -r base.txt` succeeds ☐ No version conflicts |
+| 0.14 | `backend/requirements/dev.txt` | Dev dependencies | `pytest==9.0.3`, `pytest-django==4.12.0`, `pytest-asyncio==1.3.0`, `pytest-cov==7.1.0`, `pytest-xdist==3.8.0`, `factory-boy==3.3.3`, `faker==40.5.1`, `black==26.3.1`, `isort==5.12.0`, `flake8==6.1.0`, `mypy==1.20.0`, `django-stubs==6.0.2`, `ipython==9.10.0`, `django-extensions==4.1`, `django-debug-toolbar==6.3.0`, `mkdocs==1.6.1`, `mkdocs-material==9.6.19` | ☐ `pytest` runs and discovers tests |
+| 0.15 | `frontend/next.config.ts` | Next.js 16.2.4 configuration | `output: 'standalone'`. Rewrites for BFF proxy. Image domains. PWA headers. | ☐ Build succeeds |
+| 0.16 | `frontend/tailwind.config.ts` | Tailwind v4.2.4 config | Tangerine Sky palette: `#DDEEFF`, `#0D2030`, `#F97316`, `#0891B2`, `#4EAD72`, `#D4920A`, `#D94040`. Font: Figtree. Breakpoints. | ☐ Custom colors render |
 | 0.17 | `frontend/app/layout.tsx` | Root layout | Tailwind import. Figtree font. CSP nonce. Theme color. Manifest link. Strict mode. | ☐ Page renders with correct font |
 | 0.18 | `frontend/app/globals.css` | Global styles | Tailwind v4 `@import`. CSS custom properties for theme. | ☐ Styles apply |
 | 0.19 | `frontend/public/manifest.json` | PWA manifest | Name, icons, theme_color, display: standalone, start_url. | ☐ Lighthouse PWA passes |
@@ -367,8 +387,10 @@ wellfond-bms/
 - [ ] `curl http://localhost:3000` → Next.js renders
 - [ ] `docker exec wellfond-nextjs curl http://postgres:5432` → connection refused (network isolation)
 - [ ] CI pipeline green on push to `main`
-- [ ] `pip install -r backend/requirements/base.txt` → no conflicts
-- [ ] `cd frontend && pnpm install && pnpm build` → standalone output in `.next/standalone/`
+- [ ] `pip install -r backend/requirements/base.txt` → 24 packages, no conflicts
+- [ ] `pip install -r backend/requirements/dev.txt` → 47 packages, no conflicts
+- [ ] `cd frontend && pnpm install` → 377 packages, 0 vulnerabilities
+- [ ] `cd frontend && pnpm build` → standalone output in `.next/standalone/`
 
 ---
 

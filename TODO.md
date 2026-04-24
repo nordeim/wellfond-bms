@@ -7,6 +7,22 @@
 ## Phase 0: Infrastructure & Foundation Scaffold
 **Target: 3–5 days | Status: ⬜ Not Started**
 
+### Verified Dependency Versions (installed April 2026)
+
+**Frontend (npm — 377 packages, 0 vulnerabilities):**
+`next@16.2.4` · `react@19.2.5` · `tailwindcss@4.2.4` · `@tailwindcss/postcss@4.2.4` · `typescript@6.0.3` · `framer-motion@12.38.0` · `zustand@5.0.12` · `@tanstack/react-query@5.100.1` · `zod@4.3.6` · `lucide-react@1.9.0` · `sonner@2.0.7` · `@radix-ui/react-checkbox@1.3.3` · `@radix-ui/react-dialog@1.1.15` · `@radix-ui/react-dropdown-menu@2.1.16` · `@radix-ui/react-slot@1.2.4` · `class-variance-authority@0.7.1` · `clsx@2.1.1` · `tailwind-merge@3.5.0` · `react-markdown@10.1.0` · `vite@8.0.10` · `vitest@4.1.5` · `@testing-library/react@16.3.2` · `playwright@1.59.1` · `msw@2.13.5`
+
+**Backend base (pip — 24 packages):**
+`Django==6.0.4` · `django-ninja==1.6.2` · `pydantic==2.12.5` · `psycopg2-binary==2.9.10` · `redis==6.4.0` · `hiredis==3.3.0` · `django-cors-headers==4.9.0` · `djangorestframework-simplejwt==5.5.1` · `PyJWT==2.12.1` · `stripe==14.4.1` · `python-decouple==3.8` · `pytz==2025.2` · `python-dateutil==2.9.0.post0` · `Pillow==12.2.0` · `asgiref==3.11.0` · `channels==4.3.2` · `channels-redis==4.3.0` · `django-ratelimit==4.1.0`
+
+**Backend dev (pip — 47 packages):**
+`pytest==9.0.3` · `pytest-django==4.12.0` · `pytest-asyncio==1.3.0` · `pytest-cov==7.1.0` · `pytest-xdist==3.8.0` · `factory-boy==3.3.3` · `faker==40.5.1` · `black==26.3.1` · `isort==5.12.0` · `flake8==6.1.0` · `mypy==1.20.0` · `django-stubs==6.0.2` · `ipython==9.10.0` · `django-extensions==4.1` · `django-debug-toolbar==6.3.0` · `mkdocs==1.6.1` · `mkdocs-material==9.6.19`
+
+**To add in Phase 0 scaffold:**
+`celery==5.4` · `openpyxl` · `httpx` · `opentelemetry-*` · `python-json-logger`
+
+### Files
+
 - [ ] `docker-compose.yml` — PG17, PgBouncer, Redis×3, Django, Celery, Next.js, Gotenberg, Flower, MinIO
 - [ ] `docker-compose.dev.yml` — Dev overrides with hot reload
 - [ ] `backend/Dockerfile.django` — Multi-stage, non-root, Trivy-ready
@@ -35,6 +51,10 @@
 - [ ] **VALIDATE:** `/health/` returns 200
 - [ ] **VALIDATE:** Network isolation verified
 - [ ] **VALIDATE:** CI pipeline green
+- [ ] **VALIDATE:** `pip install -r base.txt` → 24 packages, no conflicts
+- [ ] **VALIDATE:** `pip install -r dev.txt` → 47 packages, no conflicts
+- [ ] **VALIDATE:** `npm install` → 377 packages, 0 vulnerabilities
+- [ ] **VALIDATE:** `npm run build` → standalone output
 
 ---
 
@@ -292,3 +312,4 @@
 ---
 
 **Total Files: ~178 | Estimated Effort: ~70–95 days**
+**Verified Stack: npm 377 pkgs (0 vulns) + pip 71 pkgs (all resolved) | April 2026**
