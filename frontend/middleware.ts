@@ -23,28 +23,7 @@ const PUBLIC_ROUTES = [
   '/health',
 ];
 
-// Role-based route access
-const ROUTE_ACCESS: Record<string, string[]> = {
-  '/dashboard': ['management', 'admin', 'sales'],
-  '/dogs': ['management', 'admin', 'sales', 'ground', 'vet'],
-  '/ground': ['management', 'admin', 'ground'],
-  '/breeding': ['management', 'admin'],
-  '/sales': ['management', 'admin', 'sales'],
-  '/compliance': ['management', 'admin'],
-  '/customers': ['management', 'admin', 'sales'],
-  '/finance': ['management', 'admin'],
-  '/users': ['management', 'admin'],
-  '/settings': ['management', 'admin'],
-};
-
-// Default redirects by role
-const ROLE_REDIRECTS: Record<string, string> = {
-  management: '/dashboard',
-  admin: '/dashboard',
-  sales: '/dashboard',
-  ground: '/ground',
-  vet: '/dogs',
-};
+// Role-based redirects are handled client-side in the protected layout
 
 // =============================================================================
 // Helper Functions

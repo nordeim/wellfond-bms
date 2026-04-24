@@ -13,10 +13,8 @@ const nextConfig: NextConfig = {
   // React strict mode for development safety
   reactStrictMode: true,
 
-  // Turbopack for faster development
-  experimental: {
-    turbo: {},
-  },
+  // Turbopack for faster development (Next.js 15+)
+  // turbo config handled automatically in dev mode
 
   // Image optimization configuration
   images: {
@@ -99,11 +97,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
 
-  // ESLint configuration
-  eslint: {
-    // Fail builds on ESLint errors
-    ignoreDuringBuilds: false,
-  },
 };
 
 export default nextConfig;

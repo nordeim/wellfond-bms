@@ -35,8 +35,9 @@ Progress.displayName = ProgressPrimitive.Root.displayName;
 /**
  * Progress with label showing percentage.
  */
-interface ProgressWithLabelProps
-  extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
+interface ProgressWithLabelProps {
+  className?: string;
+  value?: number;
   showLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'success' | 'warning' | 'error';
