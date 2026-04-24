@@ -1,0 +1,263 @@
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 17 — Private LAN, wal_level=replica
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: wellfond-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wellfond}
+      POSTGRES_USER: ${POSTGRES_USER:-wellfond_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    command: >
+      postgres
+        -c wal_level=replica
+        -c max_connections=200
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c work_mem=64MB
+        -c maintenance_work_mem=128MB
+        -c log_statement=none
+        -c log_min_duration_statement=1000
+        -c password_encryption=scram-sha-256
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wellfond_app} -d ${POSTGRES_DB:-wellfond}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # PgBouncer — Transaction pooling
+  # ---------------------------------------------------------------------------
+  pgbouncer:
+    image: edoburu/pgbouncer:1.23.0
+    container_name: wellfond-pgbouncer
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-wellfond_app}:${DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-wellfond}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 50
+      MIN_POOL_SIZE: 10
+      RESERVE_POOL_SIZE: 10
+      ADMIN_USERS: ${POSTGRES_USER:-wellfond_app}
+      AUTH_TYPE: scram-sha-256
+    ports:
+      - "6432:5432"
+    networks:
+      - backend_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Redis — Split instances (sessions, broker, cache)
+  # ---------------------------------------------------------------------------
+  redis_sessions:
+    image: redis:7.4-alpine
+    container_name: wellfond-redis-sessions
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save ""
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  redis_broker:
+    image: redis:7.4-alpine
+    container_name: wellfond-redis-broker
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction --save ""
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  redis_cache:
+    image: redis:7.4-alpine
+    container_name: wellfond-redis-cache
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Django 6.0 — ASGI via Uvicorn
+  # ---------------------------------------------------------------------------
+  django:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.django
+    container_name: wellfond-django
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-wellfond_app}:${DB_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-wellfond}
+      POSTGRES_DB: ${POSTGRES_DB:-wellfond}
+      POSTGRES_USER: ${POSTGRES_USER:-wellfond_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_SESSIONS_URL: redis://redis_sessions:6379/0
+      REDIS_BROKER_URL: redis://redis_broker:6379/0
+      REDIS_CACHE_URL: redis://redis_cache:6379/0
+      GOTENBERG_URL: http://gotenberg:3000
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: "*"
+    ports:
+      - "8000:8000"
+    networks:
+      - backend_net
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis_sessions:
+        condition: service_healthy
+      redis_broker:
+        condition: service_healthy
+      redis_cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Celery Worker — Task execution
+  # ---------------------------------------------------------------------------
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.django
+    container_name: wellfond-celery-worker
+    command: celery -A config worker -l info -Q high,default,low,dlq --concurrency=4
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-wellfond_app}:${DB_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-wellfond}
+      POSTGRES_DB: ${POSTGRES_DB:-wellfond}
+      POSTGRES_USER: ${POSTGRES_USER:-wellfond_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_BROKER_URL: redis://redis_broker:6379/0
+      REDIS_CACHE_URL: redis://redis_cache:6379/0
+      REDIS_SESSIONS_URL: redis://redis_sessions:6379/0
+      GOTENBERG_URL: http://gotenberg:3000
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+    networks:
+      - backend_net
+    depends_on:
+      - django
+      redis_broker:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Celery Beat — Scheduled tasks
+  # ---------------------------------------------------------------------------
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.django
+    container_name: wellfond-celery-beat
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-wellfond_app}:${DB_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-wellfond}
+      POSTGRES_DB: ${POSTGRES_DB:-wellfond}
+      POSTGRES_USER: ${POSTGRES_USER:-wellfond_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_BROKER_URL: redis://redis_broker:6379/0
+      REDIS_CACHE_URL: redis://redis_cache:6379/0
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+    networks:
+      - backend_net
+    depends_on:
+      - django
+      redis_broker:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Gotenberg — PDF sidecar (Chromium-based)
+  # ---------------------------------------------------------------------------
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: wellfond-gotenberg
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Next.js 16 — BFF + PWA
+  # ---------------------------------------------------------------------------
+  nextjs:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.nextjs
+    container_name: wellfond-nextjs
+    environment:
+      BACKEND_INTERNAL_URL: http://django:8000
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend_net
+      - backend_net
+    depends_on:
+      django:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Flower — Celery monitoring UI
+  # ---------------------------------------------------------------------------
+  flower:
+    image: mher/flower:2.0
+    container_name: wellfond-flower
+    command: celery --broker=redis://redis_broker:6379/0 flower --port=5555
+    ports:
+      - "5555:5555"
+    networks:
+      - backend_net
+    depends_on:
+      redis_broker:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  backend_net:
+    driver: bridge
+  frontend_net:
+    driver: bridge
