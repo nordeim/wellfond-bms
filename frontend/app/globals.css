@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  /* Tangerine Sky palette */
+  --color-brand-bg: #DDEEFF;
+  --color-brand-sidebar: #E8F4FF;
+  --color-brand-card: #FFFFFF;
+  --color-brand-primary: #F97316;
+  --color-brand-secondary: #0891B2;
+  --color-brand-text: #0D2030;
+  --color-brand-muted: #4A7A94;
+  --color-brand-border: #C0D8EE;
+  --color-brand-success: #4EAD72;
+  --color-brand-warning: #D4920A;
+  --color-brand-error: #D94040;
+  --color-brand-role-bar: #FFF0E6;
+
+  --font-figtree: "Figtree", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-figtree);
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection color */
+::selection {
+  background-color: #F9731640;
+  color: #0D2030;
+}
