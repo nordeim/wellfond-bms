@@ -355,19 +355,19 @@ wellfond-bms/
 
 | # | File | Description | Features & Interfaces | Checklist |
 |---|------|-------------|----------------------|-----------|
-| 0.1 | `docker-compose.yml` | Production compose: PG17, PgBouncer, Redis×3, Django, Celery worker + beat, Next.js, Gotenberg, Flower, MinIO | Services on `backend_net`/`frontend_net`. Healthchecks on all. `wal_level=replica`. Resource limits. Named volumes for NVMe. | ☐ All 11 containers boot healthy ☐ Networks isolated ☐ Volumes persist data |
-| 0.2 | `docker-compose.dev.yml` | Dev overrides: hot reload, debug ports, local MinIO | Mounts `./backend` and `./frontend` for live reload. Exposes 5432 (PG), 6379 (Redis), 8000 (Django), 3000 (Next.js). | ☐ `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` works |
+| 0.1 | `docker-compose.yml` | Production compose: PG17, PgBouncer, Redis×3, Django, Celery worker + beat, Next.js, Gotenberg, Flower (11 services) | Services on `backend_net`/`frontend_net`. Healthchecks on all. `wal_level=replica`. Resource limits. Named volumes for NVMe. | ☐ All 11 containers boot healthy ☐ Networks isolated ☐ Volumes persist data |
+| 0.2 | `docker-compose.dev.yml` | Dev overrides: hot reload, debug ports | Mounts `./backend` and `./frontend` for live reload. Exposes 5432 (PG), 6379 (Redis), 8000 (Django), 3000 (Next.js). | ☐ `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` works |
 | 0.3 | `backend/Dockerfile.django` | Multi-stage: builder (uv/pip-tools) → runtime (slim) | Non-root user. Trivy scan stage. SBOM generation. `psycopg[c]`, `celery`, `uvicorn` pinned. | ☐ Image <200MB ☐ No root process ☐ Trivy passes |
-| 0.4 | `frontend/Dockerfile.nextjs` | Multi-stage: deps → build → standalone | Node 22-alpine. pnpm. `output: standalone`. Non-root. PWA assets precached. | ☐ Image <150MB ☐ Standalone output works ☐ SW precache loads |
+| 0.4 | `frontend/Dockerfile.nextjs` | Multi-stage: deps → build → standalone | Node 22-alpine. pnpm. `output: standalone`. Non-root. PWA assets precached. Env: `BACKEND_INTERNAL_URL` (server-only), `NEXT_PUBLIC_SENTRY_DSN` (optional). No `NEXT_PUBLIC_API_BASE`. | ☐ Image <150MB ☐ Standalone output works ☐ SW precache loads |
 | 0.5 | `backend/config/settings/base.py` | Django 6.0 core settings | `INSTALLED_APPS` (all 7 domain apps). CSP middleware. `CONN_MAX_AGE=0`. Split Redis configs. Celery config. Logging (JSON). Timezone `Asia/Singapore`. | ☐ `python manage.py check` passes ☐ All apps registered |
 | 0.6 | `backend/config/settings/development.py` | Dev settings | `DEBUG=True`. Debug toolbar. Local DB. Relaxed CSP. | ☐ Debug toolbar loads |
 | 0.7 | `backend/config/settings/production.py` | Prod settings | `DEBUG=False`. Strict CSP. PgBouncer host. OTel exporters. HTTPS-only cookies. | ☐ CSP headers present in response |
 | 0.8 | `backend/config/celery.py` | Celery app initialization | `app = Celery('wellfond')`. Auto-discovers tasks from all apps. Beat schedule for AVS reminders. Queue routing: compliance→high, marketing→default, breeding→low. | ☐ `celery -A config inspect registered` lists tasks |
 | 0.9 | `backend/config/urls.py` | Root URL configuration | Includes `api.urls` at `/api/v1/`. Admin at `/admin/`. Health check at `/health/`. | ☐ `/health/` returns 200 |
 | 0.10 | `backend/config/asgi.py` | ASGI config for async | Uvicorn-compatible. Supports SSE streaming. | ☐ Async views work |
-| 0.11 | `backend/api.py` | NinjaAPI instance | `NinjaAPI(title="Wellfond BMS", version="2.0.0", csrf=True)`. Global exception handlers (500/422/401). Router registry. OpenAPI at `/api/v1/openapi.json`. | ☐ Schema exports without runtime ☐ Custom error responses |
+| 0.11 | `backend/api.py` | NinjaAPI instance | `NinjaAPI(title="Wellfond BMS", version="1.0.0", csrf=True)`. Global exception handlers (500/422/401). Router registry. OpenAPI at `/api/v1/openapi.json`. | ☐ Schema exports without runtime ☐ Custom error responses |
 | 0.12 | `backend/manage.py` | Django management script | Standard. `DJANGO_SETTINGS_MODULE=config.settings.development`. | ☐ `python manage.py runserver` works |
-| 0.13 | `backend/requirements/base.txt` | Production dependencies | `Django==6.0.4`, `django-ninja==1.6.2`, `pydantic==2.12.5`, `psycopg2-binary==2.9.10`, `redis==6.4.0`, `hiredis==3.3.0`, `django-cors-headers==4.9.0`, `djangorestframework-simplejwt==5.5.1`, `PyJWT==2.12.1`, `stripe==14.4.1`, `python-decouple==3.8`, `pytz==2025.2`, `python-dateutil==2.9.0.post0`, `Pillow==12.2.0`, `asgiref==3.11.0`, `channels==4.3.2`, `channels-redis==4.3.0`, `django-ratelimit==4.1.0` + Celery, openpyxl, httpx, opentelemetry-* (to add) | ☐ `pip install -r base.txt` succeeds ☐ No version conflicts |
+| 0.13 | `backend/requirements/base.txt` | Production dependencies | `Django==6.0.4`, `django-ninja==1.6.2`, `pydantic==2.12.5`, `psycopg2-binary==2.9.10`, `redis==6.4.0`, `hiredis==3.3.0`, `django-cors-headers==4.9.0`, `djangorestframework-simplejwt==5.5.1`, `PyJWT==2.12.1`, `stripe==14.4.1`, `python-decouple==3.8`, `pytz==2025.2`, `python-dateutil==2.9.0.post0`, `Pillow==12.2.0`, `asgiref==3.11.0`, `channels==4.3.2`, `channels-redis==4.3.0`, `django-ratelimit==4.1.0` + `celery`, `django-celery-beat`, `openpyxl`, `httpx`, `opentelemetry-*`, `python-json-logger` (to add) | ☐ `pip install -r base.txt` succeeds ☐ No version conflicts |
 | 0.14 | `backend/requirements/dev.txt` | Dev dependencies | `pytest==9.0.3`, `pytest-django==4.12.0`, `pytest-asyncio==1.3.0`, `pytest-cov==7.1.0`, `pytest-xdist==3.8.0`, `factory-boy==3.3.3`, `faker==40.5.1`, `black==26.3.1`, `isort==5.12.0`, `flake8==6.1.0`, `mypy==1.20.0`, `django-stubs==6.0.2`, `ipython==9.10.0`, `django-extensions==4.1`, `django-debug-toolbar==6.3.0`, `mkdocs==1.6.1`, `mkdocs-material==9.6.19` | ☐ `pytest` runs and discovers tests |
 | 0.15 | `frontend/next.config.ts` | Next.js 16.2.4 configuration | `output: 'standalone'`. Rewrites for BFF proxy. Image domains. PWA headers. | ☐ Build succeeds |
 | 0.16 | `frontend/tailwind.config.ts` | Tailwind v4.2.4 config | Tangerine Sky palette: `#DDEEFF`, `#0D2030`, `#F97316`, `#0891B2`, `#4EAD72`, `#D4920A`, `#D94040`. Font: Figtree. Breakpoints. | ☐ Custom colors render |
@@ -382,15 +382,19 @@ wellfond-bms/
 
 ### Phase 0 Validation
 
-- [ ] `docker compose up -d` → all containers healthy within 60s
+- [ ] `docker compose up -d` → all 11 containers healthy within 60s
 - [ ] `curl http://localhost:8000/health/` → 200 OK
 - [ ] `curl http://localhost:3000` → Next.js renders
 - [ ] `docker exec wellfond-nextjs curl http://postgres:5432` → connection refused (network isolation)
+- [ ] PgBouncer routes Django connections successfully
+- [ ] Redis instances isolated: sessions ≠ broker ≠ cache
+- [ ] Gotenberg responds: `curl http://localhost:3000/health` → 200 (Gotenberg's own healthcheck)
+- [ ] OpenAPI schema exports at `/api/v1/openapi.json` without server runtime
 - [ ] CI pipeline green on push to `main`
 - [ ] `pip install -r backend/requirements/base.txt` → 24 packages, no conflicts
 - [ ] `pip install -r backend/requirements/dev.txt` → 47 packages, no conflicts
-- [ ] `cd frontend && pnpm install` → 377 packages, 0 vulnerabilities
-- [ ] `cd frontend && pnpm build` → standalone output in `.next/standalone/`
+- [ ] `cd frontend && npm install` → 377 packages, 0 vulnerabilities
+- [ ] `cd frontend && npm run build` → standalone output in `.next/standalone/`
 
 ---
 
@@ -812,6 +816,34 @@ wellfond-bms/
 | SSE alert delivery | <500ms | k6 |
 | PWA install | <3s | Lighthouse |
 | PDF generation | <5s | Gotenberg benchmark |
+
+### 13.4 Cross-Cutting Validation Matrix (from draft_plan v1.1)
+
+| Requirement | Implementation | Verification Method |
+|-------------|----------------|---------------------|
+| **BFF HttpOnly** | Next.js proxy forwards cookies; Django validates session | Playwright: `window.*` token scan → empty |
+| **Compliance Determinism** | Pure Python/SQL in `compliance/`; zero AI imports | `grep -r "anthropic\|openai\|langchain" backend/apps/compliance/` → 0 matches |
+| **GST 9/109** | `Decimal(price) * 9 / 109`, `ROUND_HALF_UP` | Unit tests: 109→9.00, 218→18.00, 50→4.13 |
+| **PDPA Hard Block** | `WHERE pdpa_consent=true` at queryset + DB constraint | Pen test: blast to opted-out → 0 delivered |
+| **COI Performance** | Closure table + recursive CTE + Redis cache | k6: p95 <500ms on 5-gen pedigree |
+| **NParks Excel** | `openpyxl` template injection, zero AI | Diff vs official template → 0 deviation |
+| **AVS 3-Day Reminder** | Celery Beat schedule, idempotent send, escalation | Mock time → task fires → comms logged |
+| **PWA Offline** | Service worker + IndexedDB queue + background sync | DevTools offline → queue → reconnect → sync |
+| **SSE Realtime** | Async generator + `text/event-stream` + EventSource | k6: alert delivery <500ms, auto-reconnect <3s |
+| **Audit Immutability** | `AuditLog` no UPDATE/DELETE, SHA-256 PDF hash | DB trigger blocks modification; hash verifies |
+
+### 13.5 Execution Protocol & Sign-Off
+
+1. **Phase Gating:** Each phase requires checklist completion + lead review before merging to `main`.
+2. **Compliance Freeze:** Phase 6 locks NParks/GST/PDPA logic. Changes require architecture review + regression suite.
+3. **AI Boundary Enforcement:** `backend/apps/ai_sandbox/` is the only directory permitted LLM imports. CI fails on violation.
+4. **Performance Budget:** Dashboard <2s, COI <500ms, NParks <3s, SSE <500ms. k6 enforces in CI.
+5. **Security Baseline:** CSP enforced, Trivy blocks CVEs, PDPA hard filter, HttpOnly BFF, audit immutability.
+6. **Handoff:** Phase 9 delivers runbooks, OTel dashboards, PITR procedure, load test reports, and sign-off matrix.
+
+**Approval Signatures:**
+`[ ] Architecture Lead` | `[ ] Compliance Officer` | `[ ] DevOps Lead` | `[ ] Product Owner`
+**Date:** _______________ | **Version:** 2.0 | **Status:** READY FOR EXECUTION
 
 ---
 

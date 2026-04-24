@@ -19,11 +19,11 @@
 `pytest==9.0.3` · `pytest-django==4.12.0` · `pytest-asyncio==1.3.0` · `pytest-cov==7.1.0` · `pytest-xdist==3.8.0` · `factory-boy==3.3.3` · `faker==40.5.1` · `black==26.3.1` · `isort==5.12.0` · `flake8==6.1.0` · `mypy==1.20.0` · `django-stubs==6.0.2` · `ipython==9.10.0` · `django-extensions==4.1` · `django-debug-toolbar==6.3.0` · `mkdocs==1.6.1` · `mkdocs-material==9.6.19`
 
 **To add in Phase 0 scaffold:**
-`celery==5.4` · `openpyxl` · `httpx` · `opentelemetry-*` · `python-json-logger`
+`celery==5.4` · `django-celery-beat` · `openpyxl` · `httpx` · `opentelemetry-*` · `python-json-logger`
 
 ### Files
 
-- [ ] `docker-compose.yml` — PG17, PgBouncer, Redis×3, Django, Celery, Next.js, Gotenberg, Flower, MinIO
+- [ ] `docker-compose.yml` — PG17, PgBouncer, Redis×3, Django, Celery, Next.js, Gotenberg, Flower (11 services)
 - [ ] `docker-compose.dev.yml` — Dev overrides with hot reload
 - [ ] `backend/Dockerfile.django` — Multi-stage, non-root, Trivy-ready
 - [ ] `frontend/Dockerfile.nextjs` — Multi-stage, pnpm, standalone output
@@ -47,9 +47,13 @@
 - [ ] `.gitignore` — Complete ignore rules
 - [ ] `scripts/seed.sh` — Fixture data loader
 - [ ] `README.md` — Project readme
-- [ ] **VALIDATE:** All containers boot healthy
+- [ ] **VALIDATE:** All 11 containers boot healthy
 - [ ] **VALIDATE:** `/health/` returns 200
 - [ ] **VALIDATE:** Network isolation verified
+- [ ] **VALIDATE:** PgBouncer routes Django connections successfully
+- [ ] **VALIDATE:** Redis instances isolated (sessions ≠ broker ≠ cache)
+- [ ] **VALIDATE:** Gotenberg healthcheck: `curl http://localhost:3000/health` → 200
+- [ ] **VALIDATE:** OpenAPI schema exports at `/api/v1/openapi.json`
 - [ ] **VALIDATE:** CI pipeline green
 - [ ] **VALIDATE:** `pip install -r base.txt` → 24 packages, no conflicts
 - [ ] **VALIDATE:** `pip install -r dev.txt` → 47 packages, no conflicts
@@ -308,6 +312,41 @@
 - [ ] **SIGN-OFF:** Compliance Officer
 - [ ] **SIGN-OFF:** DevOps Lead
 - [ ] **SIGN-OFF:** Product Owner
+
+---
+
+## Cross-Cutting Validation Matrix
+
+| Requirement | Implementation | Verification |
+|-------------|----------------|--------------|
+| BFF HttpOnly | Next.js proxy forwards cookies; Django validates session | Playwright: `window.*` token scan → empty |
+| Compliance Determinism | Pure Python/SQL in `compliance/`; zero AI imports | `grep -r "anthropic\|openai\|langchain" backend/apps/compliance/` → 0 matches |
+| GST 9/109 | `Decimal(price) * 9 / 109`, `ROUND_HALF_UP` | Unit tests: 109→9.00, 218→18.00, 50→4.13 |
+| PDPA Hard Block | `WHERE pdpa_consent=true` at queryset + DB constraint | Pen test: blast to opted-out → 0 delivered |
+| COI Performance | Closure table + recursive CTE + Redis cache | k6: p95 <500ms on 5-gen pedigree |
+| NParks Excel | `openpyxl` template injection, zero AI | Diff vs official template → 0 deviation |
+| AVS 3-Day Reminder | Celery Beat schedule, idempotent send, escalation | Mock time → task fires → comms logged |
+| PWA Offline | Service worker + IndexedDB queue + background sync | DevTools offline → queue → reconnect → sync |
+| SSE Realtime | Async generator + `text/event-stream` + EventSource | k6: alert delivery <500ms, auto-reconnect <3s |
+| Audit Immutability | `AuditLog` no UPDATE/DELETE, SHA-256 PDF hash | DB trigger blocks modification; hash verifies |
+
+## Execution Protocol
+
+1. **Phase Gating:** Each phase requires checklist completion + lead review before merging to `main`
+2. **Compliance Freeze:** Phase 6 locks NParks/GST/PDPA logic. Changes require architecture review + regression suite
+3. **AI Boundary Enforcement:** `backend/apps/ai_sandbox/` is the only directory permitted LLM imports. CI fails on violation
+4. **Performance Budget:** Dashboard <2s, COI <500ms, NParks <3s, SSE <500ms. k6 enforces in CI
+5. **Security Baseline:** CSP enforced, Trivy blocks CVEs, PDPA hard filter, HttpOnly BFF, audit immutability
+6. **Handoff:** Phase 9 delivers runbooks, OTel dashboards, PITR procedure, load test reports, and sign-off matrix
+
+## Sign-Off
+
+| Role | Name | Date | Signature |
+|------|------|------|-----------|
+| Architecture Lead | | | `[ ]` |
+| Compliance Officer | | | `[ ]` |
+| DevOps Lead | | | `[ ]` |
+| Product Owner | | | `[ ]` |
 
 ---
 
