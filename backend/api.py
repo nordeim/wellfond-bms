@@ -76,9 +76,9 @@ def server_error_handler(request, exc):
 # -----------------------------------------------------------------------------
 from apps.core.routers import auth_router, users_router
 
-# Core routers
-api.add_router("/auth/", auth_router)
-api.add_router("/users/", users_router)
+# Core routers - paths without trailing slashes (Ninja handles trailing slashes)
+api.add_router("/auth", auth_router, tags=["auth"])
+api.add_router("/users", users_router, tags=["users"])
 
 # Additional routers will be registered here as apps are built:
 # api.add_router("/operations/", operations_router, tags=["operations"])

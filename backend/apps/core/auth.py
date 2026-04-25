@@ -100,18 +100,19 @@ class AuthenticationService:
     @classmethod
     def login(
         cls, request: HttpRequest, email: str, password: str
-    ) -> tuple[Optional[User], Optional[str]]:
+    ) -> tuple[Optional[User], Optional[str], Optional[HttpResponse]]:
         """
         Authenticate user and create session.
-        Returns: (user, error_message)
+        Returns: (user, error_message, response_with_cookie)
         """
-        user = django_authenticate(request, username=email, password=password)
+        # Django's authenticate uses USERNAME_FIELD which is 'email' for our User model
+        user = django_authenticate(request, email=email, password=password)
 
         if not user:
-            return None, "Invalid credentials"
+            return None, "Invalid credentials", None
 
         if not user.is_active:
-            return None, "Account is disabled"
+            return None, "Account is disabled", None
 
         # Create session
         session_key, csrf_token = SessionManager.create_session(user, request)
@@ -158,7 +159,7 @@ class AuthenticationService:
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
-        return user, None
+        return user, None, response
 
     @classmethod
     def logout(cls, request: HttpRequest) -> HttpResponse:
@@ -267,7 +268,7 @@ def get_client_ip(request: HttpRequest) -> Optional[str]:
 
 def login_user(
     request: HttpRequest, email: str, password: str
-) -> tuple[Optional[User], Optional[str]]:
+) -> tuple[Optional[User], Optional[str], Optional[HttpResponse]]:
     """Public API for login."""
     return AuthenticationService.login(request, email, password)
 

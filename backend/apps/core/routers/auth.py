@@ -25,28 +25,19 @@ from ..schemas import (
 router = Router(tags=["auth"])
 
 
-@router.post("/login", response=LoginResponse)
+@router.post("/login")
 def login(request, data: LoginRequest):
     """
     Authenticate user and set HttpOnly session cookie.
 
     Returns user data and CSRF token for subsequent requests.
     """
-    user, error = login_user(request, data.username, data.password)
+    user, error, response = login_user(request, data.email, data.password)
 
-    if error:
-        raise HttpError(401, error)
+    if error or not response:
+        raise HttpError(401, error or "Login failed")
 
-    # Response is built in login_user and attached to request
-    # We need to get the CSRF token
-    from django.middleware.csrf import get_token
-
-    csrf_token = get_token(request)
-
-    return {
-        "user": UserResponse.from_orm(user),
-        "csrf_token": csrf_token,
-    }
+    return response
 
 
 @router.post("/logout", response=LogoutResponse)

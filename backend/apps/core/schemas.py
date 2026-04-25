@@ -21,7 +21,7 @@ from .models import User
 class LoginRequest(BaseModel):
     """Login request payload."""
 
-    username: str = Field(..., description="User email")
+    email: str = Field(..., description="User email")
     password: str = Field(..., description="User password", min_length=8)
 
 

@@ -4,7 +4,7 @@ Users Router - Wellfond BMS
 User management endpoints (admin only).
 """
 
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from ninja import Query, Router
@@ -13,12 +13,12 @@ from ninja.pagination import paginate
 
 from ..models import User
 from ..permissions import require_admin
-from ..schemas import UserCreate, UserListResponse, UserResponse, UserUpdate
+from ..schemas import UserCreate, UserResponse, UserUpdate
 
 router = Router(tags=["users"])
 
 
-@router.get("/", response=UserListResponse)
+@router.get("/", response=list[UserResponse])
 @paginate
 @require_admin
 def list_users(request, role: Optional[str] = None, is_active: Optional[bool] = None):

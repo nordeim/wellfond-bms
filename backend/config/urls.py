@@ -5,8 +5,9 @@ Root URL configuration with health checks and API mounting.
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.http import JsonResponse
+from django.conf import settings
 
 from api import api
 
@@ -45,3 +46,14 @@ urlpatterns = [
     # Ninja API v1
     path("api/v1/", api.urls),
 ]
+
+# Fix Ninja API docs URL duplication
+api.docs_url = "/docs/"
+
+# Debug toolbar in development
+if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
+    import debug_toolbar
+
+    urlpatterns = [
+        path("__debug__/", include(debug_toolbar.urls)),
+    ] + urlpatterns

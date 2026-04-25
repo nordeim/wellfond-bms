@@ -24,3 +24,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Email — console backend
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Redis — use local Redis container
+CACHES["default"]["LOCATION"] = os.environ.get(
+    "REDIS_CACHE_URL", "redis://localhost:6379/0"
+)  # noqa: F405
+CACHES["sessions"]["LOCATION"] = os.environ.get(
+    "REDIS_SESSIONS_URL", "redis://localhost:6379/1"
+)  # noqa: F405
+CACHES["idempotency"]["LOCATION"] = os.environ.get(
+    "REDIS_CACHE_URL", "redis://localhost:6379/2"
+)  # noqa: F405

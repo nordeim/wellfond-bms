@@ -175,7 +175,7 @@ class AuditLog(models.Model):
 
     def save(self, *args, **kwargs):
         """Prevent updates - audit logs are append-only."""
-        if self.pk:
+        if self.pk and not kwargs.get("force_insert"):
             raise ValueError("AuditLog entries cannot be updated")
         super().save(*args, **kwargs)
 
