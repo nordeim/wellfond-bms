@@ -228,13 +228,16 @@ class AuthenticationService:
 
         return {
             "user": {
-                "id": str(user.id),
+                "id": user.id,  # UUID object
+                "username": user.username,
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "role": user.role,
-                "entity_id": str(user.entity_id) if user.entity_id else None,
+                "entity_id": user.entity_id,
                 "pdpa_consent": user.pdpa_consent,
+                "is_active": user.is_active,
+                "created_at": user.created_at,
             },
             "csrf_token": csrf_token,
         }

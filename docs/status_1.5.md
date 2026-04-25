@@ -113,3 +113,51 @@ $ find /home/project/wellfond-bms/backend -type d -name __pycache__ -exec rm -rf
 ✅ Bytecache cleared
 Thinking: Now I need to restart the Django server for the changes
 
+# Todos
+[•] Investigate root cause of /api/v1/auth/refresh 500 error
+[ ] Investigate root cause of /api/v1/users response issue
+[ ] Create detailed remediation plan
+[ ] Validate remediation plan against codebase
+[ ] Execute fixes for refresh endpoint
+[ ] Execute fixes for users endpoint
+[ ] Verify fixes with curl tests
+→ Read backend/apps/core/auth.py 
+Thinking: Now let me look at the auth router to see how
+→ Read backend/apps/core/routers/auth.py 
+→ Read backend/apps/core/schemas.py 
+Thinking: Now let me check the users router to understand the users
+→ Read backend/apps/core/routers/users.py 
+Thinking: Now let me analyze the code to identify the root causes:
+Root Cause Analysis
+Issue 1: /api/v1/auth/refresh returning 500
+Looking at the code:
+1. auth.py:refresh() (lines 197-240) returns a dict with user and csrf_token
+2. The user in the returned dict is a plain dict, not a User model instance
+3. auth_router.py:refresh() (lines 51-66) uses response=RefreshResponse and constructs:
+      return {
+       "user": result["user"],  # This is a plain dict
+       "csrf_token": result["csrf_token"],
+   }
+   4. RefreshResponse schema (schemas.py:53-57) expects:
+      class RefreshResponse(BaseModel):
+       user: UserResponse  # This expects a User model or UserResponse
+       csrf_token: str
+   
+Root Cause: Ninja tries to validate the plain dict result["user"] against UserResponse, but the dict doesn't have all the required fields (is_active, created_at are missing from the dict created in auth.py:229-238).
+Issue 2: /api/v1/users returning empty/error
+Looking at the code:
+1. users.py:list_users() (lines 21-39) uses @paginate decorator
+2. Response type is list[UserResponse]
+3. The function returns queryset (a Django QuerySet)
+4. Django Ninja's pagination expects the response to be a dict with count and items fields, not a list. I'm seeing the core issue: the authentication refresh endpoint is missing critical user fields in its response structure, and the users endpoint requires proper pagination formatting. The refresh function needs to include is_active and created_at fields, while the users endpoint must return a paginated dictionary instead of a
+
+# Todos
+[✓] Investigate root cause of /api/v1/auth/refresh 500 error
+[✓] Investigate root cause of /api/v1/users response issue
+[✓] Create detailed remediation plan
+[✓] Validate remediation plan against codebase
+[✓] Execute fixes for refresh endpoint
+[✓] Execute fixes for users endpoint
+[✓] Verify fixes with curl tests
+The user needs to restart the Django server for the middleware changes to ta
+

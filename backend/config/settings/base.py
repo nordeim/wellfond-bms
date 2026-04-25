@@ -1,6 +1,7 @@
 """
 Django settings — Wellfond BMS (base)
 """
+
 import os
 from pathlib import Path
 
@@ -44,10 +45,12 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.AuthenticationMiddleware",  # Custom Redis-based auth (sets request.user)
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django admin support
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.IdempotencyMiddleware",
+    "apps.core.middleware.EntityScopingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -78,7 +81,8 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "wellfond"),
         "USER": os.environ.get("POSTGRES_USER", "wellfond_app"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD") or os.environ.get("DB_PASSWORD"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD")
+        or os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("POSTGRES_HOST", "pgbouncer"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         "CONN_MAX_AGE": 0,  # Mandatory for PgBouncer transaction mode
@@ -98,7 +102,9 @@ CACHES = {
     },
     "sessions": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("REDIS_SESSIONS_URL", "redis://redis_sessions:6379/0"),
+        "LOCATION": os.environ.get(
+            "REDIS_SESSIONS_URL", "redis://redis_sessions:6379/0"
+        ),
     },
     "idempotency": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -165,7 +171,9 @@ CELERY_BEAT_SCHEDULE = {
 # Password validation
 # ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
