@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Lock, User } from 'lucide-react';
 
@@ -16,7 +16,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { login } from '@/lib/api';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
+// Loading fallback for Suspense
+function LoginFormFallback() {
+  return (
+    <Card className="border-[#C0D8EE] shadow-xl">
+      <CardHeader className="space-y-1">
+        <div className="h-8 w-48 animate-pulse rounded bg-[#C0D8EE]/50" />
+        <div className="h-4 w-64 animate-pulse rounded bg-[#C0D8EE]/50" />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="h-10 animate-pulse rounded bg-[#C0D8EE]/50" />
+        <div className="h-10 animate-pulse rounded bg-[#C0D8EE]/50" />
+        <div className="h-12 animate-pulse rounded bg-[#F97316]/50" />
+      </CardContent>
+    </Card>
+  );
+}
+
+// Inner component that uses useSearchParams
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/dashboard';
@@ -139,12 +157,21 @@ export default function LoginPage() {
           <p className="text-xs text-[#4A7A94]">
             <strong>Demo Credentials:</strong>
           </p>
-          <p className="mt-1 text-xs text-[#4A7A94]">
-            Email: admin@wellfond.sg
-          </p>
-          <p className="text-xs text-[#4A7A94]">Password: admin123</p>
-        </div>
-      </CardContent>
-    </Card>
+      <p className="mt-1 text-xs text-[#4A7A94]">
+        Email: admin@wellfond.sg
+      </p>
+      <p className="text-xs text-[#4A7A94]">Password: admin123</p>
+    </div>
+  </CardContent>
+</Card>
+);
+}
+
+// Main export with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -205,10 +205,5 @@ export async function OPTIONS(_request: NextRequest) {
   });
 }
 
-// =============================================================================
-// Config
-// =============================================================================
-
-export const config = {
-  runtime: 'edge',
-};
+// Export config for Edge Runtime
+export const runtime = 'edge';
