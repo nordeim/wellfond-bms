@@ -26,6 +26,14 @@ Please meticulously and criticlly review the following project documents against
 
 ---
 
+Please meticulously plan to consolidate all attached files into one single markdown document that combines the non-duplicate information and details from the individual files, remove any document version and date information which are not pertinent to the project. The resulting single-source-of-truth document will be the authoritative definitive guide to initialize any new coding agents to understand the project deeply without first browsing the code files. consolidate the information from all attached files while just removing duplicate ones. also highlight any pieces that are conflicting among the attached files. 
+
+---
+
+please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
+
+---
+
 Please meticulously create a briefing document for an AI coding agent to be able to continue from the present state. After conducting your meticulous codebase review to align your understanding of the codebase, you will create a comprehensive *single-source-of-truth* briefing document for any coding agent or human developer to have the same deep understanding of the project and the current codebase status. Save the agent *briefing document* that captures your aligned and validated understanding as a markdown file `AGENT_BRIEF.md`. 
 
 # AGENT_BRIEF.md provides comprehensive cover for:
