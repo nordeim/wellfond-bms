@@ -19,3 +19,29 @@ awesome meticulous job so far. please keep up the good work. so far, you did not
 ---
 
 Awesome job on your meticulous analysis, planning and execution. Please keep up the good work in your rigorous and meticulous approach to planning and execution. Now, please think deeper and think harder to meticulously explore thoroughly and systematically how best to create a detailed, comprehensive, informative and attractive `README.md` for the GitHub repo that hosts this project. include a section to describe the application architecture with a file hierarchy diagram listing key files with their description, a mermaid diagram to describe the user and application interaction, and a mermaid diagram to show the application logic flow, and a section on deployment. Try to make it an awesome, complete, and useful `README.md` for the project. Then meticulously create a plan to create the `README.md`. Review and validate the plan before proceeding cautiously to execute.
+
+---
+
+Please meticulously and criticlly review the following project documents against the current codebase and to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. Then meticulously plan to create markdown file with an appropriate name to comprehensively save/document down your deep validated understanding of the project and its codebase. The comprehensive analysis/understanding document should be able to comrehensive initialize any new coding agent with the same deep validated understanding of the project and its codebase without having to do another round of deep code review. @README.md , @CLAUDE.md, @draft_plan.md and @IMPLEMENTATION_PLAN.md
+
+---
+
+Please meticulously create a briefing document for an AI coding agent to be able to continue from the present state. After conducting your meticulous codebase review to align your understanding of the codebase, you will create a comprehensive *single-source-of-truth* briefing document for any coding agent or human developer to have the same deep understanding of the project and the current codebase status. Save the agent *briefing document* that captures your aligned and validated understanding as a markdown file `AGENT_BRIEF.md`. 
+
+# AGENT_BRIEF.md provides comprehensive cover for:
+1. Core Identity & Purpose
+2. Architecture Overview with tech stack
+3. Project Structure (all directories)
+4. Development Workflow
+5. Testing Strategy
+6. Implementation Standards (Backend and Frontend)
+7. Security & Compliance (Singapore-specific)
+8. Common Issues & Solutions (including the issues we just fixed)
+9. Phase Status
+10. Key API Endpoints
+11. Documentation References
+12. Success Criteria
+13. Anti-Patterns to Avoid
+14. Next Steps
+This provides a complete briefing for any AI agent or human developer to understand the project and continue from the current codebase
+
