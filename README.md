@@ -232,25 +232,25 @@ flowchart TB
         O[Alert Delivery<br/><500ms]
     end
 
-    A -->|POST /api/proxy/operations/logs| E
-    B -->|POST /api/proxy/sales/agreements| E
-    C -->|GET /api/proxy/dogs/{id}| E
-    D -->|GET /api/proxy/dashboard/metrics| E
+    A -->|"POST /api/proxy/operations/logs"| E
+    B -->|"POST /api/proxy/sales/agreements"| E
+    C -->|"GET /api/proxy/dogs/{id}"| E
+    D -->|"GET /api/proxy/dashboard/metrics"| E
 
-    E -->|Forward with Cookies| F
-    F -->|Validate & Route| G
+    E -->|"Forward with Cookies"| F
+    F -->|"Validate & Route"| G
 
-    G -->|Query / Write| I
-    G -->|Cache| J
-    G -->|Queue Tasks| K
+    G -->|"Query / Write"| I
+    G -->|"Cache"| J
+    G -->|"Queue Tasks"| K
 
-    K -->|Generate| L
-    K -->|Send| M
+    K -->|"Generate"| L
+    K -->|"Send"| M
 
-    G -->|Publish Events| N
-    N -->|Stream| O
-    O -->|Update UI| D
-    O -->|Notify| A
+    G -->|"Publish Events"| N
+    N -->|"Stream"| O
+    O -->|"Update UI"| D
+    O -->|"Notify"| A
 
     style A fill:#DDEEFF,stroke:#0D2030
     style D fill:#FFF0E6,stroke:#F97316
