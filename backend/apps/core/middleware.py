@@ -139,12 +139,19 @@ class AuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
+        import sys
+        print(f"DEBUG AuthMiddleware: Processing {request.method} {request.path}", file=sys.stderr)
+        print(f"DEBUG AuthMiddleware: Cookies: {dict(request.COOKIES)}", file=sys.stderr)
+
         # Skip for public paths
         if self._is_public_path(request.path):
+            print(f"DEBUG AuthMiddleware: Public path, skipping auth", file=sys.stderr)
             return self.get_response(request)
 
         # Attach user from session cookie
+        print(f"DEBUG AuthMiddleware: Authenticating...", file=sys.stderr)
         self._authenticate(request)
+        print(f"DEBUG AuthMiddleware: request.user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', False)}", file=sys.stderr)
 
         return self.get_response(request)
 
