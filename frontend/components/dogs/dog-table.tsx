@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Pencil,
   Trash2,
+  Dog as DogIcon,
 } from 'lucide-react';
 
 import { useDogList, useDeleteDog } from '@/hooks/use-dogs';
@@ -44,7 +45,7 @@ interface DogTableProps {
   filters: DogFilterParams;
 }
 
-type SortField = 'microchip' | 'name' | 'breed' | 'dob' | 'unit' | 'status';
+type SortField = 'microchip' | 'name' | 'breed' | 'dob' | 'unit' | 'status' | 'created_at' | 'gender' | 'entity';
 type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
@@ -284,7 +285,7 @@ export function DogTable({ filters }: DogTableProps) {
   if (!data?.results?.length) {
     return (
       <div className="rounded-lg border border-[#C0D8EE] bg-[#E8F4FF] p-8 text-center">
-        <Dog className="mx-auto h-12 w-12 text-[#C0D8EE]" />
+        <DogIcon className="mx-auto h-12 w-12 text-[#C0D8EE]" />
         <h3 className="mt-2 text-lg font-medium text-[#0D2030]">No dogs found</h3>
         <p className="text-sm text-[#4A7A94]">
           Try adjusting your filters or search query

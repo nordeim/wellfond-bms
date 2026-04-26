@@ -109,7 +109,7 @@ export function useDogSearch() {
 // =============================================================================
 
 interface UseAlertCardsOptions {
-  entityId?: string;
+  entityId?: string | undefined;
 }
 
 export function useAlertCards(options: UseAlertCardsOptions = {}) {

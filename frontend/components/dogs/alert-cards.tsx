@@ -70,11 +70,11 @@ const COLOR_MAP: Record<string, string> = {
   green: 'bg-[#4EAD72] border-[#4EAD72] text-white',
 };
 
-function TrendIndicator({ trend }: { trend: number }) {
-  if (trend > 0) {
+function TrendIndicator({ trend }: { trend: 'up' | 'down' | 'flat' | undefined }) {
+  if (trend === 'up') {
     return <ChevronUp className="h-4 w-4" />;
   }
-  if (trend < 0) {
+  if (trend === 'down') {
     return <ChevronDown className="h-4 w-4" />;
   }
   return <Minus className="h-4 w-4" />;
@@ -86,7 +86,7 @@ function AlertCardItem({ alert }: { alert: AlertCard }) {
     label: alert.title,
   };
 
-  const colorClass = COLOR_MAP[alert.color] || COLOR_MAP.red;
+  const colorClass = COLOR_MAP[alert.color || ''] || COLOR_MAP.red;
 
   return (
     <div
