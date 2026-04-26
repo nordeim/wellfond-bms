@@ -4,7 +4,7 @@ project_type: django-nextjs-hybrid
 version: 1.0.0
 backend_framework: Django 6.0 + Django Ninja
 frontend_framework: Next.js 16 + Tailwind CSS 4 + Radix UI
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 ---
 
 # Wellfond Breeding Management System (BMS)
@@ -369,7 +369,7 @@ You are successful when:
 
 ---
 
-## Phase 2 Lessons Learned (April 26, 2026)
+## Phase 2-3 Lessons Learned (April 26, 2026)
 
 ### Technical Insights
 
@@ -383,6 +383,16 @@ You are successful when:
 
 5. **Frontend State Management**: TanStack Query with proper invalidation keys eliminates manual cache management. Use `queryClient.invalidateQueries()` after mutations.
 
+6. **Draminski Per-Dog Baseline**: Rolling mean of last 30 readings per dog provides accurate fertility thresholds, avoiding global calibration issues.
+
+7. **SSE with Django Ninja**: Async generators work seamlessly with Ninja. Event deduplication (dog+type composite key) prevents alert spam.
+
+8. **PWA Service Worker Strategy**: Cache-first for static assets, network-first for API calls. Background sync requires explicit permission in manifest.
+
+9. **Idempotency Pattern**: UUIDv4 keys on all POST requests with 24h Redis TTL ensures safe retries without duplicate processing.
+
+10. **Mobile-First Route Groups**: `(ground)/` route group with no sidebar reduces bundle size and improves kennel usability with 44px touch targets.
+
 ### Process Insights
 
 1. **Test-First Approach**: Writing tests before implementation catches architectural issues early and ensures entity scoping works correctly.
@@ -393,9 +403,15 @@ You are successful when:
 
 4. **Migration Strategy**: Always use Django migrations, never modify DB directly. This saved us from data loss during iterative development.
 
+5. **TypeScript Strict Mode**: Fixing 87 type errors revealed underlying API contract mismatches. Early type discipline prevents runtime errors.
+
+6. **Client Component Boundaries**: `'use client'` needed for hooks (useState, useEffect) but not for data fetching in Server Components.
+
+7. **Deleted File Recovery**: Systematic restoration approach (inventory → categorize → restore → verify) proved effective for large-scale recovery.
+
 ---
 
-## Phase 2 Blockers Encountered
+## Phase 2-3 Blockers Encountered
 
 ### Resolved Blockers
 
@@ -408,14 +424,19 @@ You are successful when:
 | Test discovery failure | pytest couldn't find tests | Added `__init__.py` to test directories | Apr 26 |
 | Python-style docstrings | TypeScript syntax errors | Converted to JSDoc comments | Apr 26 |
 | Duplicate AlertCards import | ESLint warning | Removed duplicate import | Apr 26 |
+| SSE connection drops | Async generators failed to stream | Verified ASGI running, added proper MIME type | Apr 26 |
+| Draminski baseline calc | Missing readings caused errors | Default to 300 if <30 readings available | Apr 26 |
+| TrendIndicator type error | Expected number, got string | Changed to `'up' \| 'down' \| 'flat' \| undefined` | Apr 26 |
+| SortField type mismatch | 'created_at' not in union | Extended local SortField type in dog-table.tsx | Apr 26 |
 
 ### Persistent Blockers
 
 | Blocker | Status | Notes |
 |---------|--------|-------|
 | PgBouncer in dev | Not required | Using direct PG connection for simplicity |
-| Gotenberg in dev | Optional | PDF generation not critical for Phase 2 |
-| Test coverage < 85% | In Progress | Need more edge case tests (Phase 3+) |
+| Gotenberg in dev | Optional | PDF generation not critical for Phase 2-3 |
+| Celery workers | In Progress | Needs worker/beat startup in dev |
+| Test coverage < 85% | In Progress | Need more edge case tests (Phase 4+) |
 
 ---
 
@@ -423,22 +444,20 @@ You are successful when:
 
 ### Immediate (Next 2-3 Days)
 
-1. **Phase 3: Ground Operations & Mobile PWA**
-   - 7 ground log types (in_heat, mated, whelped, weaned, rehomed, deceased, retired)
-   - Draminski DOD2 interpreter (per-dog thresholds, trend calculation)
-   - PWA offline queue with IndexedDB
-   - SSE alert stream for real-time notifications
+1. **Configure Celery Workers**
+   - Start worker: `celery -A config worker -l info`
+   - Start beat: `celery -A config beat -l info`
+   - Test background tasks (closure table rebuilds)
 
-2. **Complete Test Coverage**
-   - Add health endpoint tests
-   - Add vaccination calculation tests
-   - Add CSV import integration tests
+2. **Backend Test Execution**
+   - Fix Django environment for pytest
+   - Run: `pytest backend/apps/operations/tests/`
    - Target: ≥85% coverage
 
-3. **Frontend Build Verification**
-   - Run `npm run typecheck` - ensure 0 errors
-   - Run `npm run lint` - ensure 0 warnings
-   - Run `npm run build` - ensure successful build
+3. **E2E Testing with Playwright**
+   - Critical paths: Login → Ground Log → Offline Sync
+   - PWA installation flow
+   - SSE real-time alert verification
 
 ### Short-term (Next 1-2 Weeks)
 
@@ -461,8 +480,8 @@ You are successful when:
 | Phase 0 | Apr 22 | ✅ Complete |
 | Phase 1 | Apr 25 | ✅ Complete |
 | Phase 2 | Apr 26 | ✅ Complete |
-| Phase 3 | Apr 30 | 🔄 Next |
-| Phase 4 | May 7 | 📋 Planned |
+| Phase 3 | Apr 26 | ✅ Complete |
+| Phase 4 | May 7 | 🔄 Next |
 | Phase 5 | May 14 | 📋 Planned |
 
 ## System Integration

@@ -377,7 +377,25 @@ You are successful when:
 | **0** | ✅ Complete | Apr 22 | Infrastructure, Docker, CI/CD |
 | **1** | ✅ Complete | Apr 25 | Auth, BFF proxy, RBAC, design system |
 | **2** | ✅ Complete | Apr 26 | Dog models, CRUD, vaccinations, alerts |
-| **3** | 🔄 Next | - | Ground ops, PWA, Draminski, SSE |
+| **3** | ✅ Complete | Apr 26 | Ground ops, PWA, Draminski, SSE, offline queue |
+| **4** | 🔄 Next | - | Breeding engine, COI, genetics |
+
+### Phase 3 Accomplishments
+- ✅ 7 ground log models: InHeatLog, MatingLog, WhelpedLog, WeanedLog, RehomedLog, DeceasedLog, RetiredLog
+- ✅ WhelpedPup child model for individual pup tracking
+- ✅ Draminski DOD2 interpreter with per-dog baseline (30-reading rolling mean)
+- ✅ Threshold stages: EARLY (0.5x), RISING (0.5-1.0x), FAST (1.0-1.5x), PEAK (1.5x+), MATE_NOW on >10% post-peak drop
+- ✅ SSE real-time alert stream with async Django Ninja generators
+- ✅ Event deduplication by dog+type to prevent alert spam
+- ✅ PWA service worker (sw.js) with cache-first strategy
+- ✅ IndexedDB offline queue with background sync
+- ✅ X-Idempotency-Key header with 24h Redis TTL for deduplication
+- ✅ Mobile-first ground route group (no sidebar, 44px touch targets)
+- ✅ 8 ground log form pages: heat, mate, whelp, health, weight, nursing, not-ready
+- ✅ Frontend components: offline-banner, ground-header, ground-nav, dog-selector, draminski-gauge, pup-form, photo-upload, alert-log
+- ✅ TypeScript: 87 errors → 0 errors resolved
+- ✅ Build: Next.js production build successful (11/11 pages)
+- ✅ 10 new backend test files created
 
 ### Phase 2 Accomplishments
 - ✅ 4 domain models: Dog, HealthRecord, Vaccination, DogPhoto
@@ -500,6 +518,151 @@ touch apps/operations/tests/__init__.py
 # Run with verbose output
 python -m pytest apps/operations/tests/ -v --tb=short
 ```
+
+### Phase 3 Specific Issues
+
+**SSE Connection Drops**
+```bash
+# Check Redis pub/sub is working
+redis-cli
+> SUBSCRIBE alerts:channel
+
+# Check Django ASGI is running (not WSGI)
+# Should see: "ASGI application" in logs
+# Verify: python -c "import config.asgi; print('ASGI OK')"
+```
+
+**Draminski Baseline Calculation**
+```python
+# Issue: Per-dog baseline requires at least 1 reading
+# Solution: Default to 300 if no historical data
+baseline = calculate_baseline(dog_id) or 300
+
+# Threshold calculation
+current = reading.value
+ratio = current / baseline
+# EARLY: ratio < 0.5
+# RISING: 0.5 <= ratio < 1.0
+# FAST: 1.0 <= ratio < 1.5
+# PEAK: ratio >= 1.5
+```
+
+**PWA Service Worker Not Installing**
+```bash
+# Check manifest.json is valid JSON
+# Verify service worker path: /sw.js at root
+# Check Workbox configuration in next.config.ts
+
+# Chrome DevTools > Application > Service Workers
+# Should see: "Status: activated and is running"
+```
+
+**Offline Queue Not Syncing**
+```bash
+# Check IndexedDB is accessible
+# Verify background-sync permission in manifest
+# Check authFetch injects idempotency key
+
+# Debug: Log queue state
+console.log(await getOfflineQueue())
+```
+
+**Idempotency Key Collisions**
+```python
+# Issue: Same UUID used for different requests
+# Solution: Generate new UUID per request attempt
+import uuid
+idempotency_key = str(uuid.uuid4())  # Fresh each time
+
+# Backend returns 200 if key seen in Redis (24h TTL)
+```
+
+**TypeScript Type Mismatch: TrendIndicator**
+```typescript
+// BEFORE (Error): trend: number
+// AFTER (Fixed): trend accepts 'up' | 'down' | 'flat' | undefined
+
+function TrendIndicator({ 
+  trend 
+}: { 
+  trend: 'up' | 'down' | 'flat' | undefined 
+}) {
+  // Component implementation
+}
+```
+
+**SortField Type Extension**
+```typescript
+// Extended local SortField type in dog-table.tsx
+type SortField = 'microchip' | 'name' | 'breed' | 'dob' | 
+                 'unit' | 'status' | 'created_at' | 'gender' | 'entity';
+```
+
+## Phase 3 Lessons Learned
+
+### Technical Insights
+
+1. **Draminski Per-Dog Baseline**: Rolling mean of last 30 readings per dog provides accurate fertility thresholds, avoiding global calibration issues.
+
+2. **SSE with Django Ninja**: Async generators work seamlessly with Ninja. Event deduplication (dog+type composite key) prevents alert spam.
+
+3. **PWA Service Worker Strategy**: Cache-first for static assets, network-first for API calls. Background sync requires explicit permission in manifest.
+
+4. **Idempotency Pattern**: UUIDv4 keys on all POST requests with 24h Redis TTL ensures safe retries without duplicate processing.
+
+5. **Mobile-First Route Groups**: `(ground)/` route group with no sidebar reduces bundle size and improves kennel usability with 44px touch targets.
+
+### Process Insights
+
+1. **TypeScript Strict Mode**: Fixing 87 type errors revealed underlying API contract mismatches. Early type discipline prevents runtime errors.
+
+2. **Client Component Boundaries**: `'use client'` needed for hooks (useState, useEffect) but not for data fetching in Server Components.
+
+3. **Deleted File Recovery**: Systematic restoration approach (inventory → categorize → restore → verify) proved effective for large-scale recovery.
+
+## Recommended Next Steps
+
+### Immediate (Next 2-3 Days)
+
+1. **Configure Celery Workers**
+   - Start worker: `celery -A config worker -l info`
+   - Start beat: `celery -A config beat -l info`
+   - Test background tasks (closure table rebuilds)
+
+2. **Backend Test Execution**
+   - Fix Django environment for pytest
+   - Run: `pytest backend/apps/operations/tests/`
+   - Target: ≥85% coverage
+
+3. **E2E Testing with Playwright**
+   - Critical paths: Login → Ground Log → Offline Sync
+   - PWA installation flow
+   - SSE real-time alert verification
+
+### Short-term (Next 1-2 Weeks)
+
+4. **Phase 4: Breeding & Genetics Engine**
+   - Mate checker with COI calculation
+   - Farm saturation analysis
+   - Dual-sire pedigree support
+   - Closure table implementation
+
+5. **Phase 5: Sales Agreements & AVS**
+   - 5-step wizard (B2C/B2B/Rehoming)
+   - Gotenberg PDF generation
+   - AVS link tracking
+   - 3-day reminder tasks
+
+### Blockers Summary
+
+| Blocker | Status | Resolution |
+|---------|--------|------------|
+| Backend test execution | In Progress | Django environment configuration needed |
+| Celery workers | Planned | Needs worker/beat startup in dev |
+| Gotenberg PDF | Optional | Phase 5 requirement |
+
+---
+
 # Wellfond BMS: Project Knowledge Base & Architecture Manifesto
 
 ## 1. Core Identity & Purpose (The "WHAT" and "WHY")

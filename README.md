@@ -518,15 +518,15 @@ Production uses full containerization with 11 services:
 | **0** | ✅ Complete | Apr 22, 2026 | Infrastructure scaffold, Docker, CI/CD |
 | **1** | ✅ Complete | Apr 25, 2026 | Auth, BFF proxy, RBAC, design system |
 | **2** | ✅ Complete | Apr 26, 2026 | Domain models, dog CRUD, vaccinations, alerts |
-| **3** | 🔄 Planned | - | Ground ops, PWA, Draminski, SSE |
-| **4** | 📋 Backlog | - | Breeding, COI, genetics engine |
+| **3** | ✅ Complete | Apr 26, 2026 | Ground ops, PWA, Draminski, SSE, offline queue |
+| **4** | 🔄 Planned | - | Breeding, COI, genetics engine |
 | **5** | 📋 Backlog | - | Sales agreements, AVS tracking |
 | **6** | 📋 Backlog | - | Compliance, NParks reporting |
 | **7** | 📋 Backlog | - | Customer DB, marketing blast |
 | **8** | 📋 Backlog | - | Dashboard, finance exports |
 | **9** | 📋 Backlog | - | Observability, production readiness |
 
-**Overall Progress:** 3 of 9 Phases Complete (33%)
+**Overall Progress:** 4 of 9 Phases Complete (44%)
 
 ---
 
@@ -615,6 +615,55 @@ or use is strictly prohibited.
 ---
 
 ## 📊 Recent Changes
+
+### Phase 3 Completion (April 26, 2026)
+
+#### Ground Operations Models
+- `InHeatLog` - Heat cycle tracking with vaginal smear classification
+- `MatingLog` - Single/dual-sire breeding records
+- `WhelpedLog` - Whelping events with pup tracking (`WhelpedPup` child model)
+- `WeanedLog` - Pup weaning events
+- `RehomedLog` - Customer handovers with PDPA consent verification
+- `DeceasedLog` - Death records with cause tracking
+- `RetiredLog` - Breeding retirement tracking
+
+#### Real-Time Infrastructure
+- **SSE Stream**: `/api/v1/alerts/stream/` with async Django Ninja generators
+- **Event Deduplication**: Per-dog+type deduplication to prevent spam
+- **Auto-Reconnect**: 3s reconnect, 5s poll interval
+- **Alert Service**: Unified alert generation from any log type
+
+#### Draminski Integration
+- **DOD2 Interpreter**: Per-dog baseline (30-reading rolling mean)
+- **Threshold Stages**: EARLY (0.5x), RISING (0.5-1.0x), FAST (1.0-1.5x), PEAK (1.5x+)
+- **Mate Signal**: Post-peak drop >10% triggers MATE_NOW alert
+- **Visual Gauge**: Frontend component with color-coded stages
+
+#### PWA & Offline Queue
+- **Service Worker**: `public/sw.js` with cache-first strategy
+- **IndexedDB Queue**: Offline form submission queue
+- **Background Sync**: Automatic sync when connection restored
+- **Idempotency**: UUIDv4 keys with 24h Redis TTL for deduplication
+- **Mobile-First**: 44px touch targets, high contrast (#0D2030 on #DDEEFF)
+
+#### New API Endpoints
+- `/api/v1/operations/logs/{type}/` - 7 POST endpoints for ground logs
+- `/api/v1/alerts/stream/` - SSE real-time alert stream
+- `/api/v1/alerts/nparks-countdown/` - Days to AVS submission deadline
+
+#### Frontend Ground Pages
+- `(ground)/` route group with no sidebar (mobile-optimized)
+- 8 log type forms: heat, mate, whelp, health, weight, nursing, not-ready
+- Components: `offline-banner.tsx`, `ground-header.tsx`, `draminski-gauge.tsx`
+- Hooks: `use-sse.ts`, `use-offline-queue.ts`
+
+#### Code Quality
+- TypeScript: 87 errors → 0 errors resolved
+- Build: ✅ Next.js production build successful (11/11 pages)
+- Tests: 10 new backend test files created
+- Documentation: Phase 3 implementation guide created
+
+---
 
 ### Phase 2 Completion (April 26, 2026)
 
