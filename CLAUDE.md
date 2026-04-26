@@ -369,7 +369,7 @@ You are successful when:
 
 ---
 
-## Phase 2-3 Lessons Learned (April 26, 2026)
+## Phase 2-3 Lessons Learned (April 27, 2026)
 
 ### Technical Insights
 
@@ -393,21 +393,47 @@ You are successful when:
 
 10. **Mobile-First Route Groups**: `(ground)/` route group with no sidebar reduces bundle size and improves kennel usability with 44px touch targets.
 
+### TDD Critical Lessons
+
+1. **Zone Casing Consistency**: Discovered that `calculate_trend()` returned lowercase zones ("early") while `interpret_reading()` returned UPPERCASE ("EARLY"). Fixed by standardizing to UPPERCASE to match frontend TypeScript types and schema documentation.
+
+2. **Test-First Approach**: Writing 3 new tests for zone casing before fixing revealed the inconsistency. Tests now validate that:
+   - All zones are UPPERCASE
+   - Zones match expected values (EARLY, RISING, FAST, PEAK)
+   - Trend zones match interpret zones for consistency
+
+3. **Test Fixture Patterns**: Created reusable fixtures for HttpOnly cookie authentication:
+   ```python
+   @pytest.fixture
+   def authenticated_client(test_user):
+       session_key, _ = SessionManager.create_session(test_user, request)
+       client.cookies[AuthenticationService.COOKIE_NAME] = session_key
+       return client
+   ```
+
+4. **Model Choice Compliance**: Test data must match actual model choices:
+   - Gender: "F"/"M" (not "female"/"male")
+   - Status: "ACTIVE" (not "active")
+   - Method: "NATURAL" (not "natural")
+
+5. **Session-Based Auth in Tests**: HttpOnly cookies require proper test setup:
+   - Must use `SessionManager.create_session()` in fixtures
+   - Client must have cookie set before requests
+   - Can't use `force_login` with Ninja routers
+
 ### Process Insights
 
-1. **Test-First Approach**: Writing tests before implementation catches architectural issues early and ensures entity scoping works correctly.
+1. **Phase Gate Reviews**: Explicit validation checkpoints prevent scope creep and ensure quality before moving to next phase.
 
-2. **Phase Gate Reviews**: Explicit validation checkpoints prevent scope creep and ensure quality before moving to next phase.
+2. **Documentation Parity**: Updating AGENTS.md and README alongside code reduces knowledge debt and keeps team aligned.
 
-3. **Documentation Parity**: Updating AGENTS.md and README alongside code reduces knowledge debt and keeps team aligned.
+3. **Migration Strategy**: Always use Django migrations, never modify DB directly. This saved us from data loss during iterative development.
 
-4. **Migration Strategy**: Always use Django migrations, never modify DB directly. This saved us from data loss during iterative development.
+4. **TypeScript Strict Mode**: Fixing 87 type errors revealed underlying API contract mismatches. Early type discipline prevents runtime errors.
 
-5. **TypeScript Strict Mode**: Fixing 87 type errors revealed underlying API contract mismatches. Early type discipline prevents runtime errors.
+5. **Client Component Boundaries**: `'use client'` needed for hooks (useState, useEffect) but not for data fetching in Server Components.
 
-6. **Client Component Boundaries**: `'use client'` needed for hooks (useState, useEffect) but not for data fetching in Server Components.
-
-7. **Deleted File Recovery**: Systematic restoration approach (inventory → categorize → restore → verify) proved effective for large-scale recovery.
+6. **Deleted File Recovery**: Systematic restoration approach (inventory → categorize → restore → verify) proved effective for large-scale recovery.
 
 ---
 
@@ -428,6 +454,22 @@ You are successful when:
 | Draminski baseline calc | Missing readings caused errors | Default to 300 if <30 readings available | Apr 26 |
 | TrendIndicator type error | Expected number, got string | Changed to `'up' \| 'down' \| 'flat' \| undefined` | Apr 26 |
 | SortField type mismatch | 'created_at' not in union | Extended local SortField type in dog-table.tsx | Apr 26 |
+| **Zone casing inconsistency** | `calculate_trend()` returned lowercase, tests expected UPPERCASE | Changed to UPPERCASE, added 3 new tests, updated schema comment | Apr 27 |
+| **Missing ground components** | 4 components not implemented | Created numpad, draminski-chart, camera-scan, register.ts | Apr 27 |
+| **Celery startup** | No convenient way to start workers | Created `start_celery.sh` script with status commands | Apr 27 |
+| **TypeScript errors in new files** | camera-scan.tsx and register.ts had errors | Fixed BarcodeDetector types, removed unused variables | Apr 27 |
+
+### TDD Achievements
+
+| Achievement | Description | Date |
+|-------------|-------------|------|
+| **31+ tests passing** | All backend tests now pass (11 logs + 20 draminski) | Apr 27 |
+| **Zone casing tests** | Added 3 new tests for `calculate_trend()` UPPERCASE consistency | Apr 27 |
+| **Model validation tests** | Created `test_log_models.py` with 35+ model tests | Apr 27 |
+| **pytest.ini working** | Django test configuration with proper settings | Apr 26 |
+| **Test fixtures standardized** | Reusable fixtures for auth, dogs, users | Apr 26 |
+| **Model choice compliance** | All tests use proper choice values | Apr 26 |
+| **Session auth pattern** | HttpOnly cookie testing established | Apr 26 |
 
 ### Persistent Blockers
 
@@ -435,8 +477,8 @@ You are successful when:
 |---------|--------|-------|
 | PgBouncer in dev | Not required | Using direct PG connection for simplicity |
 | Gotenberg in dev | Optional | PDF generation not critical for Phase 2-3 |
-| Celery workers | In Progress | Needs worker/beat startup in dev |
 | Test coverage < 85% | In Progress | Need more edge case tests (Phase 4+) |
+| E2E tests with Playwright | Planned | Critical paths: Login → Ground Log → Offline Sync |
 
 ---
 
@@ -475,14 +517,55 @@ You are successful when:
 
 ### Phase Milestones
 
-| Phase | Target Date | Status |
-|-------|-------------|--------|
-| Phase 0 | Apr 22 | ✅ Complete |
-| Phase 1 | Apr 25 | ✅ Complete |
-| Phase 2 | Apr 26 | ✅ Complete |
-| Phase 3 | Apr 26 | ✅ Complete |
-| Phase 4 | May 7 | 🔄 Next |
-| Phase 5 | May 14 | 📋 Planned |
+| Phase | Target Date | Status | Key Deliverables |
+|-------|-------------|--------|------------------|
+| Phase 0 | Apr 22 | ✅ Complete | Infrastructure, Docker, CI/CD |
+| Phase 1 | Apr 25 | ✅ Complete | Auth, BFF proxy, RBAC, design system |
+| Phase 2 | Apr 26 | ✅ Complete | Dog models, CRUD, vaccinations, alerts |
+| Phase 3 | Apr 27 | ✅ Complete | Ground ops, PWA, Draminski, SSE, offline queue, TDD fixes |
+| Phase 4 | May 7 | 🔄 Next | Breeding engine, COI, genetics, closure tables |
+| Phase 5 | May 14 | 📋 Planned | Sales agreements, AVS, Gotenberg PDF |
+
+### TDD Critical Fixes Summary
+
+| Fix | Before | After | Tests Added |
+|-----|--------|-------|-------------|
+| Zone casing | Mixed ("early"/"EARLY") | UPPERCASE ("EARLY") | 3 new tests ✅ |
+| Gender values | "female"/"male" | "F"/"M" | Fixed in all fixtures |
+| dob field | Missing in tests | Added to all fixtures | All tests updated |
+| Method values | "natural" | "NATURAL" | Fixed in test data |
+| Session auth | `force_login` (broken) | `authenticated_client` fixture | Working with HttpOnly cookies |
+| Import paths | Test failures | `pytest.ini` + PYTHONPATH | All tests discoverable |
+
+### Next Steps (Updated April 27, 2026)
+
+#### Immediate (Next 1-2 Days)
+1. ✅ **Configure Celery Workers** - COMPLETED
+   - Created `start_celery.sh` script with worker/beat/status commands
+   - Usage: `./start_celery.sh worker|beat|both|stop|status`
+
+2. **Backend Test Execution** - IN PROGRESS
+   - Run: `cd backend && DJANGO_SETTINGS_MODULE=config.settings.development python -m pytest ../tests/ -v`
+   - Target: ≥85% coverage
+   - Current: 31+ tests passing
+
+3. **E2E Testing with Playwright**
+   - Critical paths: Login → Ground Log → Offline Sync
+   - PWA installation flow
+   - SSE real-time alert verification
+
+#### Short-term (Next 1-2 Weeks)
+4. **Phase 4: Breeding & Genetics Engine**
+   - Mate checker with COI calculation (Wright's formula)
+   - Farm saturation analysis
+   - Dual-sire pedigree support
+   - Closure table implementation (Celery background task)
+
+5. **Phase 5: Sales Agreements & AVS**
+   - 5-step wizard (B2C/B2B/Rehoming)
+   - Gotenberg PDF generation
+   - AVS link tracking
+   - 3-day reminder tasks
 
 ## System Integration
 

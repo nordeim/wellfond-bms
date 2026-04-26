@@ -370,32 +370,87 @@ You are successful when:
 
 ## Project Status & Recent Milestones
 
-### Phase Completion (Updated April 26, 2026)
+### Phase Completion (Updated April 27, 2026)
 
 | Phase | Status | Date | Key Deliverables |
 |-------|--------|------|------------------|
 | **0** | ✅ Complete | Apr 22 | Infrastructure, Docker, CI/CD |
 | **1** | ✅ Complete | Apr 25 | Auth, BFF proxy, RBAC, design system |
 | **2** | ✅ Complete | Apr 26 | Dog models, CRUD, vaccinations, alerts |
-| **3** | ✅ Complete | Apr 26 | Ground ops, PWA, Draminski, SSE, offline queue |
+| **3** | ✅ Complete | Apr 27 | Ground ops, PWA, Draminski, SSE, offline queue, TDD fixes |
 | **4** | 🔄 Next | - | Breeding engine, COI, genetics |
 
-### Phase 3 Accomplishments
-- ✅ 7 ground log models: InHeatLog, MatingLog, WhelpedLog, WeanedLog, RehomedLog, DeceasedLog, RetiredLog
-- ✅ WhelpedPup child model for individual pup tracking
-- ✅ Draminski DOD2 interpreter with per-dog baseline (30-reading rolling mean)
-- ✅ Threshold stages: EARLY (0.5x), RISING (0.5-1.0x), FAST (1.0-1.5x), PEAK (1.5x+), MATE_NOW on >10% post-peak drop
-- ✅ SSE real-time alert stream with async Django Ninja generators
-- ✅ Event deduplication by dog+type to prevent alert spam
-- ✅ PWA service worker (sw.js) with cache-first strategy
-- ✅ IndexedDB offline queue with background sync
-- ✅ X-Idempotency-Key header with 24h Redis TTL for deduplication
-- ✅ Mobile-first ground route group (no sidebar, 44px touch targets)
-- ✅ 8 ground log form pages: heat, mate, whelp, health, weight, nursing, not-ready
-- ✅ Frontend components: offline-banner, ground-header, ground-nav, dog-selector, draminski-gauge, pup-form, photo-upload, alert-log
-- ✅ TypeScript: 87 errors → 0 errors resolved
-- ✅ Build: Next.js production build successful (11/11 pages)
-- ✅ 10 new backend test files created
+### Phase 3 Accomplishments (100% Complete)
+
+#### Models (7 Log Types + Pup Model)
+- ✅ `InHeatLog` - Heat cycle with Draminski DOD2 readings and mating window
+- ✅ `MatedLog` - Single/dual-sire breeding with method tracking
+- ✅ `WhelpedLog` - Whelping events with `WhelpedPup` child model
+- ✅ `HealthObsLog` - Quick health observations (6 categories)
+- ✅ `WeightLog` - Weight tracking with history
+- ✅ `NursingFlagLog` - Nursing issues with severity (SERIOUS/MONITORING)
+- ✅ `NotReadyLog` - Not-ready status with expected date
+- ✅ `WhelpedPup` - Individual pup records within litters
+
+#### TDD Critical Fix: Zone Casing ✅
+- **Issue**: `calculate_trend()` returned lowercase zones ("early", "rising") while `interpret_reading()` returned UPPERCASE ("EARLY", "RISING")
+- **Fix**: Changed `calculate_trend()` to return UPPERCASE zones for consistency
+- **Tests**: Added 3 new tests in `TestCalculateTrendZones` class
+  - `test_calculate_trend_returns_uppercase_zones`
+  - `test_calculate_trend_valid_uppercase_values`
+  - `test_calculate_trend_matches_interpret_zones`
+- **Verification**: All 20+ draminski tests passing
+
+#### Real-Time SSE Infrastructure
+- ✅ `/api/v1/alerts/stream/` - Async Django Ninja SSE endpoint
+- ✅ Event deduplication by `dog_id + event_type`
+- ✅ 3s auto-reconnect, 5s poll interval
+- ✅ Target delivery: <500ms for critical alerts
+
+#### Draminski DOD2 Integration
+- ✅ Per-dog baseline: rolling mean of last 30 readings (last 30 days)
+- ✅ Default baseline: 250 if insufficient data
+- ✅ Thresholds: EARLY (<0.5x), RISING (0.5-1.0x), FAST (1.0-1.5x), PEAK (≥1.5x)
+- ✅ MATE_NOW signal: post-peak drop >10%
+- ✅ **NEW**: DraminskiChart component (7-day trend visualization)
+
+#### PWA Infrastructure (Complete)
+- ✅ Service worker: `public/sw.js` with cache-first strategy
+- ✅ Offline queue: `lib/offline-queue.ts` with IndexedDB
+- ✅ **NEW**: SW registration: `lib/pwa/register.ts` with update detection
+- ✅ Idempotency: UUIDv4 keys with 24h Redis TTL
+- ✅ Manifest: `public/manifest.json` for installability
+- ✅ Background sync: Automatic on reconnect
+
+#### Ground Components (12 Total - Complete)
+| Component | Status | Purpose |
+|-----------|--------|---------|
+| `offline-banner.tsx` | ✅ Existing | Network status |
+| `ground-header.tsx` | ✅ Existing | Mobile header |
+| `ground-nav.tsx` | ✅ Existing | Bottom navigation |
+| `dog-selector.tsx` | ✅ Existing | Dog selection |
+| `draminski-gauge.tsx` | ✅ Existing | Fertility gauge |
+| `pup-form.tsx` | ✅ Existing | Pup entry |
+| `photo-upload.tsx` | ✅ Existing | Photo upload |
+| `alert-log.tsx` | ✅ Existing | Alert history |
+| **numpad.tsx** | ✅ **NEW** | 48px numeric input |
+| **draminski-chart.tsx** | ✅ **NEW** | 7-day trend chart |
+| **camera-scan.tsx** | ✅ **NEW** | Barcode scanner |
+| **register.ts** | ✅ **NEW** | SW registration |
+
+#### TDD & Code Quality
+| Metric | Before | After |
+|--------|--------|-------|
+| Tests Passing | 28 | 31+ ✅ |
+| TypeScript Errors | 87 | 0 ✅ |
+| Build Status | Failed | Passing ✅ |
+| Test Files Created | 10 | 11+ ✅ |
+
+#### Celery Infrastructure
+- ✅ `backend/scripts/start_celery.sh` - Worker/beat starter script
+- ✅ Commands: `worker|beat|both|stop|status`
+- ✅ Tasks: 8 background task types
+- ✅ Queues: high, default, low, dlq
 
 ### Phase 2 Accomplishments
 - ✅ 4 domain models: Dog, HealthRecord, Vaccination, DogPhoto

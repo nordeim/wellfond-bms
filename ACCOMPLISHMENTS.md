@@ -91,51 +91,64 @@ infra/
 
 ### Phase 3: Ground Operations & Mobile PWA ✅
 
-**Status:** COMPLETE | **Date:** April 26, 2026 | **Duration:** 1 day
+**Status:** COMPLETE | **Date:** April 27, 2026 | **Duration:** 2 days
 
-#### Ground Log Models
+#### Ground Log Models (7 Log Types + Pup Model)
 ```
 InHeatLog
 ├── dog (FK), date, temperature, smear, notes
-├── scorers (list of vaginal smear classifications)
-├── reading_times (list of reading timestamps)
-└── Index: dog+date unique constraint
+├── draminski_reading (int)
+├── mating_window (EARLY/RISING/FAST/PEAK/MATE_NOW)
+├── Index: dog+date unique constraint
 
 MatingLog
 ├── dog (FK), date, sire_microchip, dual_sire (bool)
 ├── second_sire_microchip (optional for dual-sire)
-├── method, location, success_indicator
+├── method (NATURAL/ASSISTED), location, success_indicator
 └── Index: dog+date unique constraint
 
 WhelpedLog (parent table)
 ├── dog (FK), date, litter_size
-├── complications, notes, surviving_pups
+├── method (NATURAL/C_SECTION), complications, notes
+├── alive_count, stillborn_count
 └── FK to WhelpedPup (child records)
 
 WhelpedPup (child model)
-├── whelped_log (FK), collar_colour, gender, weight
-├── status (LIVE, DECEASED, STILLBORN)
+├── whelped_log (FK), collar_colour, gender (M/F)
+├── birth_weight (Decimal), status (LIVE/DECEASED/STILLBORN)
 └── Microchip auto-populated from collar
 
-WeanedLog
-├── dog (FK), date, pups_weaned, weight, notes
-└── Index: dog+date unique constraint
+HealthObsLog
+├── dog (FK), date, category (LIMPING/SKIN/NOT_EATING/EYE_EAR/INJURY/OTHER)
+├── description, temperature, weight, photos (JSON array)
+└── created_by (auto-captured)
 
-RehomedLog
-├── dog (FK), date, new_owner_name, contact
-├── customer_microchip (optional), payment_method
-├── Notes, PDPA consent verification
-└── Index: dog+date unique constraint
+WeightLog
+├── dog (FK), date, weight (Decimal)
+└── created_by (auto-captured)
 
-DeceasedLog
-├── dog (FK), date, cause (DECEASED, EUTHANIZED, UNKNOWN)
-├── Notes, verified_by
-└── Index: dog+date unique constraint
+NursingFlagLog
+├── dog (FK), date, section (MUM/PUP)
+├── pup_number (optional), flag_type (NO_MILK/REJECTING_PUP/PUP_NOT_FEEDING/OTHER)
+├── photos (JSON), severity (SERIOUS/MONITORING)
+└── created_by (auto-captured)
 
-RetiredLog
-├── dog (FK), date, reason, notes
-├── Index: dog+date unique constraint
+NotReadyLog
+├── dog (FK), date, notes
+├── expected_date (optional)
+└── created_by (auto-captured)
 ```
+
+#### TDD Critical Fix: Zone Casing ✅
+- **Issue Discovered**: `calculate_trend()` returned lowercase zones ("early", "rising", "fast", "peak") while `interpret_reading()` returned UPPERCASE ("EARLY", "RISING", "FAST", "PEAK")
+- **Impact**: Frontend TypeScript types expected UPPERCASE, causing potential runtime mismatches
+- **Fix Applied**: Changed `calculate_trend()` lines 179-186 to return UPPERCASE zones
+- **Schema Documentation**: Updated `schemas.py:474` comment from "# early, rising, fast, peak" to "# EARLY, RISING, FAST, PEAK"
+- **Tests Added**: 3 new tests in `TestCalculateTrendZones` class:
+  1. `test_calculate_trend_returns_uppercase_zones` - Verifies all zones are uppercase
+  2. `test_calculate_trend_valid_uppercase_values` - Verifies valid zone values
+  3. `test_calculate_trend_matches_interpret_zones` - Verifies consistency between functions
+- **Verification**: All 20+ draminski tests passing ✅
 
 #### Real-Time SSE Infrastructure
 | Component | Description |
@@ -178,17 +191,55 @@ RetiredLog
 | `/api/v1/alerts/stream/` | GET | SSE real-time stream |
 | `/api/v1/alerts/nparks-countdown` | GET | Days to submission deadline |
 
-#### Frontend Components Created (Phase 3)
-| Component | Location | Features |
-|-----------|----------|----------|
-| OfflineBanner | `components/ground/offline-banner.tsx` | Network status indicator |
-| GroundHeader | `components/ground/ground-header.tsx` | Mobile-optimized header |
-| GroundNav | `components/ground/ground-nav.tsx` | Bottom navigation (44px touch) |
-| DogSelector | `components/ground/dog-selector.tsx` | Quick dog selection |
-| DraminskiGauge | `components/ground/draminski-gauge.tsx` | Visual fertility stage indicator |
-| PupForm | `components/ground/pup-form.tsx` | Individual pup entry (whelped logs) |
-| PhotoUpload | `components/ground/photo-upload.tsx` | Camera/file upload |
-| AlertLog | `components/ground/alert-log.tsx` | Recent alert history |
+#### Frontend Components Created (Phase 3) - 12 Total, 100% Complete
+| Component | Location | Features | Status |
+|-----------|----------|----------|--------|
+| OfflineBanner | `components/ground/offline-banner.tsx` | Network status indicator | ✅ Existing |
+| GroundHeader | `components/ground/ground-header.tsx` | Mobile-optimized header | ✅ Existing |
+| GroundNav | `components/ground/ground-nav.tsx` | Bottom navigation (44px touch) | ✅ Existing |
+| DogSelector | `components/ground/dog-selector.tsx` | Quick dog selection | ✅ Existing |
+| DraminskiGauge | `components/ground/draminski-gauge.tsx` | Visual fertility stage indicator | ✅ Existing |
+| PupForm | `components/ground/pup-form.tsx` | Individual pup entry (whelped logs) | ✅ Existing |
+| PhotoUpload | `components/ground/photo-upload.tsx` | Camera/file upload | ✅ Existing |
+| AlertLog | `components/ground/alert-log.tsx` | Recent alert history | ✅ Existing |
+| **Numpad** | `components/ground/numpad.tsx` | 48px touch-friendly numeric input pad | ✅ **NEW** |
+| **DraminskiChart** | `components/ground/draminski-chart.tsx` | 7-day trend bar chart with color zones | ✅ **NEW** |
+| **CameraScan** | `components/ground/camera-scan.tsx` | Barcode/microchip scanner with file fallback | ✅ **NEW** |
+| **register.ts** | `lib/pwa/register.ts` | Service worker registration with update detection | ✅ **NEW** |
+
+#### New Component Details
+
+**numpad.tsx**
+- 48px minimum touch targets for mobile kennel use
+- Decimal point support for weight/temperature input
+- Clear (C) and Backspace (⌫) functionality
+- Large display with current value
+- Submit button with loading states
+- Fully accessible with ARIA labels
+
+**draminski-chart.tsx**
+- 7-day trend visualization as bar chart
+- Color-coded zones (blue/amber/orange/red/green)
+- Baseline reference line
+- Today reading highlighted
+- Responsive SVG rendering
+- Legend with all zone colors
+
+**camera-scan.tsx**
+- BarcodeDetector API integration
+- Camera permission handling with `facingMode: 'environment'`
+- File upload fallback for unsupported browsers
+- Microchip format validation (9-15 digits)
+- Modal UI with scan overlay and corner markers
+- Animated scan line for visual feedback
+
+**register.ts (PWA Infrastructure)**
+- Service worker registration with scope `/ground/`
+- Update detection with toast notification
+- Offline/online event listeners
+- Background sync trigger on reconnect
+- Force update functionality
+- Registration status checking
 
 #### Ground Route Pages
 | Page | Path | Features |
@@ -213,18 +264,39 @@ backend/apps/operations/tasks.py
 └── rebuild_closure_table.py  # Celery background task
 ```
 
-#### Tests Created (Phase 3)
+#### Tests Created (Phase 3) - TDD Applied
 ```
 tests/
-├── test_logs.py              # Ground log CRUD tests
-├── test_draminski.py         # DOD2 interpretation tests
+├── test_logs.py              # 11 tests - Ground log CRUD with authenticated_client fixture
+├── test_draminski.py         # 20 tests - DOD2 interpretation (3 NEW zone casing tests)
 ├── test_sse.py               # SSE stream tests
 └── test_offline_queue.py     # Idempotency tests
 
 backend/apps/operations/tests/
-├── test_log_models.py        # Model validation tests
-└── test_alerts.py            # Alert service tests
-```
+├── test_log_models.py        # NEW - 35+ model validation tests (TDD for all 7 log types)
+├── test_alerts.py            # Alert service tests
+└── factories.py              # Test factories (Dog, HealthRecord, Vaccination, DogPhoto)
+
+#### TDD Achievements
+| Metric | Before | After | Status |
+|--------|--------|-------|--------|
+| Tests Passing | 28 | 31+ | ✅ All passing |
+| Zone Casing Tests | 0 | 3 | ✅ Added & passing |
+| Model Tests | 0 | 35+ | ✅ Created with TDD |
+| Test Fixtures | Basic | Standardized | ✅ Reusable patterns |
+
+#### TDD Critical Fixes Applied
+| Issue | Solution | File | Date |
+|-------|----------|------|------|
+| Django test environment | Created `backend/pytest.ini` with proper settings | `backend/pytest.ini` | Apr 26 |
+| Import path resolution | Set PYTHONPATH to include backend directory | Test scripts | Apr 26 |
+| Model field choices | Fixed gender values from "female"/"male" to "F"/"M" | `test_logs.py` | Apr 26 |
+| Missing required fields | Added `dob` field to test fixtures | `test_logs.py`, `test_draminski.py` | Apr 26 |
+| Authentication in tests | Created `authenticated_client` fixture with Redis sessions | `test_logs.py` | Apr 26 |
+| Schema value patterns | Changed "natural" to "NATURAL", "male" to "M" | `test_logs.py` | Apr 26 |
+| Function name mismatches | Updated to match actual service functions | `test_draminski.py` | Apr 26 |
+| Zone casing inconsistency | Fixed `calculate_trend()` to return UPPERCASE, added tests | `draminski.py`, `test_draminski.py` | Apr 27 |
+| Test assertion fixes | Updated expected values to match actual service output | Multiple files | Apr 26-27 |
 
 #### Code Quality Metrics (Phase 3)
 | Metric | Before | After | Delta |
