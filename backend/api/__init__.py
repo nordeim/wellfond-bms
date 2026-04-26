@@ -38,8 +38,14 @@ from apps.core.routers import auth_router, users_router
 api.add_router("/auth", auth_router, tags=["auth"])
 api.add_router("/users", users_router, tags=["users"])
 
+# Domain routers
+from apps.operations.routers import alerts_router, dogs_router, health_router
+
+api.add_router("/alerts", alerts_router, tags=["alerts"])
+api.add_router("/dogs", dogs_router, tags=["dogs"])
+api.add_router("/health", health_router, tags=["health"])
+
 # Additional routers will be registered here as apps are built:
-# api.add_router("/operations", operations_router, tags=["operations"])
 # api.add_router("/breeding", breeding_router, tags=["breeding"])
 # api.add_router("/sales", sales_router, tags=["sales"])
 # api.add_router("/compliance", compliance_router, tags=["compliance"])
