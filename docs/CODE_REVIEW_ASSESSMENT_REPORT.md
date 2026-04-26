@@ -613,6 +613,107 @@ wellfond-bms/
 
 ---
 
+## Phase 2 Update: Domain Foundation & Data Migration (COMPLETE) ✅
+
+**Date:** April 26, 2026
+
+### Phase 2 Implementation Summary
+
+| Component | Status | Files |
+|-----------|--------|-------|
+| Backend Models | ✅ Complete | `Dog`, `HealthRecord`, `Vaccination`, `DogPhoto` |
+| Backend Schemas | ✅ Complete | Pydantic v2 schemas for all CRUD operations |
+| Backend Routers | ✅ Complete | `/dogs/`, `/health/`, `/alerts/` endpoints |
+| Backend Services | ✅ Complete | Vaccine calc, Alert cards, CSV importer |
+| Frontend Hooks | ✅ Complete | `use-dogs.ts` with TanStack Query |
+| Frontend Components | ✅ Complete | Chip search, Filters, Alert cards, Table |
+| Frontend Pages | ✅ Complete | Master list, Profile with 7 tabs |
+| Django Migrations | ✅ Applied | `operations.0001_initial` |
+| Backend Tests | ✅ Complete | `test_dogs.py`, `test_importers.py` |
+
+### Phase 2 Key Features Implemented
+
+#### 1. Dog Model with Pedigree
+- **Microchip**: 9-15 digit validation, uniqueness constraint
+- **Self-referential FKs**: `dam` and `sire` for pedigree tracking
+- **Age calculations**: Automatic age display, rehome flags (5-6yr yellow, 6yr+ red)
+- **Indexes**: Multi-column indexes for entity+status, breed, dob, unit
+
+#### 2. Health Records & Vaccinations
+- **HealthRecord**: Vitals tracking (temp 35-45°C, weight), photos
+- **Vaccination**: Auto-calculated due dates with puppy series logic
+  - Puppy series: 21-day intervals (DHPP)
+  - Adult: Annual boosters
+  - Status: UP_TO_DATE, DUE_SOON, OVERDUE
+
+#### 3. CSV Importer
+- **Transactional**: All-or-nothing import
+- **Validation**: Microchip format, duplicate detection, FK resolution
+- **Parent Resolution**: Look up dam/sire by microchip
+- **Error Reporting**: Row-by-row error messages
+
+#### 4. Frontend Dog Management
+- **Chip Search**: Partial match (last 4-6 digits), debounced dropdown
+- **Filter Bar**: Status chips, gender toggle, entity dropdown, breed search
+- **Alert Cards**: Horizontal strip with color coding (vaccine, rehome, NParks)
+- **Dog Table**: Sortable columns, WhatsApp copy, role-based actions
+- **Profile 7 Tabs**: Overview, Health, Breeding (locked), Litters (locked), Media, Genetics (locked), Activity
+
+### Phase 2 API Endpoints Added
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| `/api/v1/dogs/` | GET/POST | Yes | List/Create dogs |
+| `/api/v1/dogs/{id}` | GET/PATCH/DELETE | Yes | CRUD single dog |
+| `/api/v1/dogs/search/{query}` | GET | Yes | Quick search |
+| `/api/v1/dogs/{id}/health/` | GET/POST | Yes | Health records |
+| `/api/v1/dogs/{id}/vaccinations/` | GET/POST | Yes | Vaccinations |
+| `/api/v1/dogs/{id}/photos/` | GET/POST | Yes | Photos |
+| `/api/v1/alerts/` | GET | Yes | Dashboard alerts |
+| `/api/v1/alerts/nparks-countdown` | GET | Yes | Days to deadline |
+
+### Phase 2 Test Files Created
+
+```
+backend/apps/operations/tests/
+├── __init__.py
+├── factories.py          # Dog, HealthRecord, Vaccination, Photo factories
+├── test_dogs.py          # Model tests, CRUD endpoints, entity scoping
+└── test_importers.py     # CSV import validation and transaction tests
+```
+
+### Phase 2 Validation Results
+
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| Dog model with pedigree | ✅ | Self-referential FKs, age calculations |
+| Vaccine auto-calculation | ✅ | Puppy series → annual logic |
+| CSV import transactional | ✅ | `transaction.atomic()` wrapper |
+| Entity scoping | ✅ | `scope_entity()` queryset filtering |
+| Role-based tab locking | ✅ | `TAB_ACCESS` matrix with lock icons |
+| Microchip validation | ✅ | `^\d{9,15}$` pattern validation |
+| Migrations applied | ✅ | `operations.0001_initial` OK |
+
+---
+
+## Appendix C: Phase 2 Test Coverage
+
+### Backend Tests
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `test_dogs.py` | 15+ | Model properties, CRUD endpoints, entity scoping |
+| `test_importers.py` | 10+ | Validation, transactions, error handling |
+
+### Test Categories
+
+1. **Model Tests**: Age calculation, rehome flags, pedigree relationships
+2. **Endpoint Tests**: CRUD operations, filtering, pagination
+3. **Security Tests**: Entity scoping prevents cross-entity access
+4. **Import Tests**: CSV validation, duplicate detection, rollback
+
+---
+
 **Report Prepared By:** OpenCode (Frontend Architect & Avant-Garde UI Designer)  
 **Date:** April 26, 2026  
 **Classification:** Internal Technical Review  
