@@ -1,8 +1,8 @@
-"""
-Dog data hooks for Wellfond BMS
-================================
-TanStack Query hooks for dog CRUD operations.
-"""
+/**
+ * Dog data hooks for Wellfond BMS
+ * ================================
+ * TanStack Query hooks for dog CRUD operations.
+ */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

@@ -1,8 +1,8 @@
-"""
-Dogs Page - Wellfond BMS
-=========================
-Master list with alerts, filters, and table.
-"""
+/**
+ * Dogs Page - Wellfond BMS
+ * =========================
+ * Master list with alerts, filters, and table.
+ */
 
 import { Suspense } from 'react';
 import Link from 'next/link';
@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { DogFilterParams } from '@/lib/types';
-import { AlertCards } from '@/components/dogs/alert-cards';
 import { DogTable } from '@/components/dogs/dog-table';
 
 interface DogsPageProps {
