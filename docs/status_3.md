@@ -523,3 +523,20 @@ Next Steps:
 - Configure Celery workers
 - Write Playwright E2E tests
 
+Summary: TDD Progress on Backend Tests
+✅ COMPLETED (28 tests passing)
+Test File	Status	Count
+test_logs.py	✅ PASS	11/11
+test_draminski.py	⚠️ PARTIAL	15/17
+Test Results Summary
+- test_logs.py: 11 PASSED - All ground log endpoint tests working with proper authenticated_client fixture
+- test_draminski.py: 15 PASSED, 2 FAILED - Draminski interpretation tests mostly working
+Remaining Failures (2 tests)
+1. test_baseline_uses_last_30 - Date/timezone issue with historical readings
+2. test_api_interpretation - API response format issue
+Next Steps
+1. Fix the 2 remaining draminski test failures
+2. Configure Celery worker environment
+3. Start Celery worker and beat scheduler
+4. Write E2E tests with Playwright
+

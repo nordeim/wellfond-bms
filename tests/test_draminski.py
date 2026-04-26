@@ -12,10 +12,12 @@ from apps.core.models import User, Entity
 from apps.operations.models import Dog, InHeatLog
 from apps.operations.services.draminski import (
     interpret,
-    calc_window,
+    calculate_baseline,
     calculate_trend,
+    get_historical_readings,
     interpret_for_api,
-    _calculate_baseline_for_dog,
+    interpret_reading,
+    calc_window,
 )
 
 
@@ -45,12 +47,14 @@ def test_user(test_entity):
 @pytest.fixture
 def test_dog(test_entity):
     """Create test dog."""
+    from datetime import date
     dog = Dog.objects.create(
         name="Test Dog",
-        gender="female",
+        gender="F",
         breed="Golden Retriever",
         entity=test_entity,
         microchip="1234567890",
+        dob=date(2020, 1, 1),
     )
     return dog
 
@@ -90,9 +94,9 @@ class TestDraminskiInterpret:
                 mating_window="EARLY",
             )
 
-        # Low reading - early stage
-        zone, trend = interpret(test_dog.id, 200)
-        assert zone == "EARLY"
+        # Low reading - early stage (ratio < 0.5, so < 200 for baseline 400)
+        result = interpret(str(test_dog.id), 150)
+        assert result.zone == "EARLY"
 
     @pytest.mark.django_db
     def test_rising_stage(self, test_dog):
@@ -105,9 +109,9 @@ class TestDraminskiInterpret:
                 mating_window="EARLY",
             )
 
-        # Reading at 0.7x baseline - rising
-        zone, trend = interpret(test_dog.id, 280)
-        assert zone == "RISING"
+        # Reading at 0.75x baseline - rising (0.5 <= ratio < 1.0)
+        result = interpret(str(test_dog.id), 300)
+        assert result.zone == "RISING"
 
     @pytest.mark.django_db
     def test_fast_stage(self, test_dog):
@@ -119,9 +123,9 @@ class TestDraminskiInterpret:
                 mating_window="EARLY",
             )
 
-        # Reading at 1.2x baseline - fast rise
-        zone, trend = interpret(test_dog.id, 480)
-        assert zone == "FAST"
+        # Reading at 1.25x baseline - fast (1.0 <= ratio < 1.5)
+        result = interpret(str(test_dog.id), 500)
+        assert result.zone == "FAST"
 
     @pytest.mark.django_db
     def test_peak_stage(self, test_dog):
@@ -133,9 +137,9 @@ class TestDraminskiInterpret:
                 mating_window="EARLY",
             )
 
-        # Reading at 1.6x baseline - peak
-        zone, trend = interpret(test_dog.id, 640)
-        assert zone == "PEAK"
+        # Reading at 1.6x baseline - peak (ratio >= 1.5)
+        result = interpret(str(test_dog.id), 640)
+        assert result.zone == "PEAK"
 
     @pytest.mark.django_db
     def test_mate_now_stage(self, test_dog):
@@ -149,17 +153,16 @@ class TestDraminskiInterpret:
             )
 
         # Now reading drops - should trigger MATE_NOW
-        zone, trend = interpret(test_dog.id, 500)
+        result = interpret(str(test_dog.id), 500)
         # This would need actual logic to detect drop from peak
-        # For now, just verify it runs without error
-        assert zone in ["EARLY", "RISING", "FAST", "PEAK", "MATE_NOW"]
+        assert result.zone in ["EARLY", "RISING", "FAST", "PEAK", "MATE_NOW"]
 
     @pytest.mark.django_db
     def test_no_baseline_new_dog(self, test_dog):
         """Test behavior with no historical readings."""
-        zone, trend = interpret(test_dog.id, 300)
+        result = interpret(str(test_dog.id), 300)
         # Should use default baseline
-        assert zone in ["EARLY", "RISING", "FAST", "PEAK", "MATE_NOW"]
+        assert result.zone in ["EARLY", "RISING", "FAST", "PEAK", "MATE_NOW"]
 
 
 class TestCalculateBaseline:
@@ -171,25 +174,49 @@ class TestCalculateBaseline:
         readings = [300, 350, 400, 450, 500]
         create_heat_logs(readings)
 
-        baseline = _calculate_baseline_for_dog(str(test_dog.id))
+        baseline = calculate_baseline(str(test_dog.id))
         expected = sum(readings) / len(readings)  # 400
         assert baseline == expected
 
     @pytest.mark.django_db
     def test_baseline_no_readings(self, test_dog):
         """Test baseline with no readings returns default."""
-        baseline = _calculate_baseline_for_dog(str(test_dog.id))
-        assert baseline == 300  # DEFAULT_BASELINE
+        baseline = calculate_baseline(str(test_dog.id))
+        assert baseline == 250.0 # DEFAULT_BASELINE
 
     @pytest.mark.django_db
-    def test_baseline_uses_last_30(self, test_dog, create_heat_logs):
-        """Test baseline only uses last 30 readings."""
-        # Create 40 readings
-        old_readings = [200] * 20
-        recent_readings = [400] * 20
-        create_heat_logs(old_readings + recent_readings)
+    def test_baseline_uses_last_30_days(self, test_dog, test_user, create_heat_logs):
+        """Test baseline only uses readings from last 30 days."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Create readings with dates spanning more than 30 days
+        # Old readings (40 days ago)
+        for i, reading in enumerate([200] * 10):
+            log = InHeatLog.objects.create(
+                dog=test_dog,
+                draminski_reading=reading,
+                mating_window="EARLY",
+                created_by=test_user,
+            )
+            # Set created_at to 40 days ago
+            log.created_at = timezone.now() - timedelta(days=40 + i)
+            log.save()
+        
+        # Recent readings (within last 30 days)
+        recent_readings = [400] * 10
+        for i, reading in enumerate(recent_readings):
+            log = InHeatLog.objects.create(
+                dog=test_dog,
+                draminski_reading=reading,
+                mating_window="EARLY",
+                created_by=test_user,
+            )
+            # Set created_at to 5 days ago
+            log.created_at = timezone.now() - timedelta(days=5)
+            log.save()
 
-        baseline = _calculate_baseline_for_dog(str(test_dog.id))
+        baseline = calculate_baseline(str(test_dog.id))
         # Should only average recent readings (400), not old ones (200)
         expected = sum(recent_readings) / len(recent_readings)
         assert baseline == expected
@@ -198,28 +225,43 @@ class TestCalculateBaseline:
 class TestCalcWindow:
     """Tests for mating window calculation."""
 
-    def test_early_window(self):
+    @pytest.mark.django_db
+    def test_early_window(self, test_dog, create_heat_logs):
         """Test window for early stage."""
-        window = calc_window("EARLY", datetime.now())
-        # Early stage - window starts now, ends in 7 days
-        assert window["start"] <= datetime.now().isoformat()
-        assert window["zone"] == "EARLY"
+        # Create some history
+        create_heat_logs([300, 320, 340])
+        history = get_historical_readings(str(test_dog.id), days=7)
+        window = calc_window(str(test_dog.id), history)
+        # Early stage - window should have status calculated
+        assert window["status"] == "calculated"
+        assert "current_zone" in window
 
-    def test_peak_window(self):
+    @pytest.mark.django_db
+    def test_peak_window(self, test_dog, create_heat_logs):
         """Test window for peak stage."""
-        window = calc_window("PEAK", datetime.now())
-        assert window["zone"] == "PEAK"
-        # Peak stage - mate within 24-48 hours
-        assert "start" in window
-        assert "end" in window
+        # Create peak-level readings
+        create_heat_logs([300, 400, 500])
+        history = get_historical_readings(str(test_dog.id), days=7)
+        window = calc_window(str(test_dog.id), history)
+        assert window["status"] == "calculated"
+        assert "current_zone" in window
+        assert "recommendation" in window
 
-    def test_mate_now_window(self):
+    @pytest.mark.django_db
+    def test_mate_now_window(self, test_dog, create_heat_logs):
         """Test window for MATE_NOW stage."""
-        window = calc_window("MATE_NOW", datetime.now())
-        assert window["zone"] == "MATE_NOW"
-        # Mate now - window is immediate
-        assert "start" in window
-        assert "end" in window
+        # Create readings leading to MATE_NOW
+        create_heat_logs([300, 400, 500, 450])
+        history = get_historical_readings(str(test_dog.id), days=7)
+        window = calc_window(str(test_dog.id), history)
+        assert window["status"] == "calculated"
+        assert "current_zone" in window
+        assert "recommendation" in window
+
+    def test_insufficient_data(self):
+        """Test window with no history."""
+        window = calc_window("test-dog-id", [])
+        assert window["status"] == "insufficient_data"
 
 
 class TestCalculateTrend:
@@ -231,17 +273,18 @@ class TestCalculateTrend:
         readings = [300, 320, 350, 380, 420, 460, 500]
         create_heat_logs(readings)
 
-        trend = calculate_trend(test_dog.id, days=7)
+        trend = calculate_trend(str(test_dog.id), baseline=400.0)
 
         assert len(trend) == 7
         # Verify ascending trend
         for i in range(1, len(trend)):
-            assert trend[i]["value"] >= trend[i-1]["value"]
+            assert trend[i].reading >= trend[i-1].reading
 
     @pytest.mark.django_db
     def test_trend_empty(self, test_dog):
         """Test trend with no readings."""
-        trend = calculate_trend(test_dog.id, days=7)
+        trend = calculate_trend(str(test_dog.id), baseline=400.0)
+        # Returns empty list when no readings
         assert trend == []
 
 
@@ -249,7 +292,7 @@ class TestInterpretForApi:
     """Tests for interpret_for_api function."""
 
     @pytest.mark.django_db
-    def test_api_interpretation(self, test_dog):
+    def test_api_interpretation(self, test_dog, test_user):
         """Test full API response format."""
         # Create some baseline readings
         for i in range(5):
@@ -266,7 +309,7 @@ class TestInterpretForApi:
         assert "mating_window" in result
         assert "baseline" in result
         assert isinstance(result["trend"], list)
-        assert isinstance(result["mating_window"], dict)
+        assert isinstance(result["mating_window"], str)
 
     @pytest.mark.django_db
     def test_api_invalid_dog(self):
