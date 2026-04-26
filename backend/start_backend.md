@@ -249,3 +249,17 @@ Thinking: Still getting an internal server error on login. Let me
 # Check Django error logs
 $ tail -100 /home/project/wellfond-bms/backend/nohup.out 2>&1 | grep -A 20 "Internal Server Error"
 
+# Rerun tests after fix
+$ DJANGO_SETTINGS_MODULE=config.settings.development PYTHONPATH=/home/project/wellfond-bms/backend:$PYTHONPATH python -m pytest tests/test_logs.py -v --tb=short 2>&1 | head -80
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /opt/venv/bin/python
+cachedir: .pytest_cache
+django: version: 6.0.4, settings: config.settings.development (from env)
+PySide6 6.9.2 -- Qt runtime 6.9.2 -- Qt compiled 6.9.2
+hypothesis profile 'default'
+rootdir: /home/project/wellfond-bms
+plugins: asyncio-1.3.0, django-4.12.0, respx-0.22.0, qt-4.5.0, Faker-40.5.1, mock-3.12.0, langsmith-0.5.1, logfire-4.16.0, anyio-4.13.0, cov-7.1.0, xdist-3.8.0, hypothesis-6.151.11
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 11 items
+…
+
