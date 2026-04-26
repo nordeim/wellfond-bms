@@ -1,8 +1,8 @@
-"""
-Dog Profile Page - Wellfond BMS
-================================
-7-tab dog profile with role-based access control.
-"""
+/**
+ * Dog Profile Page - Wellfond BMS
+ * ================================
+ * 7-tab dog profile with role-based access control.
+ */
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

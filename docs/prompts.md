@@ -46,6 +46,10 @@ awesome meticulous job so far. please keep up the good work. yes, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, you need to use the more rigorous TDD methodology/approach to make and test code changes. please review @plans/phase-3-ground-operations.md to confirm your understanding of Phase 3 requirements, then check that the required files had been correctly updated/added - check file by file, particularly the files listed below to confirm that each file does indeed exist. then 'run typecheck/eslint' and 'run build' to check for bugs/issues.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---
