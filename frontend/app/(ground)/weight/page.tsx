@@ -7,7 +7,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/lib/api";
 
 export default function WeightLogPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const { queueRequest, isOnline } = useOfflineQueue();
 
@@ -45,7 +43,7 @@ export default function WeightLogPage() {
         weight: parseFloat(weight),
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/weight/${dogId}`, payload)
       );
 

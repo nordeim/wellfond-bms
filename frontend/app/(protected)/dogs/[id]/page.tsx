@@ -371,7 +371,7 @@ function OverviewTab({ dog }: { dog: any }) {
   );
 }
 
-function HealthTab({ dogId }: { dogId: string }) {
+function HealthTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">
@@ -381,7 +381,7 @@ function HealthTab({ dogId }: { dogId: string }) {
   );
 }
 
-function BreedingTab({ dogId }: { dogId: string }) {
+function BreedingTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">
@@ -391,7 +391,7 @@ function BreedingTab({ dogId }: { dogId: string }) {
   );
 }
 
-function LittersTab({ dogId }: { dogId: string }) {
+function LittersTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">
@@ -401,7 +401,7 @@ function LittersTab({ dogId }: { dogId: string }) {
   );
 }
 
-function MediaTab({ dogId }: { dogId: string }) {
+function MediaTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">
@@ -411,7 +411,7 @@ function MediaTab({ dogId }: { dogId: string }) {
   );
 }
 
-function GeneticsTab({ dogId }: { dogId: string }) {
+function GeneticsTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">
@@ -421,7 +421,7 @@ function GeneticsTab({ dogId }: { dogId: string }) {
   );
 }
 
-function ActivityTab({ dogId }: { dogId: string }) {
+function ActivityTab({ dogId: _dogId }: { dogId: string }) {
   return (
     <Card>
       <CardContent className="p-12 text-center">

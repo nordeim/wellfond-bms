@@ -29,7 +29,7 @@ export function PupForm({ index, data, onChange }: PupFormProps) {
         <Label className="text-[#888888] text-sm mb-2 block">Gender</Label>
         <RadioGroup
           value={data.gender}
-          onValueChange={(value) => onChange({ gender: value as "male" | "female" })}
+          onValueChange={(value: string) => onChange({ gender: value as "male" | "female" })}
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">

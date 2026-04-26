@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 

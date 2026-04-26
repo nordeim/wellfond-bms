@@ -73,13 +73,13 @@ export default function HeatLogPage() {
       };
 
       // Use offline queue for resilience
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/in-heat/${dogId}`, payload)
       );
 
       toast({
         title: "Log recorded",
-        description: `Draminski reading saved for ${response.dog_name || "dog"}`,
+        description: "Draminski reading saved",
       });
 
       // Reset form
@@ -133,7 +133,7 @@ export default function HeatLogPage() {
         {/* Interpretation Gauge */}
         {interpretation && (
           <div className="mt-4">
-            <DraminiGauge
+            <DraminskiGauge
               reading={parseInt(reading, 10)}
               zone={interpretation.zone}
               trend={interpretation.trend}

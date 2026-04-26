@@ -48,7 +48,7 @@ export default function NotReadyPage() {
         expected_date: expectedDate || undefined,
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/not-ready/${dogId}`, payload)
       );
 

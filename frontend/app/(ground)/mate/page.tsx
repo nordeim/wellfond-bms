@@ -53,13 +53,13 @@ export default function MateLogPage() {
         notes,
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/mated/${dogId}`, payload)
       );
 
       toast({
         title: "Mating recorded",
-        description: `${method === "natural" ? "Natural" : method.toUpperCase()} mating with ${response.sire_name} recorded`,
+        description: `${method === "natural" ? "Natural" : method.toUpperCase()} mating recorded`,
       });
 
       router.push("/ground");

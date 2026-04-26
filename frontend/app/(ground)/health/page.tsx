@@ -69,7 +69,7 @@ export default function HealthLogPage() {
         photos: photos.length > 0 ? photos : undefined,
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/health-obs/${dogId}`, payload)
       );
 

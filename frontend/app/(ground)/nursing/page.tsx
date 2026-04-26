@@ -66,7 +66,7 @@ export default function NursingFlagPage() {
         photos: photos.length > 0 ? photos : undefined,
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/nursing-flag/${dogId}`, payload)
       );
 

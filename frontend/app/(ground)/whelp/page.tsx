@@ -97,13 +97,13 @@ export default function WhelpLogPage() {
         notes,
       };
 
-      const response = await queueRequest(() =>
+      await queueRequest(() =>
         api.post(`/api/v1/ground-logs/whelped/${dogId}`, payload)
       );
 
       toast({
         title: "Whelping recorded",
-        description: `${response.alive_count} pups recorded`,
+        description: `${aliveCount} pups recorded`,
       });
 
       router.push("/ground");

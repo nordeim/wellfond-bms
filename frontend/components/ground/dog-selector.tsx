@@ -44,8 +44,8 @@ export function DogSelector({ gender = "all", value, onSelect }: DogSelectorProp
     const fetchDogs = async () => {
       setLoading(true);
       try {
-        const response = await api.get("/api/v1/dogs/");
-        let filtered = response.items || [];
+const data = await api.get("/api/v1/dogs/") as { items?: Dog[] };
+      let filtered = data.items || [];
 
         // Filter by gender if specified
         if (gender !== "all") {
@@ -75,8 +75,8 @@ export function DogSelector({ gender = "all", value, onSelect }: DogSelectorProp
 
     const fetchDog = async () => {
       try {
-        const dog = await api.get(`/api/v1/dogs/${value}`);
-        setSelectedDog(dog);
+const dog = await api.get(`/api/v1/dogs/${value}`) as Dog;
+      setSelectedDog(dog);
       } catch (error) {
         // Ignore error for selected dog
       }

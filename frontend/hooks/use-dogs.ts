@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Dog data hooks for Wellfond BMS
  * ================================
@@ -64,12 +66,12 @@ export function useDogList(options: UseDogListOptions = {}) {
 // =============================================================================
 
 export function useDog(id: string | null) {
-  return useQuery({
+  return useQuery<Dog | null>({
     queryKey: [DOG_DETAIL_KEY, id],
     queryFn: async () => {
       if (!id) return null;
       const response = await api.get<DogDetailResponse>(`/dogs/${id}`);
-      return response;
+      return response.dog;
     },
     enabled: !!id,
     staleTime: 60000, // 1 minute

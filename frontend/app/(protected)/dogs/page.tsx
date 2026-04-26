@@ -10,7 +10,7 @@ import { Plus, Download, Dog } from 'lucide-react';
 
 import { AlertCards } from '@/components/dogs/alert-cards';
 import { ChipSearch } from '@/components/dogs/chip-search';
-import { DogFilters } from '@/components/dogs/dog-filters';
+import { DogFiltersClient } from './dog-filters-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,12 +22,12 @@ interface DogsPageProps {
 }
 
 export default function DogsPage({ searchParams }: DogsPageProps) {
-  // Parse filters from URL
+  // Parse filters from URL with proper type casting
   const filters: DogFilterParams = {
-    status: searchParams.status as string | undefined,
+    status: searchParams.status as 'ACTIVE' | 'RETIRED' | 'REHOMED' | 'DECEASED' | undefined,
     entity: searchParams.entity as string | undefined,
     breed: searchParams.breed as string | undefined,
-    gender: searchParams.gender as string | undefined,
+    gender: searchParams.gender as 'M' | 'F' | undefined,
     search: searchParams.search as string | undefined,
     unit: searchParams.unit as string | undefined,
   };
@@ -75,7 +75,7 @@ export default function DogsPage({ searchParams }: DogsPageProps) {
           {/* Search & Filters */}
           <div className="mb-4 space-y-3">
             <ChipSearch placeholder="Search by chip or name..." />
-            <DogFilters filters={filters} />
+            <DogFiltersClient initialFilters={filters} />
           </div>
 
           {/* Dog Table */}

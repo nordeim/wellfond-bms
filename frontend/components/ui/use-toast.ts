@@ -6,7 +6,7 @@
 
 import { toast as sonnerToast } from "sonner";
 
-type ToastVariant = "default" | "destructive" | "success" | "info" | "warning";
+type ToastVariant = "default" | "destructive" | "success" | "info" | "warning" | "error";
 
 interface ToastOptions {
   title?: string;
@@ -21,30 +21,23 @@ function useToast() {
 
     const message = title || description || "";
     const desc = title && description ? description : undefined;
+    
+    // Build options object only with defined values
+    const opts: { description?: string; duration?: number } = {};
+    if (desc !== undefined) opts.description = desc;
+    if (duration !== undefined) opts.duration = duration;
 
     switch (variant) {
       case "destructive":
       case "error":
-        return sonnerToast.error(message, {
-          description: desc,
-          duration,
-        });
+        return sonnerToast.error(message, opts);
       case "success":
-        return sonnerToast.success(message, {
-          description: desc,
-          duration,
-        });
+        return sonnerToast.success(message, opts);
       case "warning":
-        return sonnerToast.warning(message, {
-          description: desc,
-          duration,
-        });
+        return sonnerToast.warning(message, opts);
       case "info":
       default:
-        return sonnerToast(message, {
-          description: desc,
-          duration,
-        });
+        return sonnerToast(message, opts);
     }
   };
 

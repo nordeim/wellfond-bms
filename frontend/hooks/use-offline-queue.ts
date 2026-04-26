@@ -80,7 +80,7 @@ export function useOfflineQueue() {
             "Content-Type": "application/json",
             ...item.headers,
           },
-          body: item.body ? JSON.stringify(item.body) : undefined,
+          body: item.body ? JSON.stringify(item.body) : null,
         });
 
         if (!response.ok) {

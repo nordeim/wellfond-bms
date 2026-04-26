@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useToast } from "@/components/ui/use-toast";
 
 interface Alert {
   id: number;
@@ -28,7 +27,6 @@ export function useSSE(options: UseSSEOptions = {}) {
     onMessage,
   } = options;
 
-  const { toast } = useToast();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [lastEventId, setLastEventId] = useState<string | null>(null);
