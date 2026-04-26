@@ -311,13 +311,84 @@ class TestInterpretForApi:
         assert isinstance(result["trend"], list)
         assert isinstance(result["mating_window"], str)
 
-    @pytest.mark.django_db
-    def test_api_invalid_dog(self):
-        """Test API with non-existent dog."""
-        fake_id = str(uuid.uuid4())
-        result = interpret_for_api(fake_id, 400)
+@pytest.mark.django_db
+def test_api_invalid_dog(self):
+    """Test API with non-existent dog."""
+    fake_id = str(uuid.uuid4())
+    result = interpret_for_api(fake_id, 400)
 
-        # Should return default values
-        assert "zone" in result
-        assert "trend" in result
-        assert result["trend"] == []
+    # Should return default values
+    assert "zone" in result
+    assert "trend" in result
+    assert result["trend"] == []
+
+
+class TestCalculateTrendZones:
+    """Tests for calculate_trend zone casing consistency.
+
+    These tests ensure that calculate_trend returns UPPERCASE zone values
+    to match interpret_reading() output and frontend expectations.
+    """
+
+    @pytest.mark.django_db
+    def test_calculate_trend_returns_uppercase_zones(
+        self, test_dog, create_heat_logs
+    ):
+        """Trend zones should be UPPERCASE to match interpret_reading()."""
+        # Create readings across all zones
+        readings = [150, 300, 500, 650]  # EARLY, RISING, FAST, PEAK
+        create_heat_logs(readings)
+        baseline = 400.0  # Reference baseline
+
+        trend = calculate_trend(str(test_dog.id), baseline)
+
+        # Verify all zones are UPPERCASE
+        for point in trend:
+            assert point.zone == point.zone.upper(), (
+                f"Zone '{point.zone}' should be UPPERCASE to match "
+                f"interpret_reading() output"
+            )
+
+    @pytest.mark.django_db
+    def test_calculate_trend_valid_uppercase_values(
+        self, test_dog, create_heat_logs
+    ):
+        """Zone values should match expected UPPERCASE constants."""
+        # Create readings across all zones
+        readings = [150, 300, 500, 650]
+        create_heat_logs(readings)
+        baseline = 400.0
+
+        trend = calculate_trend(str(test_dog.id), baseline)
+
+        # Verify zone is one of the valid UPPERCASE values
+        valid_zones = ["EARLY", "RISING", "FAST", "PEAK"]
+        for point in trend:
+            assert point.zone in valid_zones, (
+                f"Zone '{point.zone}' is not a valid UPPERCASE zone value. "
+                f"Expected one of: {valid_zones}"
+            )
+
+    @pytest.mark.django_db
+    def test_calculate_trend_matches_interpret_zones(
+        self, test_dog, create_heat_logs
+    ):
+        """calculate_trend zones should match interpret() zone values."""
+        # Create baseline readings
+        for i in range(5):
+            InHeatLog.objects.create(
+                dog=test_dog,
+                draminski_reading=400,
+                mating_window="EARLY",
+            )
+
+        # Get main interpretation
+        result = interpret(str(test_dog.id), 350)
+
+        # Get trend
+        trend = calculate_trend(str(test_dog.id), baseline=400.0)
+
+        if trend:
+            # Both should use same UPPERCASE convention
+            assert result.zone == result.zone.upper()
+            assert trend[-1].zone == trend[-1].zone.upper()

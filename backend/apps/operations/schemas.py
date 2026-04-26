@@ -471,7 +471,7 @@ class DraminskiTrendPoint(Schema):
 
     date: date
     reading: int
-    zone: str  # early, rising, fast, peak
+    zone: str  # EARLY, RISING, FAST, PEAK (matches interpret_reading zones)
 
 
 class DraminskiResult(Schema):

@@ -175,16 +175,16 @@ def calculate_trend(dog_id: str, baseline: float) -> List[TrendPoint]:
     trend = []
     for entry in historical:
         ratio = entry['reading'] / baseline if baseline > 0 else 0
-        
+
         if ratio < EARLY_THRESHOLD:
-            zone = "early"
+            zone = "EARLY"
         elif ratio < RISING_MAX:
-            zone = "rising"
+            zone = "RISING"
         elif ratio < FAST_MAX:
-            zone = "fast"
+            zone = "FAST"
         else:
-            zone = "peak"
-        
+            zone = "PEAK"
+
         trend.append(TrendPoint(
             date=entry['date'],
             reading=entry['reading'],
