@@ -1,0 +1,5 @@
+- /home/pete/.openclaw/workspace/skills/browser-automation/SKILL.md
+- /home/pete/.openclaw/workspace/skills/chrome-devtools-mcp/SKILL.md
+- /home/pete/.openclaw/workspace/skills/frontend-ui-testing-journey/SKILL.md
+- /home/pete/.openclaw/workspace/skills/playwright-cli/SKILL.md
+- /home/pete/.openclaw/workspace/skills/webapp-testing-journey/SKILL.md
