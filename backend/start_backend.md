@@ -263,3 +263,6 @@ asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None,
 collecting ... collected 11 items
 …
 
+# Run tests after fixes
+$ DJANGO_SETTINGS_MODULE=config.settings.development PYTHONPATH=/home/project/wellfond-bms/backend:$PYTHONPATH python -m pytest tests/test_logs.py -v --tb=short 2>&1
+

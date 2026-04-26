@@ -207,7 +207,7 @@ class TestMatedLogs:
         data = json.loads(response.content)
         assert data["sire_id"] == str(test_sire.id)
         assert data["sire_name"] == test_sire.name
-        assert data["method"] == "natural"
+        assert data["method"] == "NATURAL"
 
     @pytest.mark.django_db
     def test_create_mated_log_invalid_sire(
@@ -256,7 +256,7 @@ class TestWhelpedLogs:
         data = json.loads(response.content)
         assert data["alive_count"] == 3
         assert len(data["pups"]) == 3
-        assert data["pups"][0]["birth_weight"] == 350
+        assert data["pups"][0]["birth_weight"] == 0.35
 
 
 class TestHealthObsLogs:
