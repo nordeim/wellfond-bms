@@ -366,6 +366,30 @@ You are successful when:
 - Tests pass before commits
 - Code follows established patterns
 
+---
+
+## Project Status & Recent Milestones
+
+### Phase Completion (Updated April 26, 2026)
+
+| Phase | Status | Date | Key Deliverables |
+|-------|--------|------|------------------|
+| **0** | ✅ Complete | Apr 22 | Infrastructure, Docker, CI/CD |
+| **1** | ✅ Complete | Apr 25 | Auth, BFF proxy, RBAC, design system |
+| **2** | ✅ Complete | Apr 26 | Dog models, CRUD, vaccinations, alerts |
+| **3** | 🔄 Next | - | Ground ops, PWA, Draminski, SSE |
+
+### Phase 2 Accomplishments
+- ✅ 4 domain models: Dog, HealthRecord, Vaccination, DogPhoto
+- ✅ Dog CRUD with entity scoping and filtering
+- ✅ Vaccination due date calculator (21-day puppy series → annual)
+- ✅ CSV importer with transactional safety
+- ✅ Dashboard alert cards (6 types)
+- ✅ Dog profile page with 7 tabs
+- ✅ Role-based tab locking (Breeding/Litters/Genetics locked for Sales/Ground)
+- ✅ 25+ backend tests
+- ✅ Django migrations applied
+
 ## System Integration
 
 ### Available Tools
@@ -392,30 +416,90 @@ You are successful when:
 - **Storing PII without consent**: Check PDPA consent first
 - **Magic numbers**: Use constants from `lib/constants.ts`
 - **Synchronous AVS calls**: Use Celery for compliance tasks
+- **Using `@paginate` with wrapped responses**: Manual pagination for custom response objects
+- **Direct model imports in services**: Use deferred imports to avoid circular dependencies
+- **Python-style docstrings in TypeScript**: Use JSDoc comments `/** */`
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Session not persisting**
-- Check Redis connection: `redis-cli ping`
-- Verify `SESSION_ENGINE` uses Redis
-- Check cookie domain settings
+```bash
+# Check Redis connection
+redis-cli ping
+
+# Verify session engine
+python -c "from django.conf import settings; print(settings.SESSION_ENGINE)"
+# Should be: django.contrib.sessions.backends.cache
+
+# Check cookie in browser DevTools
+# Look for 'sessionid' cookie with HttpOnly, Secure, SameSite=Lax
+```
 
 **Ninja router not registering**
-- Ensure `api.add_router()` called in `api/__init__.py`
-- Check for import errors in router files
-- Clear `__pycache__` after changes
+```bash
+# Ensure router added in api/__init__.py
+# Check for import errors
+python -c "from api import api; print(api.urls)"
+
+# Clear Python cache
+find . -type d -name __pycache__ -exec rm -rf {} +
+find . -type f -name "*.pyc" -delete
+```
+
+**Migration errors**
+```bash
+# Check migration status
+python manage.py showmigrations
+
+# Reset if needed (CAUTION: data loss)
+python manage.py migrate operations zero
+python manage.py migrate operations
+```
 
 **Frontend proxy 404**
-- Verify Django running on :8000
-- Check proxy route in `app/api/proxy/[...path]/route.ts`
-- Test backend directly: `curl http://localhost:8000/health/`
+```bash
+# Verify Django running
+curl http://localhost:8000/health/
+
+# Test proxy route
+curl http://localhost:3000/api/proxy/health/
+
+# Check proxy logs in browser Network tab
+```
 
 **Type errors after changes**
-- Run `npm run typecheck` to identify issues
-- Check Pydantic schema matches ORM model
-- Verify all required fields present
+```bash
+cd frontend
+npm run typecheck
+
+# Common fixes:
+# - Check Pydantic schema matches ORM model
+# - Verify all required fields present
+# - Ensure no 'any' types with strict: true
+```
+
+**Circular import in Django services**
+```python
+# Solution: Defer import in model methods
+def save(self, *args, **kwargs):
+    try:
+        from .services.vaccine import calc_vaccine_due
+        self.due_date = calc_vaccine_due(self.dog, self.vaccine_name, self.date_given)
+    except ImportError:
+        pass
+    super().save(*args, **kwargs)
+```
+
+**pytest not discovering tests**
+```bash
+# Ensure __init__.py exists in test directories
+touch apps/operations/tests/__init__.py
+
+# Run with verbose output
+python -m pytest apps/operations/tests/ -v --tb=short
+```
 # Wellfond BMS: Project Knowledge Base & Architecture Manifesto
 
 ## 1. Core Identity & Purpose (The "WHAT" and "WHY")

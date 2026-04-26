@@ -367,6 +367,104 @@ You are successful when:
 - Tests pass before commits
 - Code follows established patterns
 
+---
+
+## Phase 2 Lessons Learned (April 26, 2026)
+
+### Technical Insights
+
+1. **Django Ninja Pagination**: `@paginate` decorator requires `list[Schema]` response type, not wrapped objects. Manual pagination gives more control and works with custom response structures.
+
+2. **Circular Imports in Django**: Services imported in model `save()` methods should use deferred imports (`try/except ImportError`) or move logic to signals. This prevents import cycles during app initialization.
+
+3. **Self-Referential FKs**: Using `on_delete=PROTECT` on dam/sire FKs prevents accidental deletion of dogs with offspring, maintaining pedigree integrity.
+
+4. **CSV Import Patterns**: Pre-flight validation before database transaction is essential for good UX with detailed error messages. Use `transaction.atomic()` for rollback safety.
+
+5. **Frontend State Management**: TanStack Query with proper invalidation keys eliminates manual cache management. Use `queryClient.invalidateQueries()` after mutations.
+
+### Process Insights
+
+1. **Test-First Approach**: Writing tests before implementation catches architectural issues early and ensures entity scoping works correctly.
+
+2. **Phase Gate Reviews**: Explicit validation checkpoints prevent scope creep and ensure quality before moving to next phase.
+
+3. **Documentation Parity**: Updating AGENTS.md and README alongside code reduces knowledge debt and keeps team aligned.
+
+4. **Migration Strategy**: Always use Django migrations, never modify DB directly. This saved us from data loss during iterative development.
+
+---
+
+## Phase 2 Blockers Encountered
+
+### Resolved Blockers
+
+| Blocker | Impact | Solution | Date Resolved |
+|---------|--------|----------|---------------|
+| `@paginate` with wrapped response | Pagination failed with custom response objects | Removed decorator, implemented manual pagination | Apr 26 |
+| Circular import (vaccine service) | Model save() couldn't import service | Deferred import with try/except | Apr 26 |
+| Missing `DogPhotoListResponse` | Router import error | Added missing schema to schemas.py | Apr 26 |
+| Import error `UserSummary` | Schema import failed | Removed non-existent import | Apr 26 |
+| Test discovery failure | pytest couldn't find tests | Added `__init__.py` to test directories | Apr 26 |
+| Python-style docstrings | TypeScript syntax errors | Converted to JSDoc comments | Apr 26 |
+| Duplicate AlertCards import | ESLint warning | Removed duplicate import | Apr 26 |
+
+### Persistent Blockers
+
+| Blocker | Status | Notes |
+|---------|--------|-------|
+| PgBouncer in dev | Not required | Using direct PG connection for simplicity |
+| Gotenberg in dev | Optional | PDF generation not critical for Phase 2 |
+| Test coverage < 85% | In Progress | Need more edge case tests (Phase 3+) |
+
+---
+
+## Recommended Next Steps
+
+### Immediate (Next 2-3 Days)
+
+1. **Phase 3: Ground Operations & Mobile PWA**
+   - 7 ground log types (in_heat, mated, whelped, weaned, rehomed, deceased, retired)
+   - Draminski DOD2 interpreter (per-dog thresholds, trend calculation)
+   - PWA offline queue with IndexedDB
+   - SSE alert stream for real-time notifications
+
+2. **Complete Test Coverage**
+   - Add health endpoint tests
+   - Add vaccination calculation tests
+   - Add CSV import integration tests
+   - Target: ≥85% coverage
+
+3. **Frontend Build Verification**
+   - Run `npm run typecheck` - ensure 0 errors
+   - Run `npm run lint` - ensure 0 warnings
+   - Run `npm run build` - ensure successful build
+
+### Short-term (Next 1-2 Weeks)
+
+4. **Phase 4: Breeding & Genetics Engine**
+   - Mate checker with COI calculation
+   - Farm saturation analysis
+   - Dual-sire pedigree support
+   - Closure table implementation
+
+5. **Phase 5: Sales Agreements & AVS**
+   - 5-step wizard (B2C/B2B/Rehoming)
+   - Gotenberg PDF generation
+   - AVS link tracking
+   - 3-day reminder tasks
+
+### Phase Milestones
+
+| Phase | Target Date | Status |
+|-------|-------------|--------|
+| Phase 0 | Apr 22 | ✅ Complete |
+| Phase 1 | Apr 25 | ✅ Complete |
+| Phase 2 | Apr 26 | ✅ Complete |
+| Phase 3 | Apr 30 | 🔄 Next |
+| Phase 4 | May 7 | 📋 Planned |
+| Phase 5 | May 14 | 📋 Planned |
+
 ## System Integration
 
 ### Available Tools
@@ -393,27 +491,119 @@ You are successful when:
 - **Storing PII without consent**: Check PDPA consent first
 - **Magic numbers**: Use constants from `lib/constants.ts`
 - **Synchronous AVS calls**: Use Celery for compliance tasks
+- **Using @paginate with wrapped responses**: Manual pagination for custom responses
+- **Python-style docstrings in TypeScript**: Use JSDoc `/** */` not `"""`
+- **Duplicate imports**: Check imports before committing
+- **Importing services at module level in models**: Use deferred imports to avoid circular deps
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Session not persisting**
-- Check Redis connection: `redis-cli ping`
-- Verify `SESSION_ENGINE` uses Redis
-- Check cookie domain settings
+```bash
+# Check Redis connection
+redis-cli ping
+
+# Verify session engine
+python -c "from django.conf import settings; print(settings.SESSION_ENGINE)"
+# Should be: django.contrib.sessions.backends.cache
+
+# Check cookie in browser DevTools
+# Look for 'sessionid' cookie with HttpOnly, Secure, SameSite=Lax
+```
 
 **Ninja router not registering**
-- Ensure `api.add_router()` called in `api/__init__.py`
-- Check for import errors in router files
-- Clear `__pycache__` after changes
+```bash
+# Ensure router added in api/__init__.py
+# Check for import errors
+python -c "from api import api; print(api.urls)"
+
+# Clear Python cache
+find . -type d -name __pycache__ -exec rm -rf {} +
+find . -type f -name "*.pyc" -delete
+```
+
+**Migration errors**
+```bash
+# Check migration status
+python manage.py showmigrations
+
+# Reset if needed (CAUTION: data loss)
+python manage.py migrate operations zero
+python manage.py migrate operations
+```
 
 **Frontend proxy 404**
-- Verify Django running on :8000
-- Check proxy route in `app/api/proxy/[...path]/route.ts`
-- Test backend directly: `curl http://localhost:8000/health/`
+```bash
+# Verify Django running
+curl http://localhost:8000/health/
+
+# Test proxy route
+curl http://localhost:3000/api/proxy/health/
+
+# Check proxy logs in browser Network tab
+```
 
 **Type errors after changes**
-- Run `npm run typecheck` to identify issues
-- Check Pydantic schema matches ORM model
-- Verify all required fields present
+```bash
+cd frontend
+npm run typecheck
+
+# Common fixes:
+# - Check Pydantic schema matches ORM model
+# - Verify all required fields present
+# - Ensure no 'any' types with strict: true
+```
+
+### Phase 2 Specific Issues
+
+**Circular import in vaccine service**
+```python
+# Problem: Importing service in model save() causes circular import
+# Solution: Defer import inside method
+def save(self, *args, **kwargs):
+    try:
+        from .services.vaccine import calc_vaccine_due
+        self.due_date = calc_vaccine_due(self.dog, self.vaccine_name, self.date_given)
+    except ImportError:
+        # Service not yet available, skip auto-calculation
+        pass
+    super().save(*args, **kwargs)
+```
+
+**@paginate decorator issues**
+```python
+# Problem: @paginate doesn't work well with wrapped response objects
+# Solution: Use manual pagination
+@router.get("/", response=DogListResponse)
+def list_dogs(request, page: int = 1, per_page: int = 25):
+    qs = Dog.objects.all()
+    total = qs.count()
+    paginated = qs[(page-1)*per_page : page*per_page]
+    return {"count": total, "results": list(paginated), "page": page, "per_page": per_page}
+```
+
+**Test discovery failure**
+```bash
+# Ensure __init__.py exists in test directories
+touch apps/operations/tests/__init__.py
+
+# Run with verbose output
+python -m pytest apps/operations/tests/ -v --tb=short
+```
+
+**Python-style docstrings in TypeScript**
+```typescript
+// WRONG - Python triple quotes:
+"""
+Component description
+"""
+
+// CORRECT - JSDoc comments:
+/**
+ * Component description
+ * =====================
+ * Detailed explanation here.
+ */
+```

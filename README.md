@@ -509,6 +509,27 @@ Production uses full containerization with 11 services:
 
 ---
 
+## 📈 Project Status
+
+### Phase Completion
+
+| Phase | Status | Completion Date | Key Deliverables |
+|-------|--------|-----------------|------------------|
+| **0** | ✅ Complete | Apr 22, 2026 | Infrastructure scaffold, Docker, CI/CD |
+| **1** | ✅ Complete | Apr 25, 2026 | Auth, BFF proxy, RBAC, design system |
+| **2** | ✅ Complete | Apr 26, 2026 | Domain models, dog CRUD, vaccinations, alerts |
+| **3** | 🔄 Planned | - | Ground ops, PWA, Draminski, SSE |
+| **4** | 📋 Backlog | - | Breeding, COI, genetics engine |
+| **5** | 📋 Backlog | - | Sales agreements, AVS tracking |
+| **6** | 📋 Backlog | - | Compliance, NParks reporting |
+| **7** | 📋 Backlog | - | Customer DB, marketing blast |
+| **8** | 📋 Backlog | - | Dashboard, finance exports |
+| **9** | 📋 Backlog | - | Observability, production readiness |
+
+**Overall Progress:** 3 of 9 Phases Complete (33%)
+
+---
+
 ## 🧪 Development
 
 ### Code Style & Linting
@@ -590,6 +611,38 @@ or use is strictly prohibited.
 - **Django Community** for the excellent framework
 - **Next.js Team** for the App Router and server components
 - **Radix UI** for accessible, unstyled components
+
+---
+
+## 📊 Recent Changes
+
+### Phase 2 Completion (April 26, 2026)
+
+#### New Models
+- `Dog` with pedigree (self-referential FKs for dam/sire)
+- `HealthRecord` with vitals tracking (temperature, weight)
+- `Vaccination` with auto-calculated due dates
+- `DogPhoto` for media management with customer visibility
+
+#### New API Endpoints
+- `/api/v1/dogs/` - Dog CRUD with filtering, pagination
+- `/api/v1/dogs/{id}/health/` - Health records
+- `/api/v1/dogs/{id}/vaccinations/` - Vaccinations with due dates
+- `/api/v1/dogs/{id}/photos/` - Photo management
+- `/api/v1/alerts/` - Dashboard alert cards
+
+#### New Frontend Components
+- `ChipSearch` - Partial microchip search with debouncing
+- `DogTable` - Sortable table with WhatsApp copy
+- `DogFilters` - Status, breed, entity filtering
+- `AlertCards` - 6 alert types (vaccines, rehome, NParks)
+- `DogProfile` - 7-tab profile with role-based locking
+
+#### Infrastructure
+- CSV importer with transactional safety
+- Vaccine due date calculator (puppy series → annual)
+- 25+ backend tests (models, CRUD, entity scoping)
+- Django migrations applied (`operations.0001_initial`)
 
 ---
 
