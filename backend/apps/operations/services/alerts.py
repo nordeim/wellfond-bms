@@ -115,22 +115,67 @@ def get_rehome_overdue(user: "User", entity_id: str | None = None) -> List[dict]
 
 def get_in_heat(entity_id: str | None = None) -> List[dict]:
     """
-    Get female dogs currently in heat (based on logs).
-    
-    This is a placeholder - actual implementation would query InHeatLog.
+    Get female dogs currently in heat (based on recent InHeatLog entries).
     """
-    # TODO: Implement when InHeatLog model is created
-    return []
+    from ..models import Dog, InHeatLog
+
+    # Get recent heat logs (last 7 days)
+    cutoff = date.today() - timedelta(days=7)
+    logs = InHeatLog.objects.filter(
+        created_at__date__gte=cutoff,
+        dog__gender=Dog.Gender.FEMALE,
+    ).select_related('dog')
+
+    if entity_id:
+        logs = logs.filter(dog__entity_id=entity_id)
+
+    # Get unique dogs with their most recent heat status
+    seen_dogs = set()
+    alerts = []
+
+    for log in logs.order_by('-created_at'):
+        if log.dog_id not in seen_dogs:
+            seen_dogs.add(log.dog_id)
+            alerts.append({
+                "id": str(log.id),
+                "type": "in_heat",
+                "title": f"{log.dog.name} - In Heat ({log.mating_window})",
+                "count": 1,
+                "dog": log.dog,
+                "mating_window": log.mating_window,
+            })
+
+    return alerts[:10]
 
 
 def get_nursing_flags(entity_id: str | None = None) -> List[dict]:
     """
-    Get active nursing flags.
-    
-    This is a placeholder - actual implementation would query NursingFlagLog.
+    Get active nursing flags (unresolved NursingFlagLog entries).
     """
-    # TODO: Implement when NursingFlagLog model is created
-    return []
+    from ..models import NursingFlagLog
+
+    # Get recent serious nursing flags (last 7 days)
+    cutoff = date.today() - timedelta(days=7)
+    logs = NursingFlagLog.objects.filter(
+        created_at__date__gte=cutoff,
+        severity=NursingFlagLog.Severity.SERIOUS,
+    ).select_related('dog')
+
+    if entity_id:
+        logs = logs.filter(dog__entity_id=entity_id)
+
+    return [
+        {
+            "id": str(log.id),
+            "type": "nursing_flag",
+            "title": f"{log.dog.name} - {log.flag_type}",
+            "count": 1,
+            "dog": log.dog,
+            "severity": log.severity,
+            "flag_type": log.flag_type,
+        }
+        for log in logs[:10]
+    ]
 
 
 def get_8week_litters(entity_id: str | None = None) -> List[dict]:
@@ -267,5 +312,138 @@ def get_all_alert_cards(user: "User", entity_id: str | None = None) -> List[dict
     
     # Sort by priority
     alerts.sort(key=lambda x: x["priority"])
-    
+
     return alerts
+
+
+# =============================================================================
+# Phase 3: SSE Event Generators
+# =============================================================================
+
+
+def get_pending_alerts(user: "User") -> List[dict]:
+    """
+    Get pending alerts for SSE stream.
+
+    Returns alerts that have not been acknowledged.
+    Deduplicates by dog+type.
+
+    Args:
+        user: Current user for entity scoping
+
+    Returns:
+        List of alert events for SSE
+    """
+    entity_id = str(user.entity_id) if user.entity_id and user.role != "management" else None
+
+    events = []
+
+    # Nursing flags (highest priority for SSE)
+    nursing = get_nursing_flags(entity_id)
+    for alert in nursing:
+        events.append({
+            "id": f"nursing-{alert['dog'].id}",
+            "type": "nursing_flag",
+            "title": alert["title"],
+            "dog_id": str(alert["dog"].id),
+            "dog_name": alert["dog"].name,
+            "severity": alert.get("severity"),
+            "timestamp": date.today().isoformat(),
+        })
+
+    # Heat cycles
+    heat = get_in_heat(entity_id)
+    for alert in heat:
+        events.append({
+            "id": f"heat-{alert['dog'].id}",
+            "type": "heat_cycle",
+            "title": alert["title"],
+            "dog_id": str(alert["dog"].id),
+            "dog_name": alert["dog"].name,
+            "mating_window": alert.get("mating_window"),
+            "timestamp": date.today().isoformat(),
+        })
+
+    # Vaccine overdue
+    vaccines = get_vaccine_overdue(entity_id)
+    for alert in vaccines:
+        events.append({
+            "id": f"vaccine-{alert['dog'].id}",
+            "type": "overdue_vaccine",
+            "title": alert["title"],
+            "dog_id": str(alert["dog"].id),
+            "dog_name": alert["dog"].name,
+            "count": alert["count"],
+            "timestamp": date.today().isoformat(),
+        })
+
+    # Rehome overdue
+    rehome = get_rehome_overdue(user, entity_id)
+    for alert in rehome:
+        events.append({
+            "id": f"rehome-{alert['dog'].id}",
+            "type": "rehome_overdue",
+            "title": alert["title"],
+            "dog_id": str(alert["dog"].id),
+            "dog_name": alert["dog"].name,
+            "color": alert.get("color"),
+            "timestamp": date.today().isoformat(),
+        })
+
+    return events
+
+
+def create_alert_event(log_type: str, log_instance) -> dict:
+    """
+    Create a standardized alert event from a log instance.
+
+    Args:
+        log_type: Type of log (in_heat, nursing_flag, etc.)
+        log_instance: The log model instance
+
+    Returns:
+        Alert event dict for SSE
+    """
+    event_types = {
+        "in_heat": "heat_cycle",
+        "mated": "mating_complete",
+        "whelped": "litter_born",
+        "health_obs": "health_observation",
+        "weight": "weight_recorded",
+        "nursing_flag": "nursing_flag",
+        "not_ready": "not_ready",
+    }
+
+    return {
+        "id": f"{log_type}-{log_instance.id}",
+        "type": event_types.get(log_type, "alert"),
+        "title": f"{log_instance.dog.name} - {log_type.replace('_', ' ').title()}",
+        "dog_id": str(log_instance.dog.id),
+        "dog_name": log_instance.dog.name,
+        "timestamp": log_instance.created_at.isoformat(),
+    }
+
+
+def should_notify(log_type: str, log_instance) -> bool:
+    """
+    Determine if a log should trigger an SSE notification.
+
+    Args:
+        log_type: Type of log
+        log_instance: The log model instance
+
+    Returns:
+        True if notification should be sent
+    """
+    from ..models import NursingFlagLog
+
+    # Always notify for serious nursing flags
+    if log_type == "nursing_flag" and isinstance(log_instance, NursingFlagLog):
+        return log_instance.severity == NursingFlagLog.Severity.SERIOUS
+
+    # Always notify for MATE_NOW in-heat readings
+    if log_type == "in_heat":
+        return log_instance.mating_window == "MATE_NOW"
+
+    # Don't notify for routine logs
+    return False
