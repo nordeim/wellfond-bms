@@ -121,18 +121,18 @@ export interface BreedingRecordListItem {
 }
 
 export interface BreedingRecordFilters {
-  dam_chip?: string;
-  sire_chip?: string;
-  date_from?: string;
-  date_to?: string;
-  has_litter?: boolean;
+  dam_chip?: string | undefined;
+  sire_chip?: string | undefined;
+  date_from?: string | undefined;
+  date_to?: string | undefined;
+  has_litter?: boolean | undefined;
 }
 
 export interface LitterFilters {
-  dam_chip?: string;
-  sire_chip?: string;
-  whelp_date_from?: string;
-  whelp_date_to?: string;
+  dam_chip?: string | undefined;
+  sire_chip?: string | undefined;
+  whelp_date_from?: string | undefined;
+  whelp_date_to?: string | undefined;
 }
 
 // =============================================================================
@@ -144,7 +144,7 @@ export function useMateCheck() {
     mutationFn: async (data: {
       dam_chip: string;
       sire1_chip: string;
-      sire2_chip?: string;
+      sire2_chip?: string | undefined;
     }) => {
       const response = await api.post<MateCheckResult>(
         "/api/v1/breeding/mate-check/",
@@ -165,12 +165,12 @@ export function useMateCheckOverride() {
     mutationFn: async (data: {
       dam_id: string;
       sire1_id: string;
-      sire2_id?: string;
+      sire2_id?: string | undefined;
       coi_pct: number;
       saturation_pct: number;
       verdict: string;
       reason: string;
-      notes?: string;
+      notes?: string | undefined;
     }) => {
       const response = await api.post("/api/v1/breeding/mate-check/override/", data);
       return response;
@@ -208,12 +208,17 @@ export function useLitters(filters?: LitterFilters) {
   return useQuery({
     queryKey: ["litters", filters],
     queryFn: async () => {
+      const params: Record<string, string | undefined> = {};
+      if (filters?.dam_chip) params.dam_chip = filters.dam_chip;
+      if (filters?.sire_chip) params.sire_chip = filters.sire_chip;
+      if (filters?.whelp_date_from) params.whelp_date_from = filters.whelp_date_from;
+      if (filters?.whelp_date_to) params.whelp_date_to = filters.whelp_date_to;
       const response = await api.get<{
         litters: LitterListItem[];
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/litters/", { params: filters });
+      }>("/api/v1/breeding/litters/", Object.keys(params).length > 0 ? { params } : undefined);
       return response;
     },
   });
@@ -373,12 +378,18 @@ export function useBreedingRecords(filters?: BreedingRecordFilters) {
   return useQuery({
     queryKey: ["breeding-records", filters],
     queryFn: async () => {
+      const params: Record<string, string | boolean | undefined> = {};
+      if (filters?.dam_chip) params.dam_chip = filters.dam_chip;
+      if (filters?.sire_chip) params.sire_chip = filters.sire_chip;
+      if (filters?.date_from) params.date_from = filters.date_from;
+      if (filters?.date_to) params.date_to = filters.date_to;
+      if (filters?.has_litter !== undefined) params.has_litter = filters.has_litter;
       const response = await api.get<{
         records: BreedingRecordListItem[];
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/records/", { params: filters });
+      }>("/api/v1/breeding/records/", Object.keys(params).length > 0 ? { params } : undefined);
       return response;
     },
   });

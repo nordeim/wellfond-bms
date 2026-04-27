@@ -295,7 +295,8 @@ backend/apps/breeding/
 | Saturation entity scoping | QuerySet filter by entity_id | Apr 27 |
 | Wright's formula accuracy | Verified against known pedigree examples | Apr 27 |
 | Animated gauge performance | SVG with Framer Motion, no canvas | Apr 28 |
-| TypeScript optional params | Used `| undefined` with exactOptionalPropertyTypes | Apr 28 |
+| TypeScript optional params | Used `\| undefined` with exactOptionalPropertyTypes | Apr 28 |
+| TypeScript build error | Fixed 4 `exactOptionalPropertyTypes` errors in hooks/use-breeding.ts and components/breeding/mate-check-form.tsx | Apr 28 |
 
 ---
 

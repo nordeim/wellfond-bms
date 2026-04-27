@@ -104,12 +104,16 @@ export function MateCheckForm() {
       return;
     }
 
+    const checkData: { dam_chip: string; sire1_chip: string; sire2_chip?: string } = {
+      dam_chip: damChip,
+      sire1_chip: sire1Chip,
+    };
+    if (useDualSire && sire2Chip) {
+      checkData.sire2_chip = sire2Chip;
+    }
+
     checkMate(
-      {
-        dam_chip: damChip,
-        sire1_chip: sire1Chip,
-        sire2_chip: useDualSire && sire2Chip ? sire2Chip : undefined,
-      },
+      checkData,
       {
         onSuccess: (data) => {
           setResult(data);
@@ -124,17 +128,32 @@ export function MateCheckForm() {
   const handleOverride = () => {
     if (!result || !overrideReason) return;
 
+    const overrideData: {
+      dam_id: string;
+      sire1_id: string;
+      sire2_id?: string;
+      coi_pct: number;
+      saturation_pct: number;
+      verdict: string;
+      reason: string;
+      notes?: string;
+    } = {
+      dam_id: result.dam_id,
+      sire1_id: result.sire1_id,
+      coi_pct: result.coi_pct,
+      saturation_pct: result.saturation_pct,
+      verdict: result.verdict,
+      reason: overrideReason,
+    };
+    if (result.sire2_id) {
+      overrideData.sire2_id = result.sire2_id;
+    }
+    if (overrideNotes) {
+      overrideData.notes = overrideNotes;
+    }
+
     createOverride(
-      {
-        dam_id: result.dam_id,
-        sire1_id: result.sire1_id,
-        sire2_id: result.sire2_id,
-        coi_pct: result.coi_pct,
-        saturation_pct: result.saturation_pct,
-        verdict: result.verdict,
-        reason: overrideReason,
-        notes: overrideNotes,
-      },
+      overrideData,
       {
         onSuccess: () => {
           setShowOverride(false);
