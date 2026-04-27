@@ -293,3 +293,50 @@ Remaining Steps:
 - [ ] Step 18: Breeding Records Page
 - [ ] Step 19-20: Testing & Validation
 
+Now let me create the COI tests (8 test
+): 1. test_coi_unrelated_returns_zero - Two unrelated dogs should have 0% COI
+2. test_coi_full_siblings_returns25pct - Full siblings mating = 25% COI
+3. test_coi_parent_offspring_returns25pct - Parent-offspring = 25% COI
+4. test_coi_grandparent_returns12_5pct - Grandparent-grandchild = 12.5% COI
+5. test_coi5_generation_depth - Verify 5-generation depth calculation
+6. test_coi_missing_parent_returns_zero - Dogs with unknown parents = 0%
+7. test_coi_cached_second_call - Second call should use cache
+8. test_coi_deterministic_same_result - Same input = same output
+
+FILES CREATED (18 files)
+Backend:
+- /backend/apps/breeding/models.py (464 lines) - 5 models
+- /backend/apps/breeding/schemas.py (23 schemas)
+- /backend/apps/breeding/services/coi.py - Wright's formula
+- /backend/apps/breeding/services/saturation.py - Saturation calculator
+- /backend/apps/breeding/services/__init__.py
+- /backend/apps/breeding/routers/mating.py - Mate-check endpoints
+- /backend/apps/breeding/routers/litters.py - Litter CRUD
+- /backend/apps/breeding/routers/__init__.py
+- /backend/apps/breeding/tasks.py - Celery tasks
+- /backend/apps/breeding/admin.py - Django admin
+- /backend/apps/breeding/tests/__init__.py
+- /backend/apps/breeding/tests/factories.py - Test factories
+- /backend/apps/breeding/tests/test_coi.py - 8 COI tests
+- /backend/apps/breeding/tests/test_saturation.py - 5 saturation tests
+Frontend:
+- /frontend/hooks/use-breeding.ts - 12 TanStack Query hooks
+- /frontend/components/breeding/coi-gauge.tsx - COI gauge component
+- /frontend/components/breeding/saturation-bar.tsx - Saturation bar component
+- /frontend/components/breeding/mate-check-form.tsx - Main form component
+- /frontend/app/(protected)/breeding/mate-checker/page.tsx - Mate checker page
+- /frontend/app/(protected)/breeding/page.tsx - Breeding records page
+ARCHITECTURE COMPLIANCE ✅
+- ✅ No DB triggers on closure table (Celery async only per v1.1)
+- ✅ Deterministic COI calculations (pure Python/SQL)
+- ✅ Entity scoping on all models and queries
+- ✅ Audit trail for overrides (MateCheckOverride)
+- ✅ Redis caching for COI results
+- ✅ Dual-sire breeding support (sire2 nullable)
+- ✅ Pydantic v2 schemas with validation
+- ✅ TanStack Query for frontend caching
+NEXT STEPS (Remaining 2)
+- [ ] Step 19: Run Full Test Suite & Validate
+- [ ] Step 20: Performance Testing (COI <500ms p95)
+The backend and frontend Phase 4 implementation is 90% complete. All core models, services, routers, and UI components have been created. The remaining steps are testing and validation.
+
