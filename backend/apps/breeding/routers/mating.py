@@ -12,15 +12,15 @@ Endpoints:
 import logging
 from typing import List
 
+from typing import List
+
 from django.db import IntegrityError
 from ninja import Router
 from ninja.errors import HttpError
-from ninja.pagination import paginate
 
 from apps.core.auth import AuthenticationService
-from apps.core.middleware import require_permissions
 from apps.core.models import AuditLog
-from apps.core.permissions import require_admin, require_entity_access
+from apps.core.permissions import require_entity_access, require_role
 from apps.operations.models import Dog
 
 from ..models import MateCheckOverride
@@ -28,7 +28,7 @@ from ..schemas import (
     MateCheckRequest,
     MateCheckResponse,
     OverrideCreate,
-    OverrideHistoryResponse,
+    OverrideListItem,
     OverrideResponse,
 )
 from ..services.coi import calc_coi, get_coi_threshold
@@ -227,9 +227,8 @@ def create_override(request, data: OverrideCreate):
     }
 
 
-@router.get("/mate-check/history", response=OverrideHistoryResponse)
-@paginate
-def list_overrides(request):
+@router.get("/mate-check/history", response=List[OverrideListItem])
+def list_overrides(request, page: int = 1, per_page: int = 20):
     """
     List mate check override history.
 
@@ -249,9 +248,15 @@ def list_overrides(request):
     if not user.has_role("management"):
         queryset = queryset.filter(entity_id=user.entity_id)
 
+    # Manual pagination
+    total = queryset.count()
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_qs = queryset[start:end]
+
     # Convert to response format
     overrides = []
-    for override in queryset:
+    for override in page_qs:
         overrides.append({
             "id": override.id,
             "dam_id": override.dam.id,
@@ -270,9 +275,4 @@ def list_overrides(request):
             "created_at": override.created_at.isoformat(),
         })
 
-    return {
-        "overrides": overrides,
-        "total": queryset.count(),
-        "page": 1,
-        "per_page": 20,
-    }
+    return overrides

@@ -266,3 +266,12 @@ collecting ... collected 11 items
 # Run tests after fixes
 $ DJANGO_SETTINGS_MODULE=config.settings.development PYTHONPATH=/home/project/wellfond-bms/backend:$PYTHONPATH python -m pytest tests/test_logs.py -v --tb=short 2>&1
 
+# Create migrations for breeding app in /home/project/wellfond-bms/backend
+$ python manage.py makemigrations breeding 2>&1
+
+# Apply breeding migrations in /home/project/wellfond-bms/backend
+$ python manage.py migrate breeding 2>&1
+
+# Verify API loads with Django settings in /home/project/wellfond-bms/backend
+$ DJANGO_SETTINGS_MODULE=config.settings.development python -c "from api import api; print('API loaded successfully'); print(f'Total routes: {len(api.urls)}')" 2>&1
+

@@ -53,8 +53,13 @@ api.add_router("/health", health_router, tags=["health"])
 api.add_router("/ground-logs", logs_router, tags=["ground-logs"])
 api.add_router("/stream", stream_router, tags=["sse-stream"])
 
+# Breeding & Genetics routers (Phase 4)
+from apps.breeding.routers import mating_router, litters_router
+
+api.add_router("/breeding/mate-check", mating_router, tags=["breeding"])
+api.add_router("/breeding", litters_router, tags=["breeding"])
+
 # Additional routers will be registered here as apps are built:
-# api.add_router("/breeding", breeding_router, tags=["breeding"])
 # api.add_router("/sales", sales_router, tags=["sales"])
 # api.add_router("/compliance", compliance_router, tags=["compliance"])
 # api.add_router("/customers", customers_router, tags=["customers"])

@@ -122,6 +122,27 @@ class OverrideHistoryResponse(Schema):
     per_page: int
 
 
+class OverrideListItem(Schema):
+    """List item schema for override history (flat structure)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    dam_id: UUID
+    dam_name: str
+    sire1_id: UUID
+    sire1_name: str
+    sire2_id: Optional[UUID] = None
+    sire2_name: Optional[str] = None
+    coi_pct: float
+    saturation_pct: float
+    verdict: str
+    override_reason: str
+    override_notes: Optional[str] = None
+    staff_name: str
+    staff_role: str
+    created_at: str
+
+
 # =============================================================================
 # Breeding Record Schemas
 # =============================================================================

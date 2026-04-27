@@ -13,15 +13,14 @@ Endpoints:
 """
 
 import logging
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
 from ninja import Router
 from ninja.errors import HttpError
-from ninja.pagination import paginate
 
 from apps.core.auth import AuthenticationService
-from apps.core.middleware import require_permissions
 from apps.core.models import AuditLog
 from apps.core.permissions import require_entity_access, require_role
 from apps.operations.models import Dog
@@ -46,9 +45,8 @@ logger = logging.getLogger(__name__)
 router = Router(tags=["litters"])
 
 
-@router.get("/litters", response=PaginatedLitters)
-@paginate
-def list_litters(request, filters: LitterFilters = None):
+@router.get("/litters", response=List[LitterListItem])
+def list_litters(request, dam_chip: str = None, sire_chip: str = None, whelp_date_from: date = None, whelp_date_to: date = None, page: int = 1, per_page: int = 20):
     """
     List litters with optional filters.
 
@@ -71,25 +69,30 @@ def list_litters(request, filters: LitterFilters = None):
         queryset = queryset.filter(entity_id=user.entity_id)
 
     # Apply filters
-    if filters:
-        if filters.dam_chip:
-            queryset = queryset.filter(
-                breeding_record__dam__microchip__icontains=filters.dam_chip
-            )
-        if filters.sire_chip:
-            queryset = queryset.filter(
-                breeding_record__sire1__microchip__icontains=filters.sire_chip
-            ) | queryset.filter(
-                breeding_record__sire2__microchip__icontains=filters.sire_chip
-            )
-        if filters.whelp_date_from:
-            queryset = queryset.filter(whelp_date__gte=filters.whelp_date_from)
-        if filters.whelp_date_to:
-            queryset = queryset.filter(whelp_date__lte=filters.whelp_date_to)
+    if dam_chip:
+        queryset = queryset.filter(
+            breeding_record__dam__microchip__icontains=dam_chip
+        )
+    if sire_chip:
+        queryset = queryset.filter(
+            breeding_record__sire1__microchip__icontains=sire_chip
+        ) | queryset.filter(
+            breeding_record__sire2__microchip__icontains=sire_chip
+        )
+    if whelp_date_from:
+        queryset = queryset.filter(whelp_date__gte=whelp_date_from)
+    if whelp_date_to:
+        queryset = queryset.filter(whelp_date__lte=whelp_date_to)
+
+    # Manual pagination
+    total = queryset.count()
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_qs = queryset[start:end]
 
     # Build response
     litters = []
-    for litter in queryset:
+    for litter in page_qs:
         litters.append({
             "id": litter.id,
             "breeding_record_id": litter.breeding_record_id,
@@ -103,12 +106,7 @@ def list_litters(request, filters: LitterFilters = None):
             "puppy_count": litter.puppies.count(),
         })
 
-    return {
-        "litters": litters,
-        "total": queryset.count(),
-        "page": 1,
-        "per_page": 20,
-    }
+    return litters
 
 
 @router.post("/litters", response=LitterDetail)
