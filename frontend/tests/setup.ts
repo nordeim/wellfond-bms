@@ -1,4 +1,5 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
 
 /**
  * Wellfond BMS - Vitest Test Setup
@@ -6,44 +7,27 @@ import "@testing-library/jest-dom";
  * Global test configuration and utilities
  */
 
-// Mock matchMedia for responsive component tests
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn().mockImplementation((query: string) => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
   })),
 });
 
-// Mock IntersectionObserver for scroll-triggered components
 class MockIntersectionObserver {
-  observe = jest.fn();
-  disconnect = jest.fn();
-  unobserve = jest.fn();
+  observe = vi.fn();
+  disconnect = vi.fn();
+  unobserve = vi.fn();
 }
 
 Object.defineProperty(window, "IntersectionObserver", {
   writable: true,
   value: MockIntersectionObserver,
 });
-
-// Suppress console errors in tests (optional - remove for debugging)
-// const originalError = console.error;
-// beforeAll(() => {
-//   console.error = (...args: any[]) => {
-//     if (/Warning.*not wrapped in act/.test(args[0])) {
-//       return;
-//     }
-//     originalError.call(console, ...args);
-//   };
-// });
-
-// afterAll(() => {
-//   console.error = originalError;
-// });

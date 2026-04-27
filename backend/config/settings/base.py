@@ -28,15 +28,16 @@ INSTALLED_APPS = [
     # Third-party
     "corsheaders",
     "django_celery_beat",
-    # Domain apps
+    # Domain apps — implemented
     "apps.core",
     "apps.operations",
     "apps.breeding",
-    "apps.sales",
-    "apps.compliance",
-    "apps.customers",
-    "apps.finance",
-    "apps.ai_sandbox",
+    # Domain apps — to be added in future phases:
+    # Phase 5: "apps.sales",
+    # Phase 6: "apps.compliance",
+    # Phase 7: "apps.customers",
+    # Phase 8: "apps.finance",
+    # Phase 9: "apps.ai_sandbox",
 ]
 
 MIDDLEWARE = [
