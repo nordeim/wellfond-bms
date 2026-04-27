@@ -275,3 +275,12 @@ $ python manage.py migrate breeding 2>&1
 # Verify API loads with Django settings in /home/project/wellfond-bms/backend
 $ DJANGO_SETTINGS_MODULE=config.settings.development python -c "from api import api; print('API loaded successfully'); print(f'Total routes: {len(api.urls)}')" 2>&1
 
+# Run test_auth.py to verify fixes
+$ cd /home/project/wellfond-bms/backend && DJANGO_SETTINGS_MODULE=config.settings.development python -m pytest apps/core/tests/test_auth.py -v --tb=short 2>&1
+
+# Run test_permissions.py to verify fixes
+$ DJANGO_SETTINGS_MODULE=config.settings.development python -m pytest apps/core/tests/test_permissions.py -v --tb=short 2>&1 | head -80
+
+# Run test_permissions.py from project root
+$ cd /home/project/wellfond-bms && DJANGO_SETTINGS_MODULE=backend.config.settings.development python -m pytest backend/apps/core/tests/test_permissions.py -v --tb=short 2>&1
+

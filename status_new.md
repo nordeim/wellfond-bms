@@ -1558,3 +1558,38 @@ Both documents are now aligned with:
 - ✅ Current codebase (Phase 4 breeding models, COI service, tests)
 - ✅ Recent commits (April 28 completion date)
 
+Remediation Complete — Summary
+All 5 fixes executed and verified using TDD
+Fix	Finding	Action	TDD Status	Tests
+Fix A	HIGH-001: Empty Stub Apps	Removed 5 empty apps from INSTALLED_APPS; added phase-plan comments	app_registry.test = PASSED	1 new gate test
+Fix B	HIGH-002: CHA YUAN (downgraded)	Deleted stale docker-compose.yml.bak	Clean	—
+Fix C	HIGH-003: Missing use-auth.ts	Created hooks/use-auth.ts with 10 React hooks wrapping lib/auth.ts	4/4 tests pass	1 new test file
+Fix D	HIGH-004: Missing offline-queue.ts	Created lib/offline-queue.ts framework-agnostic module; refactored hook	7/7 tests pass	1 new test file
+Fix E	HIGH-005: Test Split	Added root pytest.ini + conftest.py; project-level test discovery	3/3 tests pass	1 new test file
+Verification Results
+Backend:  17/17 PASSING (9 COI + 7 Saturation + 1 App Registry gate)
+Frontend: 11/11 PASSING (7 offline-queue + 4 use-auth)
+TypeScript: 0 errors
+ESLint:      0 errors
+Django:      System check — no issues (0 silenced)
+Files Changed
+Status	File	Description
+Modified	config/settings/base.py	Removed 5 empty stub apps from INSTALLED_APPS
+Created	lib/offline-queue.ts	Framework-agnostic offline queue module (83 lines)
+Created	hooks/use-auth.ts	React auth hooks wrapping lib/auth.ts (103 lines)
+Refactored	hooks/use-offline-queue.ts	Delegates to lib/offline-queue.ts
+Created	pytest.ini (root)	Project-level test configuration
+Created	conftest.py (root)	Django setup for root-level pytest
+Created	tests/__init__.py	Proper test package structure
+Created	tests/test_discovery.py	3 tests verifying project-level pytest config
+Created	tests/lib/offline-queue.test.ts	7 TDD tests for offline-queue module
+Created	tests/hooks/use-auth.test.ts	4 TDD tests for use-auth hooks
+Created	apps/core/tests/test_app_registry.py	Gate test preventing empty app registration
+Fixed	tests/setup.ts	Fixed vitest compatibility (jest.fn → vi.fn)
+Deleted	infra/docker/docker-compose.yml.bak	Stale backup file
+Backward Compatibility
+- lib/auth.ts — untouched (existing consumers unaffected)
+- useOfflineQueue() hook — same public API, delegates internally
+- All existing COI/Saturation tests — still pass
+- Django settings — check confirms no issues
+

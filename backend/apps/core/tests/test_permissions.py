@@ -20,8 +20,8 @@ from apps.core.permissions import (
     require_role,
     scope_entity,
     enforce_pdpa,
-    get_current_user,
 )
+from apps.core.auth import get_authenticated_user
 from apps.operations.models import Dog
 
 
