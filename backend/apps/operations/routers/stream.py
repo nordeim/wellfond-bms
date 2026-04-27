@@ -9,6 +9,7 @@ import json
 from typing import AsyncGenerator
 from uuid import UUID
 
+from asgiref.sync import sync_to_async
 from django.http import StreamingHttpResponse
 from ninja import Router
 
@@ -43,9 +44,8 @@ async def _generate_alert_stream(
 
     while True:
         try:
-            # Get pending alerts
-            alerts = await asyncio.to_thread(
-                get_pending_alerts,
+            # Get pending alerts using sync_to_async for proper thread handling
+            alerts = await sync_to_async(get_pending_alerts, thread_sensitive=True)(
                 user_id=user_id,
                 entity_id=entity_id,
                 role=user_role,

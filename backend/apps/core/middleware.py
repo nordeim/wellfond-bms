@@ -6,10 +6,13 @@ Idempotency + Entity scoping middleware for Phase 1.
 
 import hashlib
 import json
+import logging
 from typing import Callable, Optional
 
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.http import HttpRequest, HttpResponse, JsonResponse
+
+logger = logging.getLogger(__name__)
 
 
 class IdempotencyMiddleware:
@@ -52,7 +55,9 @@ class IdempotencyMiddleware:
 
         # Generate cache key from request fingerprint
         fingerprint = self._generate_fingerprint(request, idempotency_key)
-        cached_response = cache.get(fingerprint)
+        
+        # Use dedicated idempotency cache to avoid eviction
+        cached_response = caches["idempotency"].get(fingerprint)
 
         if cached_response:
             # Return cached response with Idempotency-Replay header
@@ -68,7 +73,8 @@ class IdempotencyMiddleware:
 
         if 200 <= response.status_code < 300:
             try:
-                cache.set(
+                # Store in dedicated idempotency cache
+                caches["idempotency"].set(
                     fingerprint,
                     {
                         "data": json.loads(response.content),
@@ -139,19 +145,26 @@ class AuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        import sys
-        print(f"DEBUG AuthMiddleware: Processing {request.method} {request.path}", file=sys.stderr)
-        print(f"DEBUG AuthMiddleware: Cookies: {dict(request.COOKIES)}", file=sys.stderr)
+        # Debug logging (only in DEBUG mode)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Processing {request.method} {request.path}",
+                extra={"method": request.method, "path": request.path}
+            )
 
         # Skip for public paths
         if self._is_public_path(request.path):
-            print(f"DEBUG AuthMiddleware: Public path, skipping auth", file=sys.stderr)
+            logger.debug(f"Public path {request.path}, skipping auth")
             return self.get_response(request)
 
         # Attach user from session cookie
-        print(f"DEBUG AuthMiddleware: Authenticating...", file=sys.stderr)
+        logger.debug(f"Authenticating request to {request.path}")
         self._authenticate(request)
-        print(f"DEBUG AuthMiddleware: request.user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', False)}", file=sys.stderr)
+        
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Auth result: user={request.user}, is_authenticated={getattr(request.user, 'is_authenticated', False)}"
+            )
 
         return self.get_response(request)
 
