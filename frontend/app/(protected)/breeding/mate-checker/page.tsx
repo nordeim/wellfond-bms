@@ -21,8 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { MateCheckForm } from "@/components/breeding/mate-check-form";
 import { COIBadge } from "@/components/breeding/coi-gauge";
 import { SaturationBadge } from "@/components/breeding/saturation-bar";

@@ -137,7 +137,7 @@ export function SaturationBarCompact({
   percentage,
   className,
 }: Omit<SaturationBarProps, "entityName" | "showLabel" | "showStats" | "dogsWithAncestry" | "totalActiveDogs">) {
-  const { bar, bg, text } = getColor(percentage);
+  const { bar, text } = getColor(percentage);
 
   return (
     <div className={cn("flex items-center gap-2", className)}>

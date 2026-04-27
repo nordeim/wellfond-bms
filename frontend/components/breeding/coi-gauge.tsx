@@ -151,7 +151,7 @@ export function COIGaugeCompact({
   size = 48,
   className,
 }: Omit<COIGaugeProps, "showLabel" | "strokeWidth">) {
-  const { stroke, bg } = getColor(percentage);
+  const { stroke } = getColor(percentage);
   const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;

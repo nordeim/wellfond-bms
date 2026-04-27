@@ -140,8 +140,6 @@ export interface LitterFilters {
 // =============================================================================
 
 export function useMateCheck() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (data: {
       dam_chip: string;
@@ -196,7 +194,7 @@ export function useMateCheckHistory(params?: { page?: number; per_page?: number 
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/mate-check/history/", { params });
+      }>("/api/v1/breeding/mate-check/history/", params ? { params: params as Record<string, string | number | undefined> } : undefined);
       return response;
     },
   });
