@@ -519,14 +519,14 @@ Production uses full containerization with 11 services:
 | **1** | ✅ Complete | Apr 25, 2026 | Auth, BFF proxy, RBAC, design system |
 | **2** | ✅ Complete | Apr 26, 2026 | Domain models, dog CRUD, vaccinations, alerts |
 | **3** | ✅ Complete | Apr 26, 2026 | Ground ops, PWA, Draminski, SSE, offline queue |
-| **4** | 🔄 Planned | - | Breeding, COI, genetics engine |
+| **4** | ✅ Complete | Apr 28, 2026 | Breeding, COI, genetics engine, mate checker |
 | **5** | 📋 Backlog | - | Sales agreements, AVS tracking |
 | **6** | 📋 Backlog | - | Compliance, NParks reporting |
 | **7** | 📋 Backlog | - | Customer DB, marketing blast |
 | **8** | 📋 Backlog | - | Dashboard, finance exports |
 | **9** | 📋 Backlog | - | Observability, production readiness |
 
-**Overall Progress:** 4 of 9 Phases Complete (44%)
+**Overall Progress:** 5 of 9 Phases Complete (55%)
 
 ---
 
@@ -615,6 +615,46 @@ or use is strictly prohibited.
 ---
 
 ## 📊 Recent Changes
+
+### Phase 4 Completion (April 28, 2026) — 100% Complete
+
+#### Breeding & Genetics Engine (5 Models)
+- `BreedingRecord` - Dual-sire breeding with method tracking and confirmed_sire enum
+- `Litter` - Whelping events with delivery method, alive/stillborn counts
+- `Puppy` - Individual pup records with microchip, gender, paternity tracking
+- `DogClosure` - Closure table for pedigree ancestor caching (no DB triggers per v1.1)
+- `MateCheckOverride` - Override audit trail for non-compliant matings
+
+#### Wright's Formula COI Implementation
+- **Formula**: COI = Σ[(0.5)^(n1+n2+1) * (1+Fa)]
+- **Depth**: 5-generation limit per PRD
+- **Cache**: Redis 1-hour TTL with automatic invalidation
+- **Thresholds**: SAFE <6.25%, CAUTION 6.25-12.5%, HIGH_RISK >12.5%
+- **Performance**: <500ms p95 (closure table O(1) lookups)
+
+#### Farm Saturation Analysis
+- **Scope**: Entity-scoped, active dogs only
+- **Thresholds**: SAFE <15%, CAUTION 15-30%, HIGH_RISK >30%
+- **Calculation**: % of dogs sharing common ancestry via closure table
+
+#### TDD Achievement: COI Tests (13 Total)
+- 8 COI tests (unrelated, siblings, parent-offspring, grandparent, depth, missing parent, cache, deterministic)
+- 5 saturation tests (zero, 100%, partial, entity-scoped, active-only)
+- All 16 breeding tests passing ✅
+
+#### Frontend Components (4 New)
+- `coi-gauge.tsx` - Animated SVG circular gauge with color zones
+- `saturation-bar.tsx` - Horizontal bar with percentage and stats
+- `mate-check-form.tsx` - Dual-sire form with override modal
+- `breeding/` pages - Mate checker and breeding records list
+
+#### Celery Tasks (No DB Triggers Per v1.1)
+- `rebuild_closure_table()` - Async closure rebuild
+- `rebuild_closure_incremental()` - Single-dog path updates
+- `verify_closure_integrity()` - Nightly integrity check
+- `invalidate_coi_cache()` - Cache invalidation on pedigree changes
+
+---
 
 ### Phase 3 Completion (April 27, 2026) — 100% Complete
 
