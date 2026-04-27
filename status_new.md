@@ -1296,3 +1296,10 @@ All documents correctly reflect v1.1 hardening:
 - ✅ Redis cache for COI results
 ---
 
+✅ Confirmed: Redundant File Deleted
+Good catch! The /home/project/wellfond-bms/models.py at project root was a duplicate fragment containing only Puppy, DogClosure, and MateCheckOverride models. I've removed it.
+Current valid models.py files:
+- /home/project/wellfond-bms/backend/apps/operations/models.py ✅ (Dog, HealthRecord, Vaccination, etc.)
+- /home/project/wellfond-bms/backend/apps/core/models.py ✅ (User, Entity, AuditLog)
+- /home/project/wellfond-bms/backend/apps/breeding/models.py ✅ (BreedingRecord, Litter, Puppy, DogClosure, MateCheckOverride)
+
