@@ -85,8 +85,14 @@ export default function GroundDashboardPage() {
   // Check pending offline queue
   useEffect(() => {
     const checkQueue = () => {
-      const queue = JSON.parse(localStorage.getItem("offline_queue") || "[]");
-      setPendingSync(queue.length);
+      try {
+        const queue = JSON.parse(localStorage.getItem("offline_queue") || "[]");
+        setPendingSync(queue.length);
+      } catch {
+        // Invalid JSON in localStorage - reset queue
+        localStorage.setItem("offline_queue", "[]");
+        setPendingSync(0);
+      }
     };
     checkQueue();
     const interval = setInterval(checkQueue, 5000);
