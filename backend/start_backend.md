@@ -284,3 +284,6 @@ $ DJANGO_SETTINGS_MODULE=config.settings.development python -m pytest apps/core/
 # Run test_permissions.py from project root
 $ cd /home/project/wellfond-bms && DJANGO_SETTINGS_MODULE=backend.config.settings.development python -m pytest backend/apps/core/tests/test_permissions.py -v --tb=short 2>&1
 
+# Run sales tests from backend directory
+$ cd /home/project/wellfond-bms/backend && python -m pytest apps/sales/tests/ -v --tb=short 2>&1 | tee /tmp/test_output.txt | tail -150
+

@@ -20,13 +20,16 @@ class TestGSTCalculation(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        import uuid as uuid_module
+        katong_id = uuid_module.uuid4()
+        thomson_id = uuid_module.uuid4()
         self.katong, _ = Entity.objects.get_or_create(
-            defaults={"name": "Katong", "code": "KATONG"},
-            id=uuid.uuid4(),
+            defaults={"name": "Katong", "code": "KATONG", "slug": f"katong-{katong_id}"},
+            id=katong_id,
         )
         self.thomson, _ = Entity.objects.get_or_create(
-            defaults={"name": "Thomson", "code": "THOMSON"},
-            id=uuid.uuid4(),
+            defaults={"name": "Thomson", "code": "THOMSON", "slug": f"thomson-{thomson_id}"},
+            id=thomson_id,
         )
 
     def tearDown(self):

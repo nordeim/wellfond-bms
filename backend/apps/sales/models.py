@@ -140,6 +140,8 @@ class SalesAgreement(models.Model):
 
     # Signatures
     signed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
     # Audit
     created_by = models.ForeignKey(
@@ -278,16 +280,34 @@ class Signature(models.Model):
         related_name="signatures",
     )
 
+    # Signer information
+    signed_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.PROTECT,
+        related_name="signatures",
+        null=True,
+        blank=True,
+    )
     signer_type = models.CharField(
         max_length=10,
         choices=SignerType.choices,
+        default=SignerType.SELLER,
     )
+
+    # Signature method
     method = models.CharField(
         max_length=15,
         choices=SignatureMethod.choices,
+        default=SignatureMethod.REMOTE,
     )
 
-    # Signature data (coordinates for digital)
+    # Signature data (base64 for digital, URL for paper)
+    signature_data = models.TextField(
+        blank=True,
+        help_text="Base64 encoded signature image data",
+    )
+
+    # Signature coordinates (for digital signatures)
     coordinates = models.JSONField(
         default=list,
         blank=True,
@@ -296,6 +316,7 @@ class Signature(models.Model):
 
     # Audit
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     # Image (for remote/paper signatures)

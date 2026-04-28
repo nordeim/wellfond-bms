@@ -91,6 +91,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously plan to run the backend and frontend tests, carefully investigate the failing cases against the codebase to identify actual code before plan an optimal fix or solution. use TDD approach to make code changes after meticulously validating the failing test cases and identifying their root causes.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---

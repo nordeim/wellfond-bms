@@ -9,7 +9,7 @@ import hashlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import uuid
+import uuid as uuid_module
 from django.test import TestCase
 
 from apps.core.models import Entity, User
@@ -20,7 +20,7 @@ from apps.sales.services.pdf import PDFService
 # Helper function to create test user with proper username
 def create_test_user(entity, email, password="testpass123", role="admin"):
     """Create a test user with required username."""
-    username = f"testuser_{uuid.uuid4().hex[:8]}"
+    username = f"testuser_{uuid_module.uuid4().hex[:8]}"
     return User.objects.create_user(
         username=username,
         email=email,
@@ -35,9 +35,10 @@ class TestPDFService(TestCase):
 
     def setUp(self):
         """Set up test data."""
+        entity_id = uuid_module.uuid4()
         self.entity, _ = Entity.objects.get_or_create(
-            defaults={"name": "Katong", "code": "KATONG"},
-            id=uuid.uuid4(),
+            defaults={"name": "Katong", "code": "KATONG", "slug": f"katong-{entity_id}"},
+            id=entity_id,
         )
         self.user = create_test_user(
             entity=self.entity,
@@ -46,16 +47,16 @@ class TestPDFService(TestCase):
         self.agreement = SalesAgreement.objects.create(
             entity=self.entity,
             created_by=self.user,
-            agreement_number="WF-TEST-001",
-            agreement_type=AgreementType.B2C,
+            type=AgreementType.B2C,
             status=AgreementStatus.SIGNED,
             buyer_name="Test Buyer",
             buyer_mobile="+6591234567",
             buyer_email="buyer@example.com",
-            subtotal=1000.00,
-            gst_amount=82.57,
-            total=1082.57,
-            terms_version="1.0",
+            buyer_address="123 Test Street",
+            total_amount=1082.57,
+            gst_component=82.57,
+            deposit=100.00,
+            balance=982.57,
         )
 
     @pytest.mark.asyncio
@@ -95,16 +96,16 @@ class TestPDFService(TestCase):
         draft_agreement = SalesAgreement.objects.create(
             entity=self.entity,
             created_by=self.user,
-            agreement_number="WF-TEST-002",
-            agreement_type=AgreementType.B2C,
+            type=AgreementType.B2C,
             status=AgreementStatus.DRAFT,
             buyer_name="Draft Buyer",
             buyer_mobile="+6599999999",
             buyer_email="draft@example.com",
-            subtotal=500.00,
-            gst_amount=45.00,
-            total=545.00,
-            terms_version="1.0",
+            buyer_address="456 Draft Street",
+            total_amount=545.00,
+            gst_component=45.00,
+            deposit=50.00,
+            balance=495.00,
         )
 
         mock_response = MagicMock()

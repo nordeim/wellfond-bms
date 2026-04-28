@@ -153,7 +153,7 @@ class AVSService:
             return False
 
     @staticmethod
-    def mark_completed(token: str) -> AVSTransfer:
+    def mark_completed(token: str) -> AVSTransfer | None:
         """
         Mark AVS transfer as completed.
 
@@ -161,9 +161,13 @@ class AVSService:
             token: Transfer token
 
         Returns:
-            Updated AVSTransfer
+            Updated AVSTransfer, or None if token not found
         """
-        transfer = AVSTransfer.objects.get(token=token)
+        try:
+            transfer = AVSTransfer.objects.get(token=token)
+        except AVSTransfer.DoesNotExist:
+            return None
+
         transfer.status = AVSStatus.COMPLETED
         transfer.completed_at = timezone.now()
         transfer.save(update_fields=["status", "completed_at"])
