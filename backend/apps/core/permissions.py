@@ -233,28 +233,6 @@ require_ground = require_role(User.Role.GROUND, User.Role.ADMIN, User.Role.MANAG
 require_vet = require_role(User.Role.VET, User.Role.ADMIN, User.Role.MANAGEMENT)
 
 
-def require_admin_debug(func: F) -> F:
-    """Debug version of require_admin."""
-    @wraps(func)
-    def wrapper(request: HttpRequest, *args, **kwargs):
-        import sys
-        print(f"DEBUG require_admin: Checking {request.user}", file=sys.stderr)
-        user = getattr(request, "user", None)
-        if not user or not user.is_authenticated:
-            print(f"DEBUG require_admin: Not authenticated", file=sys.stderr)
-            return JsonResponse({"error": "Authentication required"}, status=401)
-        if not hasattr(user, "role"):
-            print(f"DEBUG require_admin: No role", file=sys.stderr)
-            return JsonResponse({"error": "User role not found"}, status=403)
-        print(f"DEBUG require_admin: User role={user.role}", file=sys.stderr)
-        if user.role not in (User.Role.ADMIN, User.Role.MANAGEMENT):
-            print(f"DEBUG require_admin: Permission denied", file=sys.stderr)
-            return JsonResponse({"error": "Permission denied"}, status=403)
-        print(f"DEBUG require_admin: Permission granted", file=sys.stderr)
-        return func(request, *args, **kwargs)
-    return wrapper
-
-
 def require_auth(func: F) -> F:
     """Decorator that requires authentication (any role)."""
 

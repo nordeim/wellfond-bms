@@ -51,9 +51,8 @@ class AgreementService:
         """
         Extract GST component from price using Singapore GST formula.
 
-        Formula: price * 9 / 109, rounded to 2 decimals (HALF_UP)
-
-        Thomson entity has 0% GST (exempt).
+        Formula: price * gst_rate / (100 + gst_rate), rounded to 2 decimals (HALF_UP)
+        Uses entity.gst_rate field (0.00 for exempt, 0.09 for standard 9% GST).
 
         Args:
             price: Total price including GST
@@ -62,12 +61,19 @@ class AgreementService:
         Returns:
             GST component amount
         """
-        # Thomson entity is GST exempt
-        if entity.code.upper() == "THOMSON":
+        # Use gst_rate field from entity (0.00 for exempt, 0.09 for standard)
+        # Check for None explicitly since Decimal("0.00") is falsy
+        gst_rate = entity.gst_rate if entity.gst_rate is not None else Decimal("0.09")
+        
+        # If GST rate is 0, return 0
+        if gst_rate == Decimal("0.00"):
             return Decimal("0.00")
 
-        # GST = price * 9 / 109 (Singapore formula)
-        gst = price * Decimal("9") / Decimal("109")
+        # GST = price * gst_rate / (1 + gst_rate)
+        # For example: 109 * 0.09 / 1.09 = 9.00
+        divisor = Decimal("1") + gst_rate
+        gst = price * gst_rate / divisor
+        
         return gst.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     @staticmethod
@@ -78,9 +84,6 @@ class AgreementService:
         Returns:
             Tuple of (price_excl_gst, gst_component)
         """
-        if entity.code.upper() == "THOMSON":
-            return price, Decimal("0.00")
-
         gst = AgreementService.extract_gst(price, entity)
         price_excl = price - gst
 

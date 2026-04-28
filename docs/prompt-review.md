@@ -13,14 +13,6 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
 - Multi-entity support: Holdings, Katong, Thomson with strict entity scoping
 - Security: HttpOnly cookies via BFF proxy, zero JWT exposure, hardened path allowlisting
 
-## Phase Status (from README):
-- Phase 0 (Infrastructure): ✅ Complete - Docker, CI/CD, scaffold
-- Phase 1 (Auth, BFF, RBAC): ✅ Complete - Authentication, design system
-- Phase 2 (Domain Foundation): ✅ Complete - Dog CRUD, vaccinations, alerts
-- Phase 3 (Ground Operations): ✅ Complete - PWA, Draminski, SSE, offline queue, 7 log types
-- Phase 4 (Breeding/Genetics): 🔄 Planned - COI, saturation, mate checker
-- Phases 5-9: 📋 Backlog
-
 ## Key Architectural Decisions from Planning Docs:
 - wal_level=replica (not logical) to reduce WAL I/O overhead by ~15%
 - RLS dropped for Django app user - using queryset scoping + audit logs instead (PgBouncer compatibility)
@@ -29,15 +21,6 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
 - Idempotency: UUIDv4 keys + Redis store (24h TTL) for exactly-once delivery
 - Closure table: Async Celery rebuild (no DB triggers) to prevent lock contention during bulk imports
 - BFF Proxy: Server-only BACKEND_INTERNAL_URL, path allowlist regex, header sanitization (SSRF protection)
-
-## 7 Ground Log Types (Phase 3):
-1. InHeatLog - Draminski DOD2 readings with per-dog baseline
-2. MatedLog - Single/dual-sire breeding records
-3. WhelpedLog - Whelping events with pup tracking
-4. HealthObsLog - Quick health observations (6 categories)
-5. WeightLog - Quick weight tracking
-6. NursingFlagLog - Nursing/mothering issues with severity
-7. NotReadyLog - Not-ready status with EDD
 
 ## PWA Features:
 - Service Worker with cache-first/static assets, network-first/API
@@ -53,14 +36,16 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
 
 ## TODO List:
 - Read and analyzed all 8 planning documents:
-  - draft_plan.md (Master Execution Plan v1.1 with hardening)
-  - IMPLEMENTATION_PLAN.md (178 files across 9 phases)
-  - README.md (project status showing Phases 0-3 complete)
-  - phase-0-infrastructure.md (Docker, PgBouncer, Redis×3, Gotenberg)
-  - phase-1-auth-bff-rbac.md (HttpOnly cookies, RBAC, idempotency)
-  - phase-2-domain-foundation.md (Dog models, CSV import, vaccines)
-  - phase-3-ground-operations.md (7 logs, Draminski, SSE, PWA)
-  - phase-4-breeding-genetics.md (COI, saturation, closure table)
+  - @draft_plan.md (Master Execution Plan v1.1 with hardening)
+  - @IMPLEMENTATION_PLAN.md (178 files across 9 phases)
+  - @README.md (project status showing Phases 0-3 complete)
+  - @plans/phase-0-infrastructure.md (Docker, PgBouncer, Redis×3, Gotenberg)
+  - @plans/phase-1-auth-bff-rbac.md (HttpOnly cookies, RBAC, idempotency)
+  - @plans/phase-2-domain-foundation.md (Dog models, CSV import, vaccines)
+  - @plans/phase-3-ground-operations.md (7 logs, Draminski, SSE, PWA)
+  - @plans/phase-4-breeding-genetics.md (COI, saturation, closure table)
+  - @plans/phase-5-sales-avs.md 
+  - @plans/phase-6-compliance-nparks.md
 - Setting up systematic code review structure with todo items
 - Preparing to audit actual codebase implementation against plans
 - Remaining:
@@ -84,6 +69,8 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
 - /home/project/wellfond-bms/plans/phase-2-domain-foundation.md - Domain models
 - /home/project/wellfond-bms/plans/phase-3-ground-operations.md - Ground ops, PWA
 - /home/project/wellfond-bms/plans/phase-4-breeding-genetics.md - Genetics engine
+- /home/project/wellfond-bms/plans/phase-5-sales-avs.md 
+- /home/project/wellfond-bms/plans/phase-6-compliance-nparks.md
 
 ### Codebase Structure (to be audited):
 - /home/project/wellfond-bms/backend/ - Django backend (models, services, routers, config)

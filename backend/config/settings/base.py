@@ -52,6 +52,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.IdempotencyMiddleware",
     "apps.core.middleware.EntityScopingMiddleware",
+    "django_ratelimit.middleware.RatelimitMiddleware",  # Rate limit exception handling
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -271,3 +272,8 @@ GOTENBERG_URL = os.environ.get("GOTENBERG_URL", "http://gotenberg:3000")
 # ---------------------------------------------------------------------------
 NINJA_PAGINATION_CLASS = "ninja.pagination.PageNumberPagination"
 NINJA_PAGINATION_PER_PAGE = 25
+
+# ---------------------------------------------------------------------------
+# Rate Limiting (django-ratelimit)
+# ---------------------------------------------------------------------------
+RATELIMIT_VIEW = "apps.core.routers.auth.ratelimit_handler"

@@ -154,6 +154,9 @@ async def _generate_dog_alert_stream(
 ) -> AsyncGenerator[str, None]:
     """
     Async generator for dog-specific SSE events.
+    
+    Uses sync_to_async(thread_sensitive=True) for proper Django database
+    connection handling, consistent with _generate_alert_stream.
     """
     import time
 
@@ -162,8 +165,9 @@ async def _generate_dog_alert_stream(
     while True:
         try:
             # Get pending alerts for specific dog
-            alerts = await asyncio.to_thread(
-                get_pending_alerts,
+            # FIXED: Use sync_to_async(thread_sensitive=True) instead of asyncio.to_thread
+            # This ensures proper database connection handling in async context
+            alerts = await sync_to_async(get_pending_alerts, thread_sensitive=True)(
                 user_id=user_id,
                 entity_id=entity_id,
                 role=user_role,

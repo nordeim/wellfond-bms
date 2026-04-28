@@ -2,10 +2,17 @@
 Auth Router - Wellfond BMS
 ============================
 Authentication endpoints for login/logout/refresh/me.
+
+Rate Limiting:
+- Login: 5 attempts per minute per IP
+- Refresh: 10 attempts per minute per IP
+- CSRF: 20 requests per minute per IP
 """
 
 from ninja import Router
 from ninja.errors import HttpError
+from django_ratelimit.decorators import ratelimit
+from ratelimit.exceptions import Ratelimited
 
 from ..auth import (
     get_authenticated_user,
@@ -25,10 +32,26 @@ from ..schemas import (
 router = Router(tags=["auth"])
 
 
+def ratelimit_handler(exc):
+    """Custom rate limit exception handler for Ninja."""
+    from django.http import JsonResponse
+    return JsonResponse(
+        {"error": "Rate limit exceeded", "detail": "Too many requests. Please try again later."},
+        status=429
+    )
+
+
+# Apply rate limit decorator to router
+router.exception_handler(Ratelimited)(ratelimit_handler)
+
+
 @router.post("/login")
+@ratelimit(key='ip', rate='5/m', method=['POST'])
 def login(request, data: LoginRequest):
     """
     Authenticate user and set HttpOnly session cookie.
+    
+    Rate limit: 5 attempts per minute per IP.
 
     Returns user data and CSRF token for subsequent requests.
     """
@@ -49,9 +72,12 @@ def logout(request):
 
 
 @router.post("/refresh", response=RefreshResponse)
+@ratelimit(key='ip', rate='10/m', method=['POST'])
 def refresh(request):
     """
     Refresh session and rotate CSRF token.
+    
+    Rate limit: 10 attempts per minute per IP.
 
     Returns new user data and CSRF token if session is valid.
     """
@@ -82,9 +108,12 @@ def get_me(request):
 
 
 @router.get("/csrf", response=CsrfResponse)
+@ratelimit(key='ip', rate='20/m', method=['GET'])
 def get_csrf(request):
     """
     Get CSRF token for form submissions.
+    
+    Rate limit: 20 requests per minute per IP.
 
     This is primarily for frontend initialization.
     Cookie-based auth handles CSRF automatically.
