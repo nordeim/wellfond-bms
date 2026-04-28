@@ -1,9 +1,10 @@
-"""New Agreement Wizard Page
-============================
-Phase 5: Sales Agreements & AVS Tracking
-
-Wizard page for creating new sales agreements.
-"""
+/**
+ * New Agreement Wizard Page
+ * ============================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * Wizard page for creating new sales agreements.
+ */
 
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"

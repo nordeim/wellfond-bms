@@ -1,10 +1,11 @@
-"""Sales Agreements Page
-========================
-Phase 5: Sales Agreements & AVS Tracking
-
-List view for sales agreements with status filtering
-and quick actions.
-"""
+/**
+ * Sales Agreements Page
+ * ========================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * List view for sales agreements with status filtering
+ * and quick actions.
+ */
 
 import { Suspense } from "react"
 import Link from "next/link"
@@ -15,16 +16,14 @@ import {
   Search,
   CheckCircle,
   Clock,
-  AlertCircle,
   XCircle
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Mock data - replace with actual data fetching

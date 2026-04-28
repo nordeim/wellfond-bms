@@ -1,14 +1,15 @@
-"""Agreement Wizard Component
-==============================
-Phase 5: Sales Agreements & AVS Tracking
-
-5-step wizard for creating sales agreements:
-1. Select agreement type (B2C/B2B/Rehoming)
-2. Select dogs and pricing
-3. Enter buyer information
-4. Review and sign
-5. Send to buyer
-"""
+/**
+ * Agreement Wizard Component
+ * ==============================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * 5-step wizard for creating sales agreements:
+ * 1. Select agreement type (B2C/B2B/Rehoming)
+ * 2. Select dogs and pricing
+ * 3. Enter buyer information
+ * 4. Review and sign
+ * 5. Send to buyer
+ */
 
 "use client"
 
@@ -131,7 +132,7 @@ export function AgreementWizard({ dogs, onComplete, onCancel }: AgreementWizardP
       housingType: "HDB",
     },
     specialConditions: "",
-    sellerSignature: undefined,
+    sellerSignature: undefined as string | undefined,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 

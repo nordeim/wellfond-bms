@@ -1,9 +1,10 @@
-"""Sales Agreement Hooks
-========================
-Phase 5: Sales Agreements & AVS Tracking
-
-TanStack Query hooks for sales agreement operations.
-"""
+/**
+ * Sales Agreement Hooks
+ * ========================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * TanStack Query hooks for sales agreement operations.
+ */
 
 "use client"
 

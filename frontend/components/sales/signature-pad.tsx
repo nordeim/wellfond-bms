@@ -1,10 +1,11 @@
-"""Signature Pad Component
-============================
-Phase 5: Sales Agreements & AVS Tracking
-
-Electronic signature capture using HTML5 Canvas.
-Captures signature data as base64 image.
-"""
+/**
+ * Signature Pad Component
+ * ============================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * Electronic signature capture using HTML5 Canvas.
+ * Captures signature data as base64 image.
+ */
 
 "use client"
 

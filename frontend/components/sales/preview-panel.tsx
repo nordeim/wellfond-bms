@@ -1,9 +1,10 @@
-"""Preview Panel Component
-============================
-Phase 5: Sales Agreements & AVS Tracking
-
-Agreement preview with terms and conditions display.
-"""
+/**
+ * Preview Panel Component
+ * ============================
+ * Phase 5: Sales Agreements & AVS Tracking
+ *
+ * Agreement preview with terms and conditions display.
+ */
 
 import { FileText, User, Dog, DollarSign, Shield } from "lucide-react"
 

@@ -95,6 +95,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review the frontend codes for previous phases to systematically explore the optimal fixes for the remaining frontend typecheck and build errors for phase 5. meticulously plan to conduct code review to identify the root causes of the remaining frontend errors and their optimal fixes, otherwise we can't complete the frontend build process. use web search if you have any doubts.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---
