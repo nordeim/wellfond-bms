@@ -87,6 +87,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review @plans/phase-5-sales-avs.md , then check its alignment with @draft_plan.md (v1.1) and @IMPLEMENTATION_PLAN.md . next, meticulously plan to create a detailed ToDo list for completing Phase 5.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---
