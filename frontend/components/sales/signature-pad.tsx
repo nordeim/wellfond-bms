@@ -11,7 +11,7 @@
 
 import { useRef, useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Pen, Eraser, Check, Undo } from "lucide-react"
+import { Eraser, Check, Undo } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -38,7 +38,6 @@ export function SignaturePad({
 
     // Set canvas size for high DPI displays
     const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
     
     canvas.width = width * dpr
     canvas.height = height * dpr

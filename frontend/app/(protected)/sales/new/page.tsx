@@ -6,6 +6,8 @@
  * Wizard page for creating new sales agreements.
  */
 
+"use client"
+
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 

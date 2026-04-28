@@ -279,10 +279,8 @@ export function useCancelAgreement() {
       agreementId: string
       reason: string
     }) => {
-      const response = await api.delete<{ success: boolean }>(
-        `/sales/agreements/${agreementId}?reason=${encodeURIComponent(reason)}`
-      )
-      return response
+      await api.delete(`/sales/agreements/${agreementId}?reason=${encodeURIComponent(reason)}`)
+      return { success: true }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [SALES_KEY] })

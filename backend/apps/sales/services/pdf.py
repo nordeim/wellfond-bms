@@ -244,3 +244,27 @@ class PDFService:
         """
         computed = PDFService.compute_hash(pdf_bytes)
         return computed == expected_hash
+
+    @staticmethod
+    def render_agreement_pdf_sync(
+        agreement_id: UUID,
+        watermark: bool = False,
+    ) -> tuple[bytes, str]:
+        """
+        Synchronous wrapper for render_agreement_pdf.
+
+        Use this in synchronous contexts like tests or Celery tasks.
+        The async version should be used in async contexts like FastAPI/Ninja endpoints.
+
+        Uses sync_to_async bridge to properly handle Django ORM in async context.
+
+        Args:
+            agreement_id: Agreement UUID
+            watermark: Whether to add "DRAFT" watermark
+
+        Returns:
+            Tuple of (pdf_bytes, sha256_hash)
+        """
+        from asgiref.sync import async_to_sync
+
+        return async_to_sync(PDFService.render_agreement_pdf)(agreement_id, watermark)

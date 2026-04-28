@@ -34,7 +34,6 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { SignaturePad } from "./signature-pad"
@@ -71,7 +70,7 @@ export interface AgreementData {
     nric?: string
   }
   specialConditions: string
-  sellerSignature?: string
+  sellerSignature?: string | undefined
 }
 
 const steps = [
@@ -213,7 +212,7 @@ export function AgreementWizard({ dogs, onComplete, onCancel }: AgreementWizardP
       <div className="relative">
         <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-border" />
         <div className="relative flex justify-between">
-          {steps.map((step, index) => {
+          {steps.map((step) => {
             const Icon = step.icon
             const isActive = step.id === currentStep
             const isCompleted = step.id < currentStep
