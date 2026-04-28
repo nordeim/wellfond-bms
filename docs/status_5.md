@@ -100,3 +100,127 @@ Key Success Criteria
 
 ---
 
+# Todos
+[✓] Step 1.1: Create SalesAgreement model
+[✓] Step 1.2: Create AgreementLineItem model
+[✓] Step 1.3: Create AVSTransfer model
+[✓] Step 1.4: Create Signature model
+[✓] Step 1.5: Create TCTemplate model
+[✓] Step 1.6: Create Pydantic schemas
+[✓] Step 1.7-1.8: Create and apply migrations
+[•] Step 2.1: Create agreement service with state machine
+[ ] Step 2.2: Implement GST extraction
+[ ] Step 2.3: Create PDF service with Gotenberg
+[ ] Step 2.4: Create AVS service
+
+The user wants me to continue with Phase 5 execution. Step 1 is complete (models, schemas, migrations). Now I need to move to Step 2: Backend Services. Let me create the services for agreement, PDF, and AVS.
+I hit my usage limit. Let me provide a summary of what we've accomplished and what should happen next:
+---
+✅ Phase 5 Step 1 Complete: Models & Schemas
+Files Created:
+1. backend/apps/sales/models.py - 5 models:
+   - SalesAgreement - Core sales agreement with buyer info, pricing, GST
+   - AgreementLineItem - Dogs included in agreement
+   - AVSTransfer - AVS tracking with token and reminder status
+   - Signature - E-signature capture with coordinates
+   - TCTemplate - Versioned T&C templates
+2. backend/apps/sales/schemas.py - Complete Pydantic schemas:
+   - AgreementCreate/Update/ListItem/Detail
+   - BuyerInfo, LineItemCreate/Response
+   - SignatureCreate/Response
+   - AVSTransferResponse
+   - PaginatedAgreements
+3. Migrations Applied - sales.0001_initial created and applied
+Next: Step 2 - Backend Services
+When I resume, I should create:
+1. backend/apps/sales/services/__init__.py - Service exports
+2. backend/apps/sales/services/agreement.py - Agreement service with:
+   - State machine (DRAFT→SIGNED→COMPLETED)
+   - GST calculation (price * 9 / 109, ROUND_HALF_UP)
+   - HDB warning logic
+3. backend/apps/sales/services/pdf.py - PDF service with:
+   - Gotenberg integration
+   - SHA-256 hash computation
+   - Dev fallback
+4. backend/apps/sales/services/avs.py - AVS service with:
+   - UUID4 token generation
+   - Reminder/escalation logic
+Then Steps 3-8 (routers, Celery tasks, tests, frontend).
+Status: Phase 5 Step 1 ✅ Complete | Ready to proceed with Step 2
+
+✅ Phase 5 Step 2 Complete: Agreement Service
+Files Created:
+backend/apps/sales/services/__init__.py
+- Exports: AgreementService, PDFService, AVSService
+backend/apps/sales/services/agreement.py
+- GST calculation: price * 9 / 109, ROUND_HALF_UP
+- Thomson entity: 0% GST exemption
+- State machine: DRAFT → SIGNED → COMPLETED/CANCELLED
+- Agreement CRUD operations
+- HDB warning for large breeds
+- T&C template management
+Key Features Implemented:
+| Feature | Implementation |
+|---------|---------------|
+| GST Formula | price * 9 / 109, ROUND_HALF_UP |
+| Thomson GST | 0% exemption |
+| State Machine | DRAFT → SIGNED → COMPLETED |
+| HDB Warning | 13 large breeds flagged |
+| T&C Templates | Versioned, admin-editable |
+Next: Step 2.3 - PDF Service with Gotenberg
+When I resume, I need to create:
+1. backend/apps/sales/services/pdf.py - Gotenberg integration
+2. backend/apps/sales/services/avs.py - AVS service
+3. Then Steps 3-8 (routers, Celery, tests, frontend)
+
+I've completed substantial work on Phase 5. Let me summarize what has been accomplished:
+Backend Models (Step 1):
+- SalesAgreement - Core sales agreement model
+- AgreementLineItem - Dogs included in agreements
+- AVSTransfer - AVS tracking with token and reminders
+- Signature - E-signature capture with coordinates
+- TCTemplate - Versioned T&C templates
+Backend Services (Step 2):
+- agreement.py - State machine (DRAFT→SIGNED→COMPLETED), GST calculation, HDB warning
+- pdf.py - Gotenberg PDF generation with SHA-256 hashing
+- avs.py - Token generation, reminders, escalation
+Backend Routers (Step 3):
+- agreements.py - CRUD, signing, sending, HDB warning check
+- avs.py - Pending list, completion, reminders, escalation
+Celery Tasks (Step 4):
+- send_agreement_pdf - Generate and send PDF with retries
+- send_avs_reminder - Send reminders with exponential backoff
+- check_avs_reminders - Daily reminder check (Beat schedule)
+- cleanup_expired_avs_tokens - Cleanup old tokens
+Next steps would be:
+1. Add Celery Beat schedule to settings
+2. Create test factories and write tests
+3. Create frontend components and pages
+Should I proceed with any of these next steps or is there something else you'd like me to focus
+I hit my usage limit. Let me provide a summary of Phase 5 progress:
+Phase 5: Sales & AVS — Execution Status Summary
+Completed (Steps 1-4): ✅
+Step 1: Backend Models & Schemas
+- ✅ 5 models created: SalesAgreement, AgreementLineItem, AVSTransfer, Signature, TCTemplate
+- ✅ Pydantic schemas with validation (AgreementCreate/Update/Detail, LineItemResponse, SignatureResponse, AVSTransferResponse)
+- ✅ Migrations created and applied
+Step 2: Backend Services
+- ✅ agreement.py - State machine, GST calculation (price * 9 / 109, ROUND_HALF_UP), HDB warning
+- ✅ pdf.py - Gotenberg integration with SHA-256 hashing, HTML template
+- ✅ avs.py - Token generation, reminders (72h), escalation logic
+Step 3: Backend Routers
+- ✅ agreements.py - CRUD, sign, send, HDB warning endpoints
+- ✅ avs.py - Pending, complete, reminder, escalation endpoints
+- ✅ Routers registered in API
+Step 4: Celery Tasks
+- ✅ send_agreement_pdf - Async PDF generation with retry (3x exponential backoff)
+- ✅ send_avs_reminder - Reminder task with retry
+- ✅ check_avs_reminders - Daily reminder check (Beat schedule)
+- ✅ cleanup_expired_avs_tokens - Cleanup old tokens
+Next Steps (Pending):
+1. Step 5: Tests - Factories + 18 test cases
+2. Step 6: Frontend Components - Wizard, signature pad, preview
+3. Step 7: Frontend Pages - Sales list, wizard
+4. Step 8: Hooks & Integration
+Status: ~60% Complete | Backend core ✅ | Frontend pending
+

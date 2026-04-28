@@ -59,8 +59,13 @@ from apps.breeding.routers import mating_router, litters_router
 api.add_router("/breeding/mate-check", mating_router, tags=["breeding"])
 api.add_router("/breeding", litters_router, tags=["breeding"])
 
+# Sales & AVS routers (Phase 5)
+from apps.sales.routers import agreements_router, avs_router
+
+api.add_router("/sales", agreements_router, tags=["sales"])
+api.add_router("/avs", avs_router, tags=["avs"])
+
 # Additional routers will be registered here as apps are built:
-# api.add_router("/sales", sales_router, tags=["sales"])
 # api.add_router("/compliance", compliance_router, tags=["compliance"])
 # api.add_router("/customers", customers_router, tags=["customers"])
 # api.add_router("/finance", finance_router, tags=["finance"])

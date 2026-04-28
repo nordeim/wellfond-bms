@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Agreement - {{ agreement.type }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 18pt;
+            margin: 0 0 5px 0;
+        }
+        
+        .header p {
+            font-size: 10pt;
+            color: #666;
+            margin: 0;
+        }
+        
+        .section {
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 12pt;
+            border-bottom: 1px solid #999;
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            width: 120px;
+            font-weight: bold;
+        }
+        
+        .info-value {
+            flex: 1;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        table th, table td {
+            border: 1px solid #333;
+            padding: 6px;
+            text-align: left;
+        }
+        
+        table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .pricing-table {
+            width: 60%;
+            margin-left: auto;
+        }
+        
+        .pricing-table td:first-child {
+            font-weight: bold;
+            width: 60%;
+        }
+        
+        .pricing-table td:last-child {
+            text-align: right;
+        }
+        
+        .total-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .notice-box {
+            border: 2px solid #d94040;
+            padding: 10px;
+            margin: 15px 0;
+            background-color: #fff5f5;
+        }
+        
+        .notice-title {
+            font-weight: bold;
+            color: #d94040;
+            margin-bottom: 5px;
+        }
+        
+        .tc-section {
+            font-size: 9pt;
+            white-space: pre-wrap;
+        }
+        
+        .signature-section {
+            margin-top: 30px;
+        }
+        
+        .signature-box {
+            display: inline-block;
+            width: 45%;
+            margin-right: 5%;
+            vertical-align: top;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 50px;
+            padding-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 8pt;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        
+        .footer p {
+            margin: 2px 0;
+        }
+        
+        .draft-stamp {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SALES AGREEMENT - {{ agreement.type }}</h1>
+        <p>Agreement ID: {{ agreement.id }}</p>
+        <p>Generated: {{ agreement.created_at|date:"Y-m-d H:i" }}</p>
+        {% if is_draft %}
+        <p style="color: red; font-size: 14pt; font-weight: bold;">*** DRAFT ***</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="section-title">BUYER INFORMATION</div>
+        <div class="info-row">
+            <div class="info-label">Name:</div>
+            <div class="info-value">{{ buyer.name }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">NRIC/FIN:</div>
+            <div class="info-value">{{ buyer.nric|default:"-" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Mobile:</div>
+            <div class="info-value">{{ buyer.mobile }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Email:</div>
+            <div class="info-value">{{ buyer.email }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Address:</div>
+            <div class="info-value">{{ buyer.address }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Housing Type:</div>
+            <div class="info-value">{{ buyer.housing_type }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">DOGS INCLUDED</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Microchip</th>
+                    <th>Name</th>
+                    <th>Breed</th>
+                    <th>Gender</th>
+                    <th>DOB</th>
+                    <th>Price (SGD)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in line_items %}
+                <tr>
+                    <td>{{ item.microchip }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.breed }}</td>
+                    <td>{{ item.gender }}</td>
+                    <td>{{ item.dob }}</td>
+                    <td>${{ item.price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">PRICING & PAYMENT</div>
+        <table class="pricing-table">
+            <tr>
+                <td>Subtotal:</td>
+                <td>${{ pricing.total|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>GST (9%):</td>
+                <td>${{ pricing.gst|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Deposit (Non-Refundable):</td>
+                <td>${{ pricing.deposit|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Balance Due:</td>
+                <td>${{ pricing.balance|floatformat:2 }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total Amount:</td>
+                <td>${{ pricing.total|floatformat:2 }}</td>
+            </tr>
+        </table>
+        
+        <div class="notice-box">
+            <div class="notice-title">IMPORTANT NOTICE</div>
+            <p>The deposit of ${{ pricing.deposit }} is <strong>NON-REFUNDABLE</strong> except in case of breach by seller. By signing this agreement, the buyer acknowledges this condition.</p>
+        </div>
+    </div>
+
+    {% if special_conditions %}
+    <div class="section">
+        <div class="section-title">SPECIAL CONDITIONS</div>
+        <p>{{ special_conditions }}</p>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-title">TERMS & CONDITIONS</div>
+        <div class="tc-section">{{ tc_content }}</div>
+    </div>
+
+    <div class="signature-section">
+        <div class="section-title">SIGNATURES</div>
+        
+        <div class="signature-box">
+            <div class="signature-line">
+                Seller Signature<br>
+                Date: _______________
+            </div>
+        </div>
+        
+        <div class="signature-box">
+            <div class="signature-line">
+                Buyer Signature<br>
+                Date: _______________
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>This agreement is governed by the laws of Singapore.</p>
+        <p>PDF Hash: {{ agreement.pdf_hash }}</p>
+        <p>PDPA Consent: {% if agreement.pdpa_consent %}Yes{% else %}No{% endif %}</p>
+    </div>
+</body>
+</html>
