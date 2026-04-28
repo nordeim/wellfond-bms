@@ -115,6 +115,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. now, please meticulously review and analyze @qa_code_audit_findings_3.md and systematically validate the audit findings against the codebase, systematically validate and identify the root cause and for the optimal fix for each validated finding.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---

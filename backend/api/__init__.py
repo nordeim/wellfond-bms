@@ -1,4 +1,7 @@
-"""API package — Wellfond BMS."""
+"""API package — Wellfond BMS.
+
+Consolidated NinjaAPI instance with CSRF protection and all routers.
+"""
 
 from ninja import NinjaAPI
 from ninja.errors import ValidationError
@@ -10,6 +13,20 @@ api = NinjaAPI(
     urls_namespace="api",
     openapi_url="/api/v1/openapi.json",
     docs_url="/api/v1/docs/",
+    csrf=True,  # Require CSRF token for mutations (from api.py)
+    description="""
+    Breeding Management System for Singapore AVS-licensed operations.
+    
+    ## Security
+    - All endpoints require authentication via HttpOnly session cookie
+    - CSRF tokens required for state-changing operations
+    - Idempotency keys supported for POST/PUT/DELETE
+    
+    ## Architecture
+    - BFF Pattern: Frontend → Next.js API Routes → Django API
+    - Cookie-based sessions (HttpOnly, Secure, SameSite=Lax)
+    - Rate limiting applied per-user per-endpoint
+    """,
 )
 
 
