@@ -449,3 +449,183 @@ TERMS & CONDITIONS - REHOMING
         logger.info(f"T&C template for {type} updated by {updated_by.email}")
 
         return template
+
+    # =============================================================================
+    # Agreement Actions
+    # =============================================================================
+
+    @staticmethod
+    def sign_agreement(
+        agreement_id: UUID,
+        signed_by: User,
+        signature_data: str,
+        ip_address: str,
+        user_agent: str,
+    ) -> bool:
+        """
+        Sign an agreement and transition to SIGNED state.
+
+        Args:
+            agreement_id: Agreement UUID
+            signed_by: User signing the agreement
+            signature_data: Signature image/data (base64)
+            ip_address: IP address of signer
+            user_agent: User agent of signer
+
+        Returns:
+            True if signed successfully
+        """
+        try:
+            agreement = SalesAgreement.objects.get(id=agreement_id)
+        except SalesAgreement.DoesNotExist:
+            return False
+
+        # Check if can transition to SIGNED
+        if not AgreementService.can_transition(agreement, AgreementStatus.SIGNED):
+            return False
+
+        from django.utils import timezone
+        from ..models import Signature
+
+        with transaction.atomic():
+            # Create signature record
+            Signature.objects.create(
+                agreement=agreement,
+                signed_by=signed_by,
+                signature_data=signature_data,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                timestamp=timezone.now(),
+            )
+
+            # Transition to SIGNED
+            AgreementService.transition(
+                agreement=agreement,
+                new_status=AgreementStatus.SIGNED,
+                user=signed_by,
+            )
+
+        return True
+
+    @staticmethod
+    def complete_agreement(
+        agreement_id: UUID,
+        completed_by: User,
+    ) -> bool:
+        """
+        Complete an agreement and transition to COMPLETED state.
+
+        Args:
+            agreement_id: Agreement UUID
+            completed_by: User completing the agreement
+
+        Returns:
+            True if completed successfully
+        """
+        try:
+            agreement = SalesAgreement.objects.get(id=agreement_id)
+        except SalesAgreement.DoesNotExist:
+            return False
+
+        # Check if can transition to COMPLETED
+        if not AgreementService.can_transition(agreement, AgreementStatus.COMPLETED):
+            return False
+
+        from django.utils import timezone
+
+        with transaction.atomic():
+            agreement.status = AgreementStatus.COMPLETED
+            agreement.completed_at = timezone.now()
+            agreement.save(update_fields=["status", "completed_at", "updated_at"])
+
+            # Audit log
+            AuditLog.objects.create(
+                actor=completed_by,
+                action=AuditLog.Action.UPDATE,
+                resource_type="SalesAgreement",
+                resource_id=str(agreement_id),
+                payload={
+                    "old_status": AgreementStatus.SIGNED,
+                    "new_status": AgreementStatus.COMPLETED,
+                },
+            )
+
+        logger.info(f"Agreement {agreement_id} completed by {completed_by.email}")
+        return True
+
+    @staticmethod
+    def cancel_agreement(
+        agreement_id: UUID,
+        cancelled_by: User,
+        reason: str = "",
+    ) -> bool:
+        """
+        Cancel an agreement and transition to CANCELLED state.
+
+        Args:
+            agreement_id: Agreement UUID
+            cancelled_by: User cancelling the agreement
+            reason: Optional cancellation reason
+
+        Returns:
+            True if cancelled successfully
+        """
+        try:
+            agreement = SalesAgreement.objects.get(id=agreement_id)
+        except SalesAgreement.DoesNotExist:
+            return False
+
+        # Check if can transition to CANCELLED
+        if not AgreementService.can_transition(agreement, AgreementStatus.CANCELLED):
+            return False
+
+        from django.utils import timezone
+
+        with transaction.atomic():
+            agreement.status = AgreementStatus.CANCELLED
+            agreement.cancelled_at = timezone.now()
+            agreement.save(update_fields=["status", "cancelled_at", "updated_at"])
+
+            # Audit log
+            AuditLog.objects.create(
+                actor=cancelled_by,
+                action=AuditLog.Action.UPDATE,
+                resource_type="SalesAgreement",
+                resource_id=str(agreement_id),
+                payload={
+                    "old_status": agreement.status,
+                    "new_status": AgreementStatus.CANCELLED,
+                    "reason": reason,
+                },
+            )
+
+        logger.info(f"Agreement {agreement_id} cancelled by {cancelled_by.email}: {reason}")
+        return True
+
+    @staticmethod
+    def calculate_totals(agreement: SalesAgreement) -> dict:
+        """
+        Calculate agreement totals from line items.
+
+        Args:
+            agreement: SalesAgreement instance
+
+        Returns:
+            Dict with subtotal, gst_amount, total
+        """
+        from decimal import Decimal
+
+        subtotal = Decimal("0.00")
+        gst_amount = Decimal("0.00")
+
+        for item in agreement.line_items.all():
+            subtotal += item.line_total
+            gst_amount += item.gst_amount
+
+        total = subtotal + gst_amount
+
+        return {
+            "subtotal": subtotal,
+            "gst_amount": gst_amount,
+            "total": total,
+        }
