@@ -1,3 +1,19 @@
+## Audit Finding: [HIGH] offline-queue.ts Uses localStorage Instead of IndexedDB
+
+**Severity:** HIGH (Spec Violation)  
+**File:** `frontend/lib/offline-queue.ts:74`
+
+The IMPLEMENTATION_PLAN.md (Section 3.17) specifies IndexedDB for the offline queue. Actual implementation uses `localStorage` with a TODO comment acknowledging the gap.
+
+**Impact:**
+- `localStorage` has 5-10MB limit vs IndexedDB's much larger capacity
+- No transactional safety for complex queued operations
+- Queued photo uploads (base64 in localStorage) will exceed storage rapidly
+
+**Fix:** Migrate to IndexedDB as specified, or explicitly document the trade-off if localStorage is retained.
+
+---
+
 # Phase‑0 Audit — Current Code & Callers
 
 ## 1. Code Audit Results
@@ -493,3 +509,5 @@ src/lib/offline-queue/
 10. Remove the old `frontend/lib/offline-queue.ts` after validation.
 
 This plan produces a production‑grade, IndexedDB‑backed offline queue that is fully backward‑compatible (via one‑time migration), gracefully handles edge cases, adds < 2 KB to the bundle, and passes comprehensive automated tests.
+
+# https://chat.deepseek.com/share/b1qcdgxv33kdf0fpp0 
