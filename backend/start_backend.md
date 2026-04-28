@@ -287,3 +287,27 @@ $ cd /home/project/wellfond-bms && DJANGO_SETTINGS_MODULE=backend.config.setting
 # Run sales tests from backend directory
 $ cd /home/project/wellfond-bms/backend && python -m pytest apps/sales/tests/ -v --tb=short 2>&1 | tee /tmp/test_output.txt | tail -150
 
+# Run Phase 6 compliance tests
+$ cd /home/project/wellfond-bms/backend && python -m pytest apps/compliance/tests/ -v --tb=short 2>&1
+
+# Create compliance migrations
+$ cd /home/project/wellfond-bms/backend && python manage.py makemigrations compliance 2>&1
+
+# Create compliance migrations
+$ cd /home/project/wellfond-bms/backend && python manage.py makemigrations compliance 2>&1
+
+# Apply migrations
+$ python manage.py migrate 2>&1 | head -30
+
+# Apply compliance migrations
+$ cd /home/project/wellfond-bms/backend && python manage.py migrate compliance 2>&1
+
+# Run NParks tests
+$ cd /home/project/wellfond-bms && python -m pytest backend/apps/compliance/tests/test_nparks.py -v --tb=short 2>&1
+
+# Run GST tests
+$ python -m pytest backend/apps/compliance/tests/test_gst.py -v --tb=short 2>&1
+
+# Run all compliance tests
+$ cd /home/project/wellfond-bms && python -m pytest backend/apps/compliance/tests/ -v 2>&1 | tail -30
+

@@ -160,13 +160,10 @@ class PDPAConsentLog(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
-    # Customer
-    customer = models.ForeignKey(
-        "customers.Customer",  # Will be created in Phase 7
-        on_delete=models.PROTECT,
-        related_name="consent_logs",
-        null=True,  # Temporary - remove after Customer model exists
-        blank=True,
+    # Customer (UUID reference - will become ForeignKey when customers app exists)
+    customer_id = models.UUIDField(
+        help_text="Customer UUID reference",
+        db_index=True,
     )
 
     # Consent change
@@ -191,16 +188,17 @@ class PDPAConsentLog(models.Model):
         db_table = "compliance_pdpa_consent_log"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["customer", "created_at"]),
+            models.Index(fields=["customer_id", "created_at"]),
             models.Index(fields=["action", "created_at"]),
         ]
 
     def __str__(self) -> str:
-        return f"PDPA {self.action} - {self.customer} at {self.created_at}"
+        return f"PDPA {self.action} - {self.customer_id} at {self.created_at}"
 
     def save(self, *args, **kwargs):
         """Prevent updates - append-only."""
-        if self.pk:
+        # Check if record already exists in database (update vs create)
+        if self.pk and PDPAConsentLog.objects.filter(pk=self.pk).exists():
             raise ValueError("PDPAConsentLog is immutable - cannot update")
         super().save(*args, **kwargs)
 

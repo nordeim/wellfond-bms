@@ -103,6 +103,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously plan to run typecheck and build on the frontend. if you hit a roadblock when fixing errors, do rfer to code files from previous phases for ideas on optimal fixes.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---

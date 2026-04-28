@@ -65,6 +65,13 @@ from apps.sales.routers import agreements_router, avs_router
 api.add_router("/sales", agreements_router, tags=["sales"])
 api.add_router("/avs", avs_router, tags=["avs"])
 
+# Compliance & NParks routers (Phase 6)
+from apps.compliance.routers import nparks_router, gst_router, pdpa_router
+
+api.add_router("/compliance/nparks", nparks_router, tags=["compliance"])
+api.add_router("/compliance/gst", gst_router, tags=["compliance"])
+api.add_router("/compliance/pdpa", pdpa_router, tags=["compliance"])
+
 # Additional routers will be registered here as apps are built:
 # api.add_router("/compliance", compliance_router, tags=["compliance"])
 # api.add_router("/customers", customers_router, tags=["customers"])

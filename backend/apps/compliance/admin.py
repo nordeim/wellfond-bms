@@ -158,10 +158,10 @@ class GSTLedgerAdmin(admin.ModelAdmin):
 @admin.register(PDPAConsentLog)
 class PDPAConsentLogAdmin(admin.ModelAdmin):
     """Admin for PDPA consent audit log."""
-    
+
     list_display = [
         "id",
-        "customer",
+        "customer_id",
         "action",
         "previous_state",
         "new_state",
@@ -169,23 +169,23 @@ class PDPAConsentLogAdmin(admin.ModelAdmin):
         "ip_address",
         "created_at",
     ]
-    
+
     list_filter = [
         "action",
         "previous_state",
         "new_state",
         "created_at",
     ]
-    
+
     search_fields = [
-        "customer__name",
+        "customer_id",
         "actor__email",
         "actor__username",
     ]
-    
+
     readonly_fields = [
         "id",
-        "customer",
+        "customer_id",
         "action",
         "previous_state",
         "new_state",
