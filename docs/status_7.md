@@ -165,3 +165,87 @@ Phase 7 Progress Summary
 - Frontend page (customers/page.tsx)
 - Final validation
 
+Phase 7 Progress Summary
+Completed Tasks:
+1. Phase 7.1: Backend Models ✅
+   - Customer model with unique mobile, PDPA consent tracking
+   - CommunicationLog (immutable)
+   - Segment model with JSON filters
+2. Phase 7.2: Pydantic Schemas ✅
+   - CustomerCreate, CustomerUpdate schemas
+   - BlastCreate, BlastPreviewResponse schemas
+   - Segment schemas with filters
+   - CSV import schemas
+3. Phase 7.3: Customers Router ✅
+   - GET /customers/ - List with filters
+   - POST /customers/ - Create customer
+   - PATCH /customers/{id} - Update customer
+   - GET /customers/{id} - Detail with comms history
+   - POST /customers/blast - Send blast
+   - POST /customers/import - CSV import
+4. Phase 7.4: Segmentation Service ✅
+   - build_segment() with composable Q objects
+   - PDPA hard filter enforcement
+   - Cached counts (5 min TTL)
+   - Segment validation
+5. Phase 7.5: Blast Service ✅
+   - RateLimiter (10/sec)
+   - BlastProgressTracker via Redis
+   - Merge tag interpolation ({{name}}, {{mobile}}, {{entity}})
+   - Email/WA send (placeholders for Resend/WA APIs)
+   - Communication logging
+6. Phase 7.7: Communication Router ✅
+   - Route messages with fallback WA → email
+   - Channel switching logged
+7. Phase 7.8: Celery Tasks ✅
+   - dispatch_blast task (chunked 50/chunk)
+   - log_delivery task
+   - Retry with exponential backoff
+   - DLQ on 3 failures
+8. Phase 7.9: Django Admin ✅
+   - Customer, CommunicationLog, Segment admin configs
+9. Phase 7.10-7.11: Tests ✅
+   - test_segmentation.py (12+ tests)
+   - test_blast.py (20+ tests)
+10. Phase 7.14: Integration ✅
+    - Added to INSTALLED_APPS
+    - Registered router in api/init.py
+    - Migrations created and applied
+Remaining Tasks:
+- Phase 7.12: Frontend hooks (use-customers.ts)
+- Phase 7.13: Frontend customers page
+- Phase 7.15: Full test and build validation
+The backend is essentially complete. Ready to proceed with frontend when
+I reached my usage limit. Here's a summary of Phase 7 progress:
+Phase 7: Customer DB & Marketing Blast - Backend Complete ✅
+Files Created (19 total):
+Backend:
+- apps/customers/models.py - Customer, CommunicationLog, Segment (209 lines)
+- apps/customers/schemas.py - Pydantic schemas (344 lines)
+- apps/customers/routers/customers.py - 12 endpoints (597 lines)
+- apps/customers/services/segmentation.py - Q objects, PDPA filtering (287 lines)
+- apps/customers/services/blast.py - Rate limiter, merge tags, dispatch (384 lines)
+- apps/customers/tasks.py - Celery chunked dispatch (164 lines)
+- apps/customers/admin.py - Django admin (89 lines)
+- apps/customers/tests/test_segmentation.py - 12 tests (279 lines)
+- apps/customers/tests/test_blast.py - 20 tests (494 lines)
+- apps/customers/migrations/0001_initial.py - Applied ✅
+Configuration:
+- Updated config/settings/base.py - Added customers to INSTALLED_APPS
+- Updated api/__init__.py - Registered customers router
+Key Features Implemented:
+- ✅ PDPA Hard Filter - Automatic exclusion of non-consented customers
+- ✅ Segmentation - Composable Q objects with caching (5min TTL)
+- ✅ Blast Dispatch - Chunked 50/chunk, rate limited 10/sec
+- ✅ Merge Tags - {{name}}, {{mobile}}, {{entity}}, {{email}}, {{housing}}
+- ✅ Communication Router - WA fallback to email
+- ✅ Progress Tracking - Redis-backed for SSE streaming
+- ✅ Celery Tasks - Retry 3x, DLQ on failure
+- ✅ Immutable Logs - CommunicationLog no UPDATE/DELETE
+- ✅ CSV Import - Column mapping, duplicate detection
+Pending Tasks:
+- Phase 7.12: Frontend hooks (use-customers.ts)
+- Phase 7.13: Frontend customers page with blast composer
+- Phase 7.15: Full test validation and build verification
+Backend migrations applied successfully. Ready for frontend implementation
+
