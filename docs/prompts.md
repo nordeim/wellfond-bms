@@ -131,6 +131,23 @@ please meticulously plan to update @backend/requirements/base.txt and @backend/r
 
 ---
 
+1. Core Identity & Purpose - already have from AGENTS.md and other docs
+2. Architecture Overview - Django 6.0 + Next.js 16 + PostgreSQL + Redis + Celery
+3. Project Structure - need to document all directories
+4. Development Workflow - commands and processes
+5. Testing Strategy - unit, integration, E2E tests
+6. Implementation Standards - coding patterns
+7. Security & Compliance - Singapore AVS/NParks specific
+8. Common Issues & Solutions - things we fixed
+9. Phase Status - current implementation status
+10. Key API Endpoints - backend routers
+11. Documentation References - links to key docs
+12. Success Criteria - what makes implementation successful
+13. Anti-Patterns - things to avoid
+14. Next Steps - what to do next
+
+---
+
 Please meticulously create a briefing document for an AI coding agent to be able to continue from the present state. After conducting your meticulous codebase review to align your understanding of the codebase, you will create a comprehensive *single-source-of-truth* briefing document for any coding agent or human developer to have the same deep understanding of the project and the current codebase status. Save the agent *briefing document* that captures your aligned and validated understanding as a markdown file `AGENT_BRIEF.md`. 
 
 # AGENT_BRIEF.md provides comprehensive cover for:
