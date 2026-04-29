@@ -25,8 +25,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { AlertCard } from '@/lib/types';
 
 interface AlertCardsProps {
-  entityId?: string;
-  className?: string;
+  entityId?: string | undefined;
+  className?: string | undefined;
 }
 
 const ALERT_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {

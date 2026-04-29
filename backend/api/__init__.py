@@ -13,7 +13,6 @@ api = NinjaAPI(
     urls_namespace="api",
     openapi_url="/api/v1/openapi.json",
     docs_url="/api/v1/docs/",
-    csrf=True,  # Require CSRF token for mutations (from api.py)
     description="""
     Breeding Management System for Singapore AVS-licensed operations.
     
@@ -49,10 +48,11 @@ def generic_error_handler(request, exc):
 # -------------------------------------------------------------------------
 # Router Registration
 # -------------------------------------------------------------------------
-from apps.core.routers import auth_router, users_router
+from apps.core.routers import auth_router, dashboard_router, users_router
 
 # Core routers
 api.add_router("/auth", auth_router, tags=["auth"])
+api.add_router("/dashboard", dashboard_router, tags=["dashboard"])
 api.add_router("/users", users_router, tags=["users"])
 
 # Domain routers

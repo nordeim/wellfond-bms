@@ -12,7 +12,7 @@ Rate Limiting:
 from ninja import Router
 from ninja.errors import HttpError
 from django_ratelimit.decorators import ratelimit
-from ratelimit.exceptions import Ratelimited
+from django_ratelimit.exceptions import Ratelimited
 
 from ..auth import (
     get_authenticated_user,
@@ -32,17 +32,7 @@ from ..schemas import (
 router = Router(tags=["auth"])
 
 
-def ratelimit_handler(exc):
-    """Custom rate limit exception handler for Ninja."""
-    from django.http import JsonResponse
-    return JsonResponse(
-        {"error": "Rate limit exceeded", "detail": "Too many requests. Please try again later."},
-        status=429
-    )
 
-
-# Apply rate limit decorator to router
-router.exception_handler(Ratelimited)(ratelimit_handler)
 
 
 @router.post("/login")

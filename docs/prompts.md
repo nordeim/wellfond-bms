@@ -119,6 +119,14 @@ awesome meticulous job so far. now, please meticulously review and analyze @qa_c
 
 ---
 
+awesome meticulous job so far. please keep up the good work, yes, please meticulously plan and proceed with proceed with creating the dashboard page and components. first, meticulously explore the existing codebase to thoroughly and systematically explore how best to re-imagine the dashboard page and components. then meticulously plan to create a detailed execution plan with ToDo list to implement the re-imagined dashboard and components. review and validate the execution plan with the codebase and @draft_plan.md to enure correct alignment. use TDD approach to make code changes.
+
+---
+
+Please meticulously validate the implementation details in @plan_dashboard_page.md against the actual codebase and @draft_plan.md (v1.1) and @IMPLEMENTATION_PLAN.md to ensure correct alignment, then create a detail ToDo list to execute it. use TDD approach to make code changes. you may refer to @skills/nextjs16-tailwind4/SKILL.md for guidance on Next.js 16+ with Tailwind-CSS v4.
+
+---
+
 please meticulously plan to update @backend/requirements/base.txt and @backend/requirements/dev.txt with the actual versions of the installed packages as captured in @backend/installed_packages.txt . please make precise edits without removing/deleting lines from the original `base.txt` and `dev.txt` files
 
 ---
