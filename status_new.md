@@ -430,3 +430,36 @@ Next Steps 1. Run frontend build and verify TypeScript 0 errors 2. Run full back
 Critical Context - Phase 8 Status: 95% complete | Backend 100% (models, schemas, services, router, admin, tests), Frontend 95% (hooks, page complete, build pending) - GST Calculation: Formula verified - 109 → 9.00, 218 → 18.00, 50 → 4.13, Thomson → 0.00 - P&L YTD: Rolls from April (month 4), handles March year-end correctly - Intercompany Balance: Automatically creates EXPENSE for from_entity, REVENUE for to_entity - TypeScript Fix: date | None syntax incompatible with Pydantic, replaced with Optionaldate - Django App Registration: apps.finance added to INSTALLED_APPS in settings/base.py - Router URL: Base /api/v1/finance/, tags="finance" - Export Endpoints: Return HttpResponse with Excel blob, Content-Disposition attachment header
 Relevant Files - /home/project/wellfond-bms/backend/apps/finance/models.py: Transaction, IntercompanyTransfer, GSTReport, PNLSnapshot - /home/project/wellfond-bms/backend/apps/finance/schemas.py: Pydantic schemas with Optional[] typing, TransactionCreate/Response, PNLResponse, GSTReportResponse - /home/project/wellfond-bms/backend/apps/finance/services/pnl.py: calc_pnl(), calc_ytd(), PNLResult, intercompany elimination - /home/project/wellfond-bms/backend/apps/finance/services/gst_report.py: extract_gst(), gen_gst_excel(), gen_pnl_excel(), GST9/GST109 format - /home/project/wellfond-bms/backend/apps/finance/routers/reports.py: 7 finance endpoints with entity scoping, role-based access - /home/project/wellfond-bms/backend/apps/finance/admin.py: Transaction (filterable), IntercompanyTransfer, GSTReport/PNLSnapshot (read-only) - /home/project/wellfond-bms/backend/apps/finance/tests/test_pnl.py: 7 tests for P&L calculation, COGS, expenses, net, YTD, determinism - /home/project/wellfond-bms/backend/apps/finance/tests/test_gst.py: 4 tests for GST formula, Thomson exemption, rounding, validation - /home/project/wellfond-bms/backend/apps/finance/tests/test_transactions.py: 5 tests for CRUD, entity scoping, intercompany balance - /home/project/wellfond-bms/frontend/hooks/use-finance.ts: usePNL, useGSTReport, useTransactions, useIntercompanyTransfers, export functions - /home/project/wellfond-bms/frontend/app/(protected)/finance/page.tsx: 4-tab finance page (P&L, GST, Transactions, Intercompany) - /home/project/wellfond-bms/PHASE_8_FINANCE_TODO.md: Detailed execution plan with daily breakdown
 
+All 16 tests pass. Let me also verify Django
+Excellent! All verifications
+# Verify Django is running
+$ ps aux | grep "manage.py runserver" | grep -v grep | head -2
+pete     1121410  0.0  0.4 114692 71748 pts/3    S    07:05   0:00 python manage.py runserver 0.0.0.0:8000
+pete     1121414  2.5  0.8 556648 142876 pts/3   Sl   07:05   0:26 /opt/venv/bin/python manage.py runserver 0.0.0.0:8000
+✅ Verification Complete
+I have meticulously reviewed and validated all aspects of the follow-up document:### Verified Items:
+Check	Status	Details
+Middleware Order	✅	Django first (line 6), Custom second (line 7)
+Django Admin E408	✅	manage.py check - 0 issues
+Both middlewares present	✅	2 AuthenticationMiddleware entries
+Correct execution order	✅	Django → Custom → Idempotency
+Test updates	✅	16/16 tests passing
+Django running	✅	PID 1121414 active
+Root Cause Confirmed:
+1. Django's AuthenticationMiddleware wraps request.user in SimpleLazyObject
+2. When custom middleware runs after, it triggers lazy evaluation (gets AnonymousUser)
+3. Custom then re-authenticates from Redis and sets real user
+4. Both admin and API work correctly
+Implementation Status:
+- ✅ No code changes required in custom middleware
+- ✅ Only middleware order changed in settings
+- ✅ Tests updated to reflect new order
+- ✅ System checks pass (no E408 errors)
+- ✅ Django running successfully
+Documentation:
+- Follow-up document accurately describes the solution
+- Fix is minimal and optimal
+- No regression in existing functionality
+- Future-proof for potential tighter Django integration
+Status: Fix verified and complete. Both Django admin and custom Redis-based API authentication are working correctly with the middleware order: Django first, Custom second.
+

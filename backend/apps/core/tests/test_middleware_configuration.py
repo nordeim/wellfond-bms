@@ -31,15 +31,19 @@ class MiddlewareConfigurationTests(TestCase):
             settings.MIDDLEWARE
         )
 
-    def test_custom_auth_before_django_auth(self):
-        """Custom auth middleware must run before Django's auth middleware."""
+    def test_django_auth_before_custom_auth(self):
+        """Django auth middleware must run before custom auth middleware.
+
+        Django's middleware wraps request.user in SimpleLazyObject.
+        Custom middleware runs after to re-authenticate from Redis if needed.
+        """
         middleware_list = settings.MIDDLEWARE
         custom_idx = middleware_list.index("apps.core.middleware.AuthenticationMiddleware")
         django_idx = middleware_list.index("django.contrib.auth.middleware.AuthenticationMiddleware")
 
         self.assertLess(
-            custom_idx, django_idx,
-            "Custom AuthenticationMiddleware must run before Django's"
+            django_idx, custom_idx,
+            "Django AuthenticationMiddleware must run before custom middleware"
         )
 
     def test_django_auth_before_idempotency(self):

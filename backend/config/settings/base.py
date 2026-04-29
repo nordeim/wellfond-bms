@@ -47,8 +47,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "apps.core.middleware.AuthenticationMiddleware", # Custom Redis-based auth (sets request.user)
-    "django.contrib.auth.middleware.AuthenticationMiddleware", # Django admin support - runs after custom
+    "django.contrib.auth.middleware.AuthenticationMiddleware", # Django auth - sets lazy request.user
+    "apps.core.middleware.AuthenticationMiddleware", # Custom Redis-based auth - re-authenticates from Redis
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.IdempotencyMiddleware",
