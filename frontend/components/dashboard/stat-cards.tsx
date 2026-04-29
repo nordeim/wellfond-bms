@@ -13,7 +13,7 @@ import { Dog, Heart, FileText, AlertCircle } from 'lucide-react';
 import { useQuickStats } from '@/hooks/use-dashboard';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { DashboardStats } from '@/lib/types';
+
 
 interface StatCardsProps {
   entityId?: string | undefined;
@@ -81,7 +81,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
   );
 }
 
-export function StatCards({ entityId, className, variant = 'default' }: StatCardsProps) {
+export function StatCards({ entityId: _entityId, className, variant = 'default' }: StatCardsProps) {
   const { data: stats, isLoading } = useQuickStats();
 
   if (isLoading) {

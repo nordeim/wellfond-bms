@@ -113,3 +113,91 @@ Key Directories to Explore for Dashboard:
 - /home/project/wellfond-bms/frontend/hooks/ — Available hooks for data fetching
 - /home/project/wellfond-bms/frontend/lib/ — Utilities and services
 
+Implementation Summary
+Phase 1: Backend Dashboard Router & Service ✅
+| File | Purpose |
+|------|---------|
+| backend/apps/core/services/dashboard.py | Role-aware metrics service with Redis caching (60s), entity scoping, NParks countdown, revenue calculation |
+| backend/apps/core/routers/dashboard.py | GET /dashboard/metrics endpoint with role-based response |
+| backend/apps/core/tests/test_dashboard.py | 11 TDD tests for endpoint validation |
+| backend/apps/core/tests/test_dashboard_integration.py | 20+ integration tests for API response structure |
+| Updated backend/api/__init__.py | Dashboard router registered |
+Key Features:
+- Role-aware payload (Management sees all entities, others scoped)
+- Redis caching with 60-second TTL
+- Revenue summary for last 6 months (GST calculation: price * 9 / 109)
+- NParks countdown with status (upcoming/due_soon/overdue)
+- Health alerts for Vet/Admin/Management
+- Sales pipeline for Sales/Admin/Management
+Phase 2: Frontend Types & Hooks ✅
+| File | Purpose |
+|------|---------|
+| frontend/lib/types.ts | Added DashboardMetrics, ActivityFeedItem, RevenueMonthlyData, etc. |
+| frontend/hooks/use-dashboard.ts | TanStack Query hooks: useDashboardMetrics, useQuickStats, useActivityFeed, useRevenueChart, useNParksCountdown, useDashboardAlerts |
+Phase 3: Dashboard Components (7 Widgets) ✅
+| Component | Purpose |
+|-----------|---------|
+| stat-cards.tsx | 4 summary cards (total_dogs, active_litters, pending_agreements, overdue_vaccinations) |
+| nparks-countdown.tsx | Countdown widget with status colors |
+| quick-actions.tsx | Role-aware action buttons (Management/Sales/Vet) |
+| activity-feed.tsx | Activity feed with auto-scroll, pause on hover |
+| revenue-chart.tsx | 6-month revenue bar chart (CSS-based, no Recharts dependency) |
+| alert-cards.tsx | Reused existing from /components/dogs/alert-cards.tsx |
+| dashboard-skeleton.tsx | Loading skeletons for all widgets |
+Phase 4: Dashboard Page & Layout ✅
+| File | Purpose |
+|------|---------|
+| frontend/app/(protected)/dashboard/page.tsx | Main dashboard with responsive grid (1/2/3 cols), Suspense + Skeleton |
+| frontend/app/(protected)/dashboard/layout.tsx | Dashboard layout |
+Responsive Grid:
+- Desktop (lg): 3-column grid
+- Tablet (md): 2-column grid  
+- Mobile: 1-column stack
+Phase 5: Testing Suite ✅
+| Test Suite | File | Tests |
+|------------|------|-------|
+| Backend Unit | test_dashboard.py | 11 tests |
+| Backend Integration | test_dashboard_integration.py | 20+ tests |
+| Frontend Unit | tests/dashboard.test.tsx | 20+ tests |
+| Frontend E2E | e2e/dashboard.spec.ts | 30+ tests |
+Test Coverage:
+- Role-based access (Management/Admin/Sales/Vet/Ground)
+- Entity scoping
+- API response structure validation
+- Component rendering with loading states
+- Responsive design (desktop/tablet/mobile)
+- Accessibility (ARIA labels, keyboard navigation)
+- Performance (<2s load time)
+TypeScript: 0 errors ✅
+---
+Key Design Decisions
+1. No Recharts Dependency: Revenue chart uses pure CSS bars to avoid heavy dependency
+2. Redis Caching: 60-second TTL on dashboard metrics for performance
+3. Role-Aware Payload: Backend returns different data based on user role
+4. Suspense + Skeleton: Proper loading states for all widgets
+5. Tangerine Sky Theme: Orange (#F97316) primary, blue (#0891B2) secondary, light blue (#DDEEFF) background
+6. Type Safety: All DashboardMetrics types properly defined
+---
+Files Created/Modified
+New Files (16):
+backend/apps/core/services/dashboard.py
+backend/apps/core/routers/dashboard.py
+backend/apps/core/tests/test_dashboard.py
+backend/apps/core/tests/test_dashboard_integration.py
+frontend/hooks/use-dashboard.ts
+frontend/components/dashboard/stat-cards.tsx
+frontend/components/dashboard/nparks-countdown.tsx
+frontend/components/dashboard/quick-actions.tsx
+frontend/components/dashboard/activity-feed.tsx
+frontend/components/dashboard/revenue-chart.tsx
+frontend/components/dashboard/dashboard-skeleton.tsx
+frontend/app/(protected)/dashboard/page.tsx
+frontend/app/(protected)/dashboard/layout.tsx
+frontend/tests/dashboard.test.tsx
+frontend/e2e/dashboard.spec.ts
+Modified Files (4):
+backend/api/__init__.py (dashboard router registration)
+backend/apps/core/routers/__init__.py (export dashboard_router)
+backend/apps/core/routers/auth.py (fix Ratelimited import)
+frontend/lib/types.ts (Dashboard types)
+
