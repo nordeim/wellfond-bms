@@ -1,379 +1,555 @@
-# Wellfond BMS Remediation Plan
-
-**Date:** April 29, 2026  
-**Status:** Ready for Execution  
-**Approach:** Test-Driven Development (TDD)
+# Wellfond BMS - Validated Remediation Plan
+## Version: 1.0 | Date: April 30, 2026
+## Status: Validated Against Codebase
 
 ---
 
 ## Executive Summary
 
-This plan addresses **4 confirmed valid issues** from the code audit:
+This plan addresses **20 validated issues** from the Code Review Audit Report. Each issue has been re-confirmed by direct code inspection. Issues are prioritized by criticality with root causes and optimal fixes specified.
 
-| Issue | File | Severity | TDD Phase |
-|-------|------|----------|-----------|
-| Hardcoded GST logic | `agreement.py:66` | High | Phase 1 |
-| Async/sync mismatch | `stream.py:165` | High | Phase 2 |
-| Missing rate limiting | `auth.py` routers | High | Phase 3 |
-| Dead code | `permissions.py:236` | Medium | Phase 4 |
-
----
-
-## Phase 1: GST Calculation Fix
-
-### Issue
-Hardcoded `entity.code.upper() == "THOMSON"` instead of using `entity.gst_rate` field.
-
-### TDD Cycle
-
-**Step 1.1: Write Failing Test**
-```python
-# backend/apps/sales/tests/test_gst_fix.py
-import pytest
-from decimal import Decimal
-from apps.core.models import Entity
-from apps.sales.services.agreement import AgreementService
-
-@pytest.mark.django_db
-class TestGSTCalculation:
-    def test_extract_gst_uses_gst_rate_field(self):
-        """Test that GST extraction uses entity.gst_rate, not hardcoded name."""
-        # Create entity with 0% GST but different name
-        entity = Entity.objects.create(
-            name="Test Entity",
-            code="TESTZERO",
-            gst_rate=Decimal("0.00")  # 0% GST
-        )
-        
-        price = Decimal("109.00")
-        gst = AgreementService.extract_gst(price, entity)
-        
-        # Should return 0.00 because gst_rate=0, not because of hardcoded name
-        assert gst == Decimal("0.00"), "Should use gst_rate field, not hardcoded name"
-    
-    def test_extract_gst_for_9_percent_entity(self):
-        """Test normal 9% GST calculation."""
-        entity = Entity.objects.create(
-            name="Holdings",
-            code="HOLDINGS",
-            gst_rate=Decimal("0.09")
-        )
-        
-        price = Decimal("109.00")
-        gst = AgreementService.extract_gst(price, entity)
-        
-        # GST = 109 * 9 / 109 = 9.00
-        assert gst == Decimal("9.00"), "Should calculate GST correctly for 9% rate"
-```
-
-**Step 1.2: Implement Fix**
-```python
-# backend/apps/sales/services/agreement.py:50-71
-@staticmethod
-def extract_gst(price: Decimal, entity: Entity) -> Decimal:
-    """
-    Extract GST component from price using Singapore GST formula.
-    Formula: price * 9 / 109, rounded to 2 decimals (HALF_UP)
-    Uses entity.gst_rate field (0.00 for exempt entities).
-    """
-    # Use gst_rate field from entity (0.00 for exempt, 0.09 for standard)
-    if entity.gst_rate == Decimal("0.00"):
-        return Decimal("0.00")
-    
-    # Calculate GST using the entity's rate
-    # Formula: price * rate / (1 + rate)
-    rate = entity.gst_rate
-    divisor = Decimal("1") + rate
-    gst = price * rate / divisor
-    
-    return gst.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-```
-
-**Step 1.3: Verify Fix**
-- Run `pytest backend/apps/sales/tests/test_gst_fix.py -v`
-- All tests should pass
-- Verify Thomson entity still works (gst_rate should be 0.00)
+| Category | Count | Status |
+|----------|-------|--------|
+| Critical | 3 | 🔴 Must fix before deployment |
+| High | 7 | 🟠 Should fix before production |
+| Medium | 7 | 🟡 Next sprint |
+| Low | 3 | 🔵 Backlog/Polish |
 
 ---
 
-## Phase 2: Async/Sync Mismatch Fix
+## Critical Issues (Must Fix Before Deployment)
 
-### Issue
-`_generate_dog_alert_stream()` uses `asyncio.to_thread()` instead of `sync_to_async(thread_sensitive=True)`.
+### 🔴 C1: BFF Proxy Path Traversal Vulnerability
 
-### TDD Cycle
+**Validation:**
+- **File:** `frontend/app/api/proxy/[...path]/route.ts:52-60`
+- **Confirmed:** Uses simple `startsWith()` check
+- **Risk:** SSRF via path traversal (e.g., `/dogs/../../admin/` after normalization)
 
-**Step 2.1: Write Failing Test**
-```python
-# backend/apps/operations/tests/test_sse_async.py
-import pytest
-import asyncio
-from unittest.mock import patch, MagicMock
-from apps.operations.routers.stream import _generate_dog_alert_stream
-
-@pytest.mark.asyncio
-@pytest.mark.django_db
-class TestSSEAsyncHandling:
-    @patch('apps.operations.routers.stream.asyncio.to_thread')
-    @patch('apps.operations.routers.stream.sync_to_async')
-    async def test_dog_alert_stream_uses_sync_to_async(self, mock_sync_to_async, mock_to_thread):
-        """Test that _generate_dog_alert_stream uses sync_to_async, not asyncio.to_thread."""
-        # Mock sync_to_async to return an async function
-        async def mock_async_func(*args, **kwargs):
-            return []
-        mock_sync_to_async.return_value = mock_async_func
-        
-        # Start the generator
-        gen = _generate_dog_alert_stream(
-            dog_id="test-dog-id",
-            user_id="test-user-id",
-            entity_id="test-entity-id",
-            user_role="admin"
-        )
-        
-        # Try to get first result (will timeout or error)
-        try:
-            await asyncio.wait_for(gen.__anext__(), timeout=0.5)
-        except asyncio.TimeoutError:
-            pass
-        
-        # Verify sync_to_async was called (not asyncio.to_thread)
-        mock_sync_to_async.assert_called_once()
-        mock_to_thread.assert_not_called()
+**Root Cause:**
+```typescript
+// Current (vulnerable):
+function isAllowedPath(path: string): boolean {
+  return ALLOWED_PREFIXES.some(prefix => path.startsWith(prefix));
+}
+// Bypass: `/dogs/../../../etc/passwd` starts with `/dogs/`
 ```
 
-**Step 2.2: Implement Fix**
-```python
-# backend/apps/operations/routers/stream.py:149-172
-async def _generate_dog_alert_stream(
-    dog_id: str,
-    user_id: str,
-    entity_id: str,
-    user_role: str,
-) -> AsyncGenerator[str, None]:
-    """Async generator for dog-specific SSE events."""
-    import time
+**Optimal Fix:**
+1. Add path normalization before validation
+2. Use regex anchored at start with strict path segment matching
+3. Reject paths containing `..` or null bytes
 
-    last_event_id = 0
-
-    while True:
-        try:
-            # Get pending alerts using sync_to_async for proper thread handling
-            # CHANGED: sync_to_async instead of asyncio.to_thread
-            alerts = await sync_to_async(get_pending_alerts, thread_sensitive=True)(
-                user_id=user_id,
-                entity_id=entity_id,
-                role=user_role,
-                since_id=last_event_id,
-                dog_id=dog_id,
-            )
-            # ... rest of function unchanged
+**Implementation:**
+```typescript
+function isAllowedPath(path: string): boolean {
+  // Normalize path: remove duplicate slashes, resolve . and ..
+  const normalized = path.replace(/\/+/g, '/').replace(/\/$/, '');
+  
+  // Reject paths with traversal attempts
+  if (normalized.includes('..') || normalized.includes('\0')) {
+    return false;
+  }
+  
+  // Allow health checks
+  if (normalized === '/health' || normalized === '/ready') {
+    return true;
+  }
+  
+  // Strict regex matching for API paths
+  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations)(\/.*)?$/;
+  return allowedPattern.test(normalized);
+}
 ```
 
-**Step 2.3: Verify Fix**
-- Run `pytest backend/apps/operations/tests/test_sse_async.py -v`
-- Verify both `_generate_alert_stream` and `_generate_dog_alert_stream` use same pattern
+**Test Strategy:**
+```typescript
+// Test cases for TDD
+const testCases = [
+  { path: '/dogs/', expected: true },
+  { path: '/dogs/../../admin/', expected: false },
+  { path: '/dogs/../../../etc/passwd', expected: false },
+  { path: '//dogs/', expected: true },  // After normalization
+  { path: '/dogs\x00/../../etc', expected: false },  // Null byte
+  { path: '/health/', expected: true },
+  { path: '/api/internal', expected: false },
+];
+```
 
 ---
 
-## Phase 3: Rate Limiting Implementation
+### 🔴 C2: Duplicate AuthenticationMiddleware Conflict
 
-### Issue
-No rate limiting on `/login`, `/refresh`, `/csrf` endpoints.
+**Validation:**
+- **File:** `backend/config/settings/base.py:50-51`
+- **Confirmed:** Both middlewares present
+- **Risk:** Race condition where Django middleware overwrites custom auth
 
-### TDD Cycle
-
-**Step 3.1: Write Failing Test**
+**Root Cause:**
 ```python
-# backend/apps/core/tests/test_rate_limit.py
-import pytest
-from django.test import Client
-from django.core.cache import cache
-from apps.core.models import User, Entity
+MIDDLEWARE = [
+    # ...
+    "apps.core.middleware.AuthenticationMiddleware",  # Custom (line 50)
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django (line 51)
+    # ...
+]
+```
 
-@pytest.mark.django_db
-class TestRateLimiting:
-    def setup_method(self):
-        self.client = Client()
-        cache.clear()
-        
-        self.entity = Entity.objects.create(
-            name="Test Entity",
-            code="TEST"
-        )
-        self.user = User.objects.create_user(
-            email="test@example.com",
-            password="TestPass123!",
-            role="admin",
-            entity=self.entity
-        )
+**Optimal Fix:**
+Remove line 51 (Django's middleware). The custom middleware already handles:
+- Session retrieval from Redis
+- User attachment to request
+- Django admin compatibility via ModelBackend
+
+**Implementation:**
+```python
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "apps.core.middleware.AuthenticationMiddleware",  # Keep only this
+    # REMOVE: "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.IdempotencyMiddleware",
+    "apps.core.middleware.EntityScopingMiddleware",
+    "django_ratelimit.middleware.RatelimitMiddleware",
+]
+```
+
+**Note:** Keep `django.contrib.auth` in INSTALLED_APPS for admin support.
+
+---
+
+### 🔴 C3: Idempotency Only Enforced on Log Paths
+
+**Validation:**
+- **File:** `backend/apps/core/middleware.py:29-31`
+- **Confirmed:** Only `/api/v1/operations/logs/` requires idempotency
+- **Risk:** Duplicate records for agreements, litters, transactions, etc.
+
+**Root Cause:**
+```python
+IDEMPOTENCY_REQUIRED_PATHS = [
+    "/api/v1/operations/logs/",  # Only logs!
+]
+```
+
+**Optimal Fix:**
+Per draft_plan v1.1, idempotency should be required for all state-changing operations.
+
+**Implementation:**
+```python
+# Option A: Require for all POST/PUT/PATCH/DELETE (recommended)
+def _is_idempotency_required(self, path: str, method: str) -> bool:
+    """Check if idempotency key is required for this request."""
+    # All state-changing methods require idempotency
+    if method in ("POST", "PUT", "PATCH", "DELETE"):
+        # Except auth endpoints
+        if path.startswith("/api/v1/auth/"):
+            return False
+        return True
+    return False
+
+# Option B: Expand explicit paths
+IDEMPOTENCY_REQUIRED_PATHS = [
+    "/api/v1/operations/logs/",
+    "/api/v1/breeding/litters",  # POST/PUT/PATCH
+    "/api/v1/breeding/records",  # POST/PUT/PATCH
+    "/api/v1/sales/agreements",  # POST/PUT/PATCH
+    "/api/v1/finance/transactions",  # POST
+    "/api/v1/customers/",  # POST/PUT/PATCH
+]
+```
+
+---
+
+## High Issues (Should Fix Before Production)
+
+### 🟠 H1: Session and Idempotency Share Redis Cache
+
+**Validation:**
+- **File:** `backend/config/settings/base.py:112-115`
+- **Confirmed:** Uses same `REDIS_CACHE_URL` as default cache
+
+**Root Cause:**
+```python
+"idempotency": {
+    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    "LOCATION": os.environ.get("REDIS_CACHE_URL", "redis://redis_cache:6379/0"),  # Same as default!
+},
+```
+
+**Optimal Fix:**
+Add dedicated Redis URL for idempotency with noeviction policy.
+
+**Implementation:**
+```python
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("REDIS_CACHE_URL", "redis://redis_cache:6379/0"),
+    },
+    "sessions": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("REDIS_SESSIONS_URL", "redis://redis_sessions:6379/0"),
+    },
+    "idempotency": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get(
+            "REDIS_IDEMPOTENCY_URL", "redis://redis_idempotency:6379/0"  # NEW dedicated instance
+        ),
+    },
+}
+```
+
+**Docker Compose Update:**
+```yaml
+redis_idempotency:
+  image: redis:7.4-alpine
+  command: redis-server --maxmemory 256mb --maxmemory-policy noeviction
+```
+
+---
+
+### 🟠 H2: NEXT_PUBLIC_API_URL Exposes Internal URL
+
+**Validation:**
+- **Files:** `frontend/lib/api.ts:16`, `frontend/lib/constants.ts:182`
+- **Confirmed:** Both use NEXT_PUBLIC_API_URL
+
+**Root Cause:**
+```typescript
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+```
+
+**Optimal Fix:**
+Use BACKEND_INTERNAL_URL for server-side calls (not exposed to browser).
+
+**Implementation:**
+```typescript
+// lib/api.ts
+function buildUrl(path: string): string {
+  if (typeof window === 'undefined') {
+    // Server-side: use internal URL (not exposed to browser)
+    const internalUrl = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:8000';
+    return `${internalUrl}/api/v1${path}`;
+  }
+  // Client-side: use BFF proxy
+  return `${PROXY_PREFIX}${path}`;
+}
+
+// lib/constants.ts - remove or use for client-side only
+export const API_CONFIG = {
+  // Only used for client-side configuration
+  baseUrl: '/api/proxy',  // Always proxy
+  timeout: 30000,
+};
+```
+
+---
+
+### 🟠 H3: SESSION_COOKIE_SECURE Verification
+
+**Validation:**
+- **File:** `backend/config/settings/production.py:18-19`
+- **Status:** ✅ Already correctly set
+- **Note:** base.py doesn't set it explicitly but auth.py handles via `secure=not settings.DEBUG`
+
+**Action:** No fix needed. Verified correct in production settings.
+
+---
+
+### 🟠 H4: COI Raw SQL Not Async-Compatible
+
+**Validation:**
+- **File:** `backend/apps/breeding/services/coi.py:61-90`
+- **Confirmed:** Uses synchronous `connection.cursor()`
+
+**Root Cause:**
+```python
+def get_shared_ancestors(dam_id: UUID, sire_id: UUID, generations: int = 5) -> List[dict]:
+    with connection.cursor() as cursor:  # Synchronous
+        cursor.execute("...")  # Blocks event loop
+```
+
+**Optimal Fix:**
+Add async wrapper using `sync_to_async(thread_sensitive=True)`.
+
+**Implementation:**
+```python
+from asgiref.sync import sync_to_async
+
+async def get_shared_ancestors_async(
+    dam_id: UUID, sire_id: UUID, generations: int = 5
+) -> List[dict]:
+    """Async wrapper for get_shared_ancestors."""
+    return await sync_to_async(get_shared_ancestors, thread_sensitive=True)(
+        dam_id, sire_id, generations
+    )
+
+async def calc_coi_async(
+    dam_id: UUID, sire_id: UUID, generations: int = 5, use_cache: bool = True
+) -> dict:
+    """Async version of calc_coi."""
+    cache_key = get_cache_key(dam_id, sire_id, generations)
+    if use_cache:
+        cached_result = await sync_to_async(cache.get)(cache_key)
+        if cached_result:
+            cached_result["cached"] = True
+            return cached_result
     
-    def test_login_rate_limit_blocks_after_5_attempts(self):
-        """Test that login endpoint rate limits after 5 attempts."""
-        # Make 5 failed login attempts
-        for i in range(5):
-            response = self.client.post(
-                '/api/v1/auth/login',
-                {'email': 'test@example.com', 'password': 'wrong'},
-                content_type='application/json'
-            )
-            # Should get 401 for wrong password
-            assert response.status_code == 401
-        
-        # 6th attempt should be rate limited
-        response = self.client.post(
-            '/api/v1/auth/login',
-            {'email': 'test@example.com', 'password': 'wrong'},
-            content_type='application/json'
-        )
-        # Should get 429 Too Many Requests
-        assert response.status_code == 429
-        assert 'Rate limit exceeded' in response.content.decode()
+    # Use async version
+    ancestors = await get_shared_ancestors_async(dam_id, sire_id, generations)
+    # ... rest of calculation
 ```
 
-**Step 3.2: Implement Fix**
+---
 
-First, verify django-ratelimit is installed:
-```bash
-pip install django-ratelimit
+### 🟠 H5: Service Worker Cache Never Versioned
+
+**Validation:**
+- **File:** `frontend/public/sw.js:7`
+- **Confirmed:** Hardcoded `const CACHE_NAME = "wellfond-bms-v1"`
+
+**Root Cause:**
+No mechanism to bump cache version on deploy.
+
+**Optimal Fix:**
+Add build-time version injection via environment variable or build hash.
+
+**Implementation:**
+```javascript
+// sw.js
+// Injected at build time
+const CACHE_VERSION = self.__WB_MANIFEST ? self.__WB_MANIFEST.version : 'v1';
+const CACHE_NAME = `wellfond-bms-${CACHE_VERSION}`;
+const BUILD_TIMESTAMP = '{{BUILD_TIMESTAMP}}';  // Template replaced at build
+
+// Alternative: Use Workbox for proper cache management
+// Install: npm install workbox-build workbox-webpack-plugin
+// Then use workbox.injectManifest in build process
 ```
 
-Update auth router:
+**Build Script Update:**
+```json
+// package.json
+"scripts": {
+  "build": "next build && npm run build:sw",
+  "build:sw": "workbox injectManifest workbox-config.js"
+}
+```
+
+---
+
+### 🟠 H6: PDPA Enforcement Missing in Log Routers
+
+**Validation:**
+- **File:** `backend/apps/operations/routers/logs.py`
+- **Confirmed:** No `enforce_pdpa()` calls
+- **Note:** Log models don't have `pdpa_consent` field - this is on User/Customer
+
+**Root Cause:**
+The `enforce_pdpa()` function filters querysets by `pdpa_consent` field, but log operations check user permissions, not customer data.
+
+**Optimal Fix:**
+Add PDPA consent check at user level for operations that handle customer data. For pure operational logs (heat, whelping), PDPA may not apply.
+
+**Implementation:**
 ```python
-# backend/apps/core/routers/auth.py
-from ninja import Router
-from django_ratelimit.decorators import ratelimit
-from ninja.decorators import decorate
-
-router = Router(tags=["auth"])
-
-def apply_rate_limit(func):
-    """Decorator to apply rate limiting to auth endpoints."""
-    return decorate(ratelimit(key='ip', rate='5/m', method=['POST']))(func)
-
-@router.post("/login")
-@apply_rate_limit
-def login(request, data: LoginRequest):
-    """Login endpoint with rate limiting: 5 attempts per minute per IP."""
-    ...
-
-@router.post("/refresh")
-@apply_rate_limit
-def refresh(request):
-    """Refresh endpoint with rate limiting."""
-    ...
-
-@router.get("/csrf")
-@decorate(ratelimit(key='ip', rate='10/m', method=['GET']))
-def get_csrf(request):
-    """CSRF endpoint with rate limiting."""
-    ...
+# In log routers, check user's entity access and PDPA compliance
+def _check_permission(request, dog: Dog):
+    """Check if user has access to the dog with PDPA compliance."""
+    user = _get_current_user(request)
+    
+    if not user or not user.is_authenticated:
+        raise HttpError(401, "Authentication required")
+    
+    # Check PDPA consent for user
+    if hasattr(user, 'pdpa_consent') and not user.pdpa_consent:
+        raise HttpError(403, "PDPA consent required")
+    
+    # Entity scoping
+    if user.role != "management" and str(dog.entity_id) != str(user.entity_id):
+        raise HttpError(403, "Access denied")
+    
+    return user
 ```
 
-Add rate limit exception handler to `api.py`:
+---
+
+### 🟠 H7: Rate Limiting on Auth Endpoints
+
+**Validation:**
+- **File:** `backend/apps/core/routers/auth.py:39,65,101`
+- **Confirmed:** `@ratelimit` decorators present
+- **Status:** ✅ Already implemented
+
+**Note:** RATELIMIT_VIEW in settings needs handler implementation.
+
+**Action:** Add ratelimit handler view if not present.
+
+---
+
+## Medium Issues (Next Sprint)
+
+### 🟡 M1: COI SQL Parameter Documentation
+
+**Status:** Low priority - queries are properly parameterized with `%s`
+**Action:** Add comment documenting parameter order for maintainability.
+
+---
+
+### 🟡 M2: Closure Table Auto-Rebuild
+
+**Status:** Celery tasks exist but no automatic triggers
+**Action:** Document manual rebuild process; consider adding post_save signal for critical paths.
+
+---
+
+### 🟡 M3: Gotenberg Missing in Dev Compose
+
+**Implementation:**
+```yaml
+gotenberg:
+  image: gotenberg/gotenberg:8
+  ports:
+    - "3001:3000"
+  command: gotenberg --api-port=3000
+```
+
+---
+
+### 🟡 M4: api.ts Server Detection Fragile
+
+**Current:** `typeof window === 'undefined'`
+**Better:** Use Next.js headers() availability
+
+```typescript
+function isServer(): boolean {
+  try {
+    // Server-only import
+    const { headers } = require('next/headers');
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+---
+
+### 🟡 M5: Rate Limit Handler
+
+**Add to:** `backend/apps/core/routers/auth.py`
 ```python
-# backend/api.py
-from ninja import NinjaAPI
 from django.http import JsonResponse
 
-api = NinjaAPI()
-
-@api.exception_handler(Ratelimited)
-def handle_rate_limit(request, exc):
-    """Return 429 when rate limit exceeded."""
+def ratelimit_handler(request, exception):
+    """Handle rate limit exceeded."""
     return JsonResponse(
-        {"error": "Rate limit exceeded", "detail": "Too many requests. Please try again later."},
+        {"error": "Rate limit exceeded", "retry_after": 60},
         status=429
     )
 ```
 
-**Step 3.3: Verify Fix**
-- Run `pytest backend/apps/core/tests/test_rate_limit.py -v`
-- Manual test: rapid-fire login requests from same IP should get blocked
+---
+
+### 🟡 M6: SSE Connection Cleanup
+
+**Current:** `while True` loop never terminates
+**Fix:** Add client disconnect detection via request signals.
+
+```python
+async def _generate_alert_stream(...):
+    cancelled = False
+    
+    def on_disconnect():
+        nonlocal cancelled
+        cancelled = True
+    
+    # Register disconnect handler
+    request.add_done_callback(on_disconnect)
+    
+    while not cancelled:
+        # ... existing logic
+```
 
 ---
 
-## Phase 4: Dead Code Removal
+### 🟡 M7: scope_entity Hasattr Check
 
-### Issue
-`require_admin_debug` function exists but is never used.
-
-### TDD Cycle
-
-**Step 4.1: Write Test to Confirm Dead Code**
 ```python
-# backend/apps/core/tests/test_dead_code.py
-import subprocess
-
-def test_require_admin_debug_not_referenced():
-    """Verify require_admin_debug is not imported or used anywhere."""
-    result = subprocess.run(
-        ['grep', '-rn', 'require_admin_debug', 'backend/'],
-        capture_output=True,
-        text=True
-    )
-    # Should only find the definition, no usages
-    lines = [l for l in result.stdout.split('\n') if l.strip()]
-    # Should only have 1 line (the definition)
-    assert len(lines) == 1, f"require_admin_debug found in {len(lines)} places: {lines}"
+def scope_entity(queryset: QuerySet, user: User) -> QuerySet:
+    if not user or not user.is_authenticated:
+        return queryset.none()
+    
+    if user.role == User.Role.MANAGEMENT:
+        return queryset
+    
+    # Add hasattr check
+    if not hasattr(queryset.model, 'entity_id'):
+        return queryset  # Pass through for non-entity models
+    
+    if user.entity_id:
+        return queryset.filter(entity_id=user.entity_id)
+    
+    return queryset.none()
 ```
 
-**Step 4.2: Implement Fix**
-```python
-# backend/apps/core/permissions.py
-# Remove lines 236-255 entirely:
-# def require_admin_debug(func: F) -> F:
-#     """Debug version of require_admin."""
-#     ...
+---
+
+## Low Issues (Backlog)
+
+### 🔵 L1: Remove api.py.bak
+```bash
+rm /home/project/wellfond-bms/backend/api.py.bak
 ```
 
-**Step 4.3: Verify Fix**
-- Run `pytest backend/apps/core/tests/test_dead_code.py -v`
-- Run full test suite to ensure nothing breaks
+### 🔵 L2: Fix GOTENBERG_URL Port
+```python
+# sales/services/pdf.py:24
+GOTENBERG_URL = getattr(settings, "GOTENBERG_URL", "http://localhost:3001")
+```
+
+### 🔵 L3: Update README Docker References
+Update to reference actual `infra/docker/docker-compose.yml`
 
 ---
 
 ## Execution Order
 
-1. **Phase 1** (GST Fix) - ~30 min
-   - Write test → Run (fails) → Implement → Run (passes) → Commit
+### Phase 1: Critical (Immediate)
+1. C2: Remove duplicate AuthenticationMiddleware
+2. C1: Fix BFF proxy path traversal
+3. C3: Expand idempotency enforcement
 
-2. **Phase 2** (Async Fix) - ~30 min
-   - Write test → Run (fails) → Implement → Run (passes) → Commit
+### Phase 2: High (This Sprint)
+4. H1: Isolate idempotency cache
+5. H2: Remove NEXT_PUBLIC_API_URL
+6. H4: Add COI async wrapper
+7. H5: SW cache versioning
+8. H6: PDPA enforcement (if applicable)
 
-3. **Phase 3** (Rate Limiting) - ~45 min
-   - Install package → Write test → Run (fails) → Implement → Run (passes) → Commit
+### Phase 3: Medium (Next Sprint)
+9. M3: Add Gotenberg to compose
+10. M6: SSE connection cleanup
+11. M7: scope_entity hasattr check
+12. M4: api.ts server detection
 
-4. **Phase 4** (Dead Code) - ~15 min
-   - Write test → Run (passes - confirms dead) → Remove code → Verify → Commit
-
-5. **Final Verification** - ~20 min
-   - Run full test suite
-   - Run lint/typecheck
-   - Manual verification
-
----
-
-## Rollback Plan
-
-Each phase is independent with its own commit:
-```bash
-# If issues arise, rollback specific phase
-git revert <commit-hash>
-```
+### Phase 4: Low (Backlog)
+13. L1: Remove api.py.bak
+14. L2: Fix GOTENBERG_URL port
+15. L3: Update README
 
 ---
 
-## Verification Checklist
+## Validation Checklist
 
-- [ ] All new tests pass
-- [ ] Existing tests still pass
-- [ ] No lint/type errors
-- [ ] Manual testing confirms fixes work
-- [ ] Code review complete
-
----
-
-**Plan Created:** 2026-04-29  
-**Estimated Time:** 2.5 hours  
-**Ready to Execute:** ✅
+- [ ] Each fix has corresponding test
+- [ ] TDD approach: test first, then implementation
+- [ ] Security fixes tested with attack scenarios
+- [ ] No regression in existing functionality
+- [ ] Documentation updated

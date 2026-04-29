@@ -47,16 +47,39 @@ const STRIP_HEADERS = [
 // =============================================================================
 
 /**
- * Validate if path is allowed
- */
-function isAllowedPath(path: string): boolean {
-  // Allow health checks
-  if (path === '/health/' || path === '/ready/') {
+* Validate if path is allowed
+*
+* Security fix for Critical Issue C1: Path Traversal Vulnerability
+* - Normalizes path before validation
+* - Rejects paths with traversal attempts (..)
+* - Uses strict regex matching anchored at start
+* - Rejects null byte injection attempts
+*/
+export function isAllowedPath(path: string): boolean {
+  // Normalize path: remove duplicate slashes, remove trailing slash
+  const normalized = path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
+
+  // Reject paths with traversal attempts
+  if (normalized.includes('..')) {
+    return false;
+  }
+
+  // Reject null byte injection attempts
+  if (normalized.includes('\0')) {
+    return false;
+  }
+
+  // Allow health checks (exact match or with trailing slash)
+  if (normalized === '/health' || normalized === '/ready') {
     return true;
   }
 
-  // Check against allowed prefixes
-  return ALLOWED_PREFIXES.some(prefix => path.startsWith(prefix));
+  // Strict regex matching for API paths
+  // Matches: /auth, /users, /dogs, /breeding, /sales, /compliance,
+  //          /customers, /finance, /operations
+  // Followed by optional path segments
+  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations)(\/|$)/;
+  return allowedPattern.test(normalized);
 }
 
 /**

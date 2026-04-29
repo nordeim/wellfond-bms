@@ -48,7 +48,6 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "apps.core.middleware.AuthenticationMiddleware",  # Custom Redis-based auth (sets request.user)
-    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django admin support
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.IdempotencyMiddleware",
@@ -111,7 +110,9 @@ CACHES = {
     },
     "idempotency": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("REDIS_CACHE_URL", "redis://redis_cache:6379/0"),
+        "LOCATION": os.environ.get(
+            "REDIS_IDEMPOTENCY_URL", "redis://redis_idempotency:6379/0"
+        ),
     },
 }
 

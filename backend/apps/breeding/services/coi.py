@@ -19,6 +19,7 @@ from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
+from asgiref.sync import sync_to_async
 from django.core.cache import cache
 from django.db import connection
 
@@ -325,11 +326,151 @@ def get_coi_color(coi_pct: float) -> str:
     Get color code for COI percentage (for UI).
 
     Returns:
-        Hex color code
+    Hex color code
     """
     if coi_pct < 6.25:
-        return "#4EAD72"  # Green
+        return "#4EAD72" # Green
     elif coi_pct < 12.5:
-        return "#D4920A"  # Yellow/Orange
+        return "#D4920A" # Yellow/Orange
     else:
-        return "#D94040"  # Red
+        return "#D94040" # Red
+
+
+# =============================================================================
+# Async Wrappers (HIGH-4 Fix)
+# =============================================================================
+
+async def get_shared_ancestors_async(
+    dam_id: UUID,
+    sire_id: UUID,
+    generations: int = 5
+) -> List[dict]:
+    """
+    Async wrapper for get_shared_ancestors.
+
+    Uses sync_to_async(thread_sensitive=True) for proper Django
+    database connection handling in async contexts.
+
+    Args:
+        dam_id: UUID of the dam (female)
+        sire_id: UUID of the sire (male)
+        generations: Maximum generations to search (default: 5)
+
+    Returns:
+        List of dicts with ancestor info
+    """
+    return await sync_to_async(get_shared_ancestors, thread_sensitive=True)(
+        dam_id, sire_id, generations
+    )
+
+
+async def calc_coi_async(
+    dam_id: UUID,
+    sire_id: UUID,
+    generations: int = 5,
+    use_cache: bool = True
+) -> dict:
+    """
+    Async version of calc_coi for use in async contexts.
+
+    Uses sync_to_async with thread_sensitive=True to properly handle
+    Django database connections in async event loops.
+
+    Args:
+        dam_id: UUID of the dam (female)
+        sire_id: UUID of the sire (male)
+        generations: Maximum generations to analyze (default: 5)
+        use_cache: Whether to use Redis cache (default: True)
+
+    Returns:
+        Dict with COI calculation results
+    """
+    cache_key = get_cache_key(dam_id, sire_id, generations)
+
+    if use_cache:
+        cached = await sync_to_async(cache.get)(cache_key)
+        if cached:
+            cached["cached"] = True
+            logger.debug(f"COI cache hit (async) for {dam_id} x {sire_id}")
+            return cached
+
+    # Use async wrapper for ancestor lookup
+    ancestors = await get_shared_ancestors_async(dam_id, sire_id, generations)
+
+    if not ancestors:
+        result = {
+            "coi_pct": 0.0,
+            "shared_ancestors": [],
+            "generation_depth": generations,
+            "cached": False,
+        }
+        if use_cache:
+            await sync_to_async(cache.set)(cache_key, result, COI_CACHE_TTL)
+        return result
+
+    # Calculate COI using Wright's formula
+    coi = Decimal("0.0")
+    ancestor_details = []
+
+    for ancestor in ancestors:
+        n1 = ancestor["depth_dam"]
+        n2 = ancestor["depth_sire"]
+        contribution = Decimal("0.5") ** (n1 + n2 + 1)
+        fa = Decimal("0.0")  # Assume 0 if not known
+        contribution = contribution * (Decimal("1.0") + fa)
+        coi += contribution
+
+        relationship = _get_relationship_name(n1, n2)
+        ancestor_details.append({
+            "dog_id": ancestor["dog_id"],
+            "name": ancestor["name"],
+            "microchip": ancestor["microchip"],
+            "relationship": relationship,
+            "generations_back": max(n1, n2),
+            "depth_dam": n1,
+            "depth_sire": n2,
+            "contribution_pct": float(contribution * 100),
+        })
+
+    coi_pct = float(coi * 100)
+
+    result = {
+        "coi_pct": coi_pct,
+        "shared_ancestors": ancestor_details,
+        "generation_depth": generations,
+        "cached": False,
+    }
+
+    if use_cache:
+        await sync_to_async(cache.set)(cache_key, result, COI_CACHE_TTL)
+        logger.debug(f"COI calculated and cached (async) for {dam_id} x {sire_id}: {coi_pct:.2f}%")
+
+    return result
+
+
+async def calc_coi_by_dogs_async(
+    dam: Dog,
+    sire: Dog,
+    generations: int = 5,
+    use_cache: bool = True
+) -> dict:
+    """
+    Async version of calc_coi_by_dogs.
+
+    Validates gender before calculation.
+
+    Args:
+        dam: Dam Dog instance (must be female)
+        sire: Sire Dog instance (must be male)
+        generations: Maximum generations to analyze
+        use_cache: Whether to use Redis cache
+
+    Returns:
+        Dict with COI calculation results
+    """
+    if dam.gender != "F":
+        raise ValueError(f"Dam must be female, got {dam.gender}")
+    if sire.gender != "M":
+        raise ValueError(f"Sire must be male, got {sire.gender}")
+
+    return await calc_coi_async(dam.id, sire.id, generations, use_cache)

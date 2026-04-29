@@ -58,6 +58,20 @@ Awesome meticulous review, analysis and planning. Please keep up the good work. 
 
 ---
 
+please meticulously review and analyze @Code_Review_Audit_Report_2.md and carefully and systematically validate the findings and claims about bugs and gaps against the codebase. identify the root cause and the optimal fix for each validated issue. then present the validated issues in order of criticality. be very thorough and methodical in your review and validation of the report.
+
+---
+
+awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your previous validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
+
+1. Re-evaluate and re-validate the issues I identified in my previous validation
+2. Confirm root causes and optimal fixes
+3. Create a detailed remediation plan with ToDo list
+4. Review and validate the remediation plan against the codebase
+5. Execute the fixes using TDD approach
+
+---
+
 Awesome meticulous review, analysis and planning. Please keep up the good work. now, please meticulously review and update @README.md , @CLAUDE.md and @ACCOMPLISHMENTS.md to align with the latest code changes, issues fixed, gotchas to look out for, troubleshooting tips, lessons learnt, outstanding issues and recommendations.
 
 ---

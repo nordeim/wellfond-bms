@@ -22,12 +22,25 @@ class IdempotencyMiddleware:
 
     Header: X-Idempotency-Key: <uuid>
 
-    Special enforcement:
-    - POST to /api/v1/operations/logs/ REQUIRES idempotency key
+    Critical Fix C3: All state-changing operations require idempotency keys
+    (except auth endpoints which have their own replay protection).
     """
 
+    # State-changing paths that REQUIRE idempotency key
     IDEMPOTENCY_REQUIRED_PATHS = [
-        "/api/v1/operations/logs/",
+        "/api/v1/operations/",
+        "/api/v1/breeding/",
+        "/api/v1/sales/",
+        "/api/v1/finance/",
+        "/api/v1/customers/",
+        "/api/v1/compliance/",
+        "/api/v1/dogs/",
+        "/api/v1/users/",
+    ]
+
+    # Exempt paths (auth has its own CSRF/replay protection)
+    IDEMPOTENCY_EXEMPT_PATHS = [
+        "/api/v1/auth/",
     ]
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
@@ -45,7 +58,7 @@ class IdempotencyMiddleware:
             return JsonResponse(
                 {
                     "error": "Idempotency key required",
-                    "detail": f"POST to {request.path} requires X-Idempotency-Key header",
+                    "detail": f"{request.method} to {request.path} requires X-Idempotency-Key header",
                 },
                 status=400,
             )
@@ -102,7 +115,16 @@ class IdempotencyMiddleware:
         return f"idempotency:{hashlib.sha256(data.encode()).hexdigest()}"
 
     def _is_idempotency_required(self, path: str) -> bool:
-        """Check if idempotency key is required for this path."""
+        """
+        Check if idempotency key is required for this path.
+
+        All state-changing operations require idempotency except exempt paths (auth).
+        """
+        # Check if path is exempt (auth endpoints have CSRF protection)
+        if any(path.startswith(exempt) for exempt in self.IDEMPOTENCY_EXEMPT_PATHS):
+            return False
+
+        # All other state-changing operations require idempotency
         return any(
             path.startswith(required_path)
             for required_path in self.IDEMPOTENCY_REQUIRED_PATHS
