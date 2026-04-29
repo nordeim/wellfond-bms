@@ -480,7 +480,10 @@ class TestBlastSend(TestCase):
     @patch("apps.customers.services.blast.dispatch_blast")
     def test_send_blast_queues_task(self, mock_dispatch):
         """Test that send_blast queues the Celery task."""
-        mock_dispatch.delay = MagicMock()
+        # Mock the Celery task's delay method
+        mock_task = MagicMock()
+        mock_task.delay = MagicMock()
+        mock_dispatch.return_value = mock_task
 
         payload = BlastCreate(
             customer_ids=[self.customer1.id, self.customer2.id],
@@ -495,7 +498,8 @@ class TestBlastSend(TestCase):
         )
 
         # Should queue task
-        mock_dispatch.delay.assert_called_once()
+        mock_dispatch.assert_called_once()
+        mock_task.delay.assert_called_once()
 
         # Result should show exclusion
         self.assertEqual(result.total_recipients, 2)

@@ -12,7 +12,7 @@ from django.db import transaction
 from uuid import UUID
 
 from apps.core.models import User
-from .models import BlastChannel, CommunicationChannel, CommunicationStatus, Customer
+from .models import Customer
 from .services.blast import BlastProgressTracker, BlastService, CommunicationRouter
 
 logger = logging.getLogger(__name__)

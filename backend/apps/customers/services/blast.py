@@ -339,24 +339,8 @@ class BlastService:
         external_id: str = "",
         error_message: str = "",
     ) -> CommunicationLog:
-        """
-        Log communication attempt.
-
-        Args:
-            customer: Customer
-            channel: EMAIL or WA
-            status: SENT, DELIVERED, BOUNCED, FAILED
-            message_preview: First 200 chars of message
-            subject: Email subject (if email)
-            blast_id: Blast ID
-            external_id: External provider ID
-            error_message: Error details
-
-        Returns:
-            Created CommunicationLog entry
-        """
-    with transaction.atomic():
-        # Prepare timestamp fields
+        """Log communication attempt."""
+        # Prepare timestamp fields before create
         sent_at = None
         delivered_at = None
         if status in ["SENT", "DELIVERED"]:
@@ -364,19 +348,20 @@ class BlastService:
         if status == "DELIVERED":
             delivered_at = datetime.now()
 
-        # Create log with all fields (single save)
-        log = CommunicationLog.objects.create(
-            customer=customer,
-            blast_id=blast_id,
-            channel=channel,
-            status=status,
-            subject=subject,
-            message_preview=message_preview[:200],
-            external_id=external_id,
-            error_message=error_message,
-            sent_at=sent_at,
-            delivered_at=delivered_at,
-        )
+        # Create log with all fields (single atomic save)
+        with transaction.atomic():
+            log = CommunicationLog.objects.create(
+                customer=customer,
+                blast_id=blast_id,
+                channel=channel,
+                status=status,
+                subject=subject,
+                message_preview=message_preview[:200],
+                external_id=external_id,
+                error_message=error_message,
+                sent_at=sent_at,
+                delivered_at=delivered_at,
+            )
 
         logger.info(f"Logged {channel} {status} for {customer.id}")
         return log

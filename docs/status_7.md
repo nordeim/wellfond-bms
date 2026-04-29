@@ -329,3 +329,42 @@ Next Steps Needed:
 2. Verify blast.py has correct indentation
 3. Re-run tests
 
+Now I understand the issue. The with transaction.atomic(): line only has 4 spaces of indentation (same as the function definition), but it should have 8 spaces (inside the function). This makes Python think the code block is at module level rather than inside the function.
+
+There is still an indentation issue. Let me check the
+→ Read backend/apps/customers/services/blast.py [offset=355, limit=35]
+Thinking: I see the problem now. The indentation is still wrong - line 358 has with transaction.atomic(): but lines 359-382 don't have enough indentation. The content is supposed to be indented 8 spaces to be inside the with block, but it's only 4 spaces.
+
+I see! The indentation script didn't work correctly. The lines are now missing their leading spaces entirely (showing sent_at = None without any leading spaces). The script added spaces to lines that already had spaces, but now the indentation is broken.
+Let me check what the original file looked like and restore it properly. I'll need to rewrite the log
+
+Great progress! 42 tests passing, only 2 remaining failures:
+1. test_send_blast_no_recipients - ImportError for BlastChannel
+2. test_send_blast_queues_task - AttributeError for `dispatch_b
+# Todos
+Fix indentation in blast.py log_communication method
+Clear Python cache and verify syntax
+Run all Phase 7 tests and verify 44/44 pass
+Thinking: Down from 8 failures to just 2! Let me fix these remaining issues:
+1. test_send_blast_no_recipients - ImportError for BlastChannel
+2. test_send_blast_queues_task - AttributeError for dispatch_blast
+
+Phase 7 Backend Tests - Status Update
+Fixed:
+1. ✅ Indentation in blast.py - The log_communication method was indented incorrectly, causing syntax error. Fixed by rewriting the method with proper 8-space indentation inside the function.
+2. ✅ Removed BlastChannel import from tasks.py - This was a leftover reference that no longer exists in models.
+Remaining Issues:
+1. Test blast.py line 480 - The mock patch needs to be fixed:
+      @patch("apps.customers.services.blast.dispatch_blast")
+      The test expects mock_dispatch.delay but dispatch_blast is imported inside send_blast() method, making it hard to mock.
+Solution Options:
+Option 1: Move the import to module level in blast.py so it can be mocked:
+from ..tasks import dispatch_blast  # Move to top of file
+Option 2: Change the mock patch in test:
+@patch("apps.customers.tasks.dispatch_blast.delay")
+Option 3: Skip these 2 tests for now since the core functionality works (42/44 tests passing).
+Current Test Results: 42 passed, 2 failed 
+The 2 failures are:
+1. test_send_blast_no_recipients - ImportError: BlastChannel (already fixed in tasks.py)
+2. test_send_blast_queues_task - Mock path issue
+
