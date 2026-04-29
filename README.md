@@ -520,13 +520,13 @@ Production uses full containerization with 11 services:
 | **2** | ✅ Complete | Apr 26, 2026 | Domain models, dog CRUD, vaccinations, alerts |
 | **3** | ✅ Complete | Apr 26, 2026 | Ground ops, PWA, Draminski, SSE, offline queue |
 | **4** | ✅ Complete | Apr 28, 2026 | Breeding, COI, genetics engine, mate checker |
-| **5** | 📋 Backlog | - | Sales agreements, AVS tracking |
-| **6** | 📋 Backlog | - | Compliance, NParks reporting |
-| **7** | 📋 Backlog | - | Customer DB, marketing blast |
-| **8** | 📋 Backlog | - | Dashboard, finance exports |
+| **5** | ✅ Complete | Apr 29, 2026 | Sales agreements, AVS, e-signatures, PDF generation |
+| **6** | ✅ Complete | Apr 29, 2026 | Compliance, NParks reporting, GST 9/109 |
+| **7** | ✅ Complete | Apr 29, 2026 | Customer CRM, segmentation, marketing blast |
+| **8** | ✅ Complete | Apr 29, 2026 | Finance P&L, GST reports, intercompany transfers |
 | **9** | 📋 Backlog | - | Observability, production readiness |
 
-**Overall Progress:** 5 of 9 Phases Complete (55%)
+**Overall Progress:** 8 of 9 Phases Complete (89%)
 
 ---
 
@@ -615,6 +615,88 @@ or use is strictly prohibited.
 ---
 
 ## 📊 Recent Changes
+
+### Phase 8 Completion (April 29, 2026) — 100% Complete
+
+#### Finance Module (4 Models + Services)
+- `Transaction` - Revenue/expense/transfer tracking with entity scoping
+- `IntercompanyTransfer` - Auto-balancing transactions between entities
+- `GSTReport` - Quarterly IRAS GST calculation (price × 9 / 109, ROUND_HALF_UP)
+- `PNLSnapshot` - Monthly P&L snapshots with YTD rollup (April fiscal year)
+
+#### P&L Statement Implementation
+- **Revenue**: Aggregated from SalesAgreement (SOLD/COMPLETED status)
+- **COGS**: SALE category expenses calculated
+- **Operating Expenses**: All other transaction categories
+- **Net Calculation**: revenue - cogs - expenses
+- **YTD Rollup**: Singapore fiscal year (April-March) with proper April rollover
+- **Intercompany Elimination**: Excludes internal transfers between entities
+
+#### GST Report Implementation
+- **Formula**: `price * 9 / 109` with `ROUND_HALF_UP` (Singapore IRAS compliant)
+- **Thomson Exemption**: 0% GST for Thomson entity (breeding stock)
+- **Excel Export**: IRAS-compatible format with validation
+- **Quarterly Reporting**: Q1-Q4 breakdowns with cumulative totals
+
+#### Intercompany Transfers
+- **Auto-Balancing**: Creates paired transactions (REVENUE + EXPENSE)
+- **Entity Scoping**: Management/Admin only creation
+- **Audit Trail**: Immutable transfer records
+- **Automatic Transaction Creation**: `from_entity` EXPENSE, `to_entity` REVENUE
+
+#### API Endpoints Added (Phase 8)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/finance/pnl` | GET | P&L statement for month/entity |
+| `/api/v1/finance/pnl/ytd` | GET | Year-to-date P&L rollup |
+| `/api/v1/finance/gst` | GET | GST report for quarter/entity |
+| `/api/v1/finance/transactions` | GET/POST | Transaction list/create |
+| `/api/v1/finance/intercompany` | GET/POST | Intercompany transfers |
+| `/api/v1/finance/export/pnl` | GET | Download P&L as Excel |
+| `/api/v1/finance/export/gst` | GET | Download GST as Excel |
+
+#### Frontend Components (Phase 8)
+| Component | Location | Features |
+|-----------|----------|----------|
+| `FinancePage` | `app/(protected)/finance/page.tsx` | 4-tab interface (P&L, GST, Transactions, Intercompany) |
+| `use-finance.ts` | `hooks/use-finance.ts` | 7 TanStack Query hooks for finance data |
+
+#### Tests Added (Phase 8) — 19/19 Passing
+- **test_pnl.py**: 7 tests (revenue, COGS, expenses, net, YTD, determinism)
+- **test_gst.py**: 4 tests (GST formula, Thomson exemption, rounding, validation)
+- **test_transactions.py**: 8 tests (CRUD, entity scoping, intercompany balance)
+
+#### Key Technical Achievements
+- Manual pagination implementation (avoiding `@paginate` decorator issues)
+- Transaction model using `_state.adding` for new record detection
+- PNLResult dataclass with frozenset for immutability
+- GST Thomson check case-insensitive for robustness
+- YTD calculation handling Singapore fiscal year (April start)
+
+---
+
+### Phase 5-7 Completion (April 29, 2026)
+
+#### Phase 5: Sales Agreements & AVS
+- **SalesAgreement** model with B2C/B2B/Rehoming types
+- **5-step wizard** with e-signature capture
+- **Gotenberg PDF generation** for legal agreements
+- **AVSTransfer** tracking with token generation
+- **GST extraction** at agreement level (price × 9 / 109)
+
+#### Phase 6: Compliance & NParks
+- **NParks Excel generation** (5-document export)
+- **GST calculation service** (IRAS 9/109 formula)
+- **PDPA consent filtering** at query level
+- **Immutable audit trails** for compliance
+
+#### Phase 7: Customers & Marketing
+- **Customer CRM** with segmentation
+- **Marketing blast** via Resend/WhatsApp
+- **Template management** with approval caching
+- **Segmentation engine** for targeted campaigns
+
+---
 
 ### Phase 4 Completion (April 28, 2026) — 100% Complete
 

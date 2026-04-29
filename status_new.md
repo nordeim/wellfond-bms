@@ -395,3 +395,38 @@ Frontend Hooks	✅	use-finance.ts with 7 hooks
 Frontend Page	✅	/finance with 4 tabs + Excel export
 Build	✅	0 TypeScript errors, 21 routes
 
+Let me review what happened:
+1. The user asked me to review Phase 8 plans and create a detailed TODO list
+2. I analyzed the alignment between plans/phase-8-dashboard-finance.md, AGENT_BRIEF.md, IMPLEMENTATION_PLAN.md, and draft_plan.md
+3. I discovered that Dashboard was already complete (80%) and the remaining work was Finance module only
+4. I created a detailed execution plan (PHASE_8_FINANCE_TODO.md)
+5. I implemented Phase 8 Finance:
+   - Day 1: Models (Transaction, IntercompanyTransfer, GSTReport, PNLSnapshot), Schemas, Migrations
+   - Day 2: P&L service (pnl.py), GST report service (gst_report.py)
+   - Day 3: Finance router (reports.py) registered in api/init.py
+   - Day 4: Admin and Tests (19 tests all passing)
+   - Day 5-6: Frontend hooks (use-finance.ts) and Finance page
+Key accomplishments:
+- All 19 finance tests passing
+- Frontend TypeScript errors fixed (removed unused TrendingDown import, fixed Badge variant)
+- Django check passes
+- Models, schemas, services, router, admin, tests all complete
+The previous summary was about Phase 7 completion. Now I need to update it to reflect Phase 8 Finance completion.
+Let me check the current status:
+- Phase 7: COMPLETE (44 tests passing, including the 2 that were failing)
+- Phase 8: Finance module COMPLETE
+  - Backend: Models, schemas, services (pnl.py, gst_report.py), router, admin, tests - all done
+  - Frontend: hooks/use-finance.ts, /finance page - done
+  - Tests: 19 finance tests passing
+I need to update the summary to reflect this new state.
+--- 
+Goal - Complete Phase 8: Finance Module, implementing P&L statements, GST reports for IRAS filing, transaction management, and intercompany transfers with Excel exports.
+Constraints & Preferences - P&L calculation: revenue - COGS - expenses = net (Singapore fiscal year: April-March) - GST formula: price × 9 / 109, ROUND_HALF_UP (Thomson entity = 0%) - Intercompany transfers: automatic balancing transaction creation (debit=credit) - Zero AI interpolation in finance calculations - Deterministic calculations for compliance
+Progress ### Done - Phase 7 COMPLETE: All 44 tests passing (blast test failures fixed), /customers route operational - Phase 8 Backend Models: Transaction, IntercompanyTransfer, GSTReport, PNLSnapshot with migrations applied - Phase 8 Schemas: Pydantic v2 schemas with Optional[] typing for all finance models - Phase 8 Services: P&L service (pnl.py) with YTD rollup from April, GST report service (gst_report.py) with IRAS format, intercompany elimination - Phase 8 Router: 7 endpoints (/finance/pnl, /finance/gst, /finance/transactions, /finance/intercompany, export/pnl, export/gst), registered in api/init.py - Phase 8 Tests: 19/19 tests passing (7 P&L, 4 GST, 5 transactions, 3 intercompany) - Phase 8 Frontend: hooks/use-finance.ts with typed TanStack hooks, /finance page with P&L, GST, Transactions, Intercompany tabs - TypeScript: Fixed errors (removed unused TrendingDown import, Badge variant "destructive" → "error") - Django Check: System check identified no issues (0 silenced)
+In Progress - Frontend build verification after TypeScript fixes
+Blocked - (none)
+Key Decisions - Manual pagination in router (not @paginate decorator) for control over response shape - IntercompanyTransfer.save() uses _state.adding (not self.pk) to detect new records - PNLResult dataclass with frozenset for immutability - GST extraction: Thomson entity code check is case-insensitive - YTD calculation: Singapore fiscal year starts April, rolls over in April of next year
+Next Steps 1. Run frontend build and verify TypeScript 0 errors 2. Run full backend test suite (all apps) 3. Integration test: /finance endpoints via API client 4. Verify Excel export downloads work correctly 5. Update documentation/PHASE_8_FINANCE_TODO.md completion status
+Critical Context - Phase 8 Status: 95% complete | Backend 100% (models, schemas, services, router, admin, tests), Frontend 95% (hooks, page complete, build pending) - GST Calculation: Formula verified - 109 → 9.00, 218 → 18.00, 50 → 4.13, Thomson → 0.00 - P&L YTD: Rolls from April (month 4), handles March year-end correctly - Intercompany Balance: Automatically creates EXPENSE for from_entity, REVENUE for to_entity - TypeScript Fix: date | None syntax incompatible with Pydantic, replaced with Optionaldate - Django App Registration: apps.finance added to INSTALLED_APPS in settings/base.py - Router URL: Base /api/v1/finance/, tags="finance" - Export Endpoints: Return HttpResponse with Excel blob, Content-Disposition attachment header
+Relevant Files - /home/project/wellfond-bms/backend/apps/finance/models.py: Transaction, IntercompanyTransfer, GSTReport, PNLSnapshot - /home/project/wellfond-bms/backend/apps/finance/schemas.py: Pydantic schemas with Optional[] typing, TransactionCreate/Response, PNLResponse, GSTReportResponse - /home/project/wellfond-bms/backend/apps/finance/services/pnl.py: calc_pnl(), calc_ytd(), PNLResult, intercompany elimination - /home/project/wellfond-bms/backend/apps/finance/services/gst_report.py: extract_gst(), gen_gst_excel(), gen_pnl_excel(), GST9/GST109 format - /home/project/wellfond-bms/backend/apps/finance/routers/reports.py: 7 finance endpoints with entity scoping, role-based access - /home/project/wellfond-bms/backend/apps/finance/admin.py: Transaction (filterable), IntercompanyTransfer, GSTReport/PNLSnapshot (read-only) - /home/project/wellfond-bms/backend/apps/finance/tests/test_pnl.py: 7 tests for P&L calculation, COGS, expenses, net, YTD, determinism - /home/project/wellfond-bms/backend/apps/finance/tests/test_gst.py: 4 tests for GST formula, Thomson exemption, rounding, validation - /home/project/wellfond-bms/backend/apps/finance/tests/test_transactions.py: 5 tests for CRUD, entity scoping, intercompany balance - /home/project/wellfond-bms/frontend/hooks/use-finance.ts: usePNL, useGSTReport, useTransactions, useIntercompanyTransfers, export functions - /home/project/wellfond-bms/frontend/app/(protected)/finance/page.tsx: 4-tab finance page (P&L, GST, Transactions, Intercompany) - /home/project/wellfond-bms/PHASE_8_FINANCE_TODO.md: Detailed execution plan with daily breakdown
+

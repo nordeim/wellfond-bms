@@ -46,6 +46,8 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
   - @plans/phase-4-breeding-genetics.md (COI, saturation, closure table)
   - @plans/phase-5-sales-avs.md 
   - @plans/phase-6-compliance-nparks.md
+  - @plans/plans/phase-7-customers-marketing.md 
+  - @plans/phase-8-dashboard-finance.md 
 - Setting up systematic code review structure with todo items
 - Preparing to audit actual codebase implementation against plans
 - Remaining:
@@ -71,6 +73,8 @@ Please meticulously conduct a comprehensive code review and audit of the Wellfon
 - /home/project/wellfond-bms/plans/phase-4-breeding-genetics.md - Genetics engine
 - /home/project/wellfond-bms/plans/phase-5-sales-avs.md 
 - /home/project/wellfond-bms/plans/phase-6-compliance-nparks.md
+- /home/project/wellfond-bms/plans/phase-7-customers-marketing.md 
+- /home/project/wellfond-bms/plans/phase-8-dashboard-finance.md 
 
 ### Codebase Structure (to be audited):
 - /home/project/wellfond-bms/backend/ - Django backend (models, services, routers, config)
