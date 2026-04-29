@@ -35,8 +35,9 @@ INSTALLED_APPS = [
     "apps.sales",  # Phase 5: Sales Agreements & AVS
     "apps.compliance",  # Phase 6: Compliance & NParks Reporting
     "apps.customers",  # Phase 7: Customer DB & Marketing Blast
+    # Phase 8: Finance & Dashboard
+    "apps.finance",
     # Domain apps — to be added in future phases:
-    # Phase 8: "apps.finance",
     # Phase 9: "apps.ai_sandbox",
 ]
 

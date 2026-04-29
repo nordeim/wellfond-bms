@@ -94,5 +94,7 @@ from apps.customers.routers import customers_router
 
 api.add_router("/customers", customers_router, tags=["customers"])
 
-# Additional routers will be registered here as apps are built:
-# api.add_router("/finance", finance_router, tags=["finance"])
+# Finance routers (Phase 8)
+from apps.finance.routers import finance_router
+
+api.add_router("/finance", finance_router, tags=["finance"])
