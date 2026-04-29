@@ -1,40 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import {
- Users,
- Search,
- Filter,
- Plus,
- Mail,
- MessageSquare,
- Send,
- Upload,
- CheckCircle,
- AlertTriangle,
- RefreshCw,
- ChevronDown,
- ChevronRight,
- Shield,
- Eye,
- X,
- Check,
+  Users,
+  Search,
+  Filter,
+  Plus,
+  Mail,
+  MessageSquare,
+  Send,
+  Upload,
+  Shield,
+  Eye,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
 
 export default function CustomersPage() {
   const [activeTab, setActiveTab] = useState("list")

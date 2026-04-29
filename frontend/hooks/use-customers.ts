@@ -308,7 +308,7 @@ export function useSendBlast() {
 }
 
 export function useBlastProgress(blastId: string | null) {
-  return useQuery({
+  return useQuery<BlastProgress | null>({
     queryKey: [BLAST_KEY, "progress", blastId],
     queryFn: async () => {
       if (!blastId) return null
@@ -316,8 +316,9 @@ export function useBlastProgress(blastId: string | null) {
       return response
     },
     enabled: !!blastId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Stop polling when blast is complete
+      const data = query.state.data
       return data?.in_progress ? 1000 : false
     },
   })
