@@ -72,6 +72,10 @@ awesome meticulous job so far. please keep up the good work. now, I have another
 
 ---
 
+awesome meticulous job so far. you need to run typecheck and build test for the frontend to ensure no new bugs. also please run the existing tests for the backend to ensure no regression after your remediation fixes. 
+
+---
+
 awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 1. Re-evaluate and re-validate the issues identified in earlier validation

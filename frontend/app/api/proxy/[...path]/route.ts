@@ -17,21 +17,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // Backend URL (internal, not exposed to browser)
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:8000';
 
-// Allowed API path prefixes (whitelist)
-const ALLOWED_PREFIXES = [
-  '/auth/',
-  '/users/',
-  '/dogs/',
-  '/breeding/',
-  '/sales/',
-  '/compliance/',
-  '/customers/',
-  '/finance/',
-  '/operations/',
-  '/health/',
-  '/ready/',
-];
-
 // Headers to strip (security)
 const STRIP_HEADERS = [
   'host',

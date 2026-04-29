@@ -47,12 +47,13 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "apps.core.middleware.AuthenticationMiddleware",  # Custom Redis-based auth (sets request.user)
+    "apps.core.middleware.AuthenticationMiddleware", # Custom Redis-based auth (sets request.user)
+    "django.contrib.auth.middleware.AuthenticationMiddleware", # Django admin support - runs after custom
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.IdempotencyMiddleware",
     "apps.core.middleware.EntityScopingMiddleware",
-    "django_ratelimit.middleware.RatelimitMiddleware",  # Rate limit exception handling
+    "django_ratelimit.middleware.RatelimitMiddleware", # Rate limit exception handling
 ]
 
 ROOT_URLCONF = "config.urls"

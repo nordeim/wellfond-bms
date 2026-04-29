@@ -1,8 +1,10 @@
 """
-Test: Verify only one AuthenticationMiddleware is registered.
-Critical Issue C2: Duplicate AuthenticationMiddleware conflict.
+Test: Verify AuthenticationMiddleware configuration.
+Updated: Django admin requires django.contrib.auth.middleware.AuthenticationMiddleware.
 
-This test ensures the fix is correctly applied.
+Both middlewares are needed:
+- Custom: Sets request.user from Redis sessions for API
+- Django: Required for Django admin to function
 """
 
 from django.test import TestCase, override_settings
@@ -10,14 +12,14 @@ from django.conf import settings
 
 
 class MiddlewareRemovalTests(TestCase):
-    """Tests for CRITICAL-2: Remove duplicate AuthenticationMiddleware."""
+    """Tests for AuthenticationMiddleware configuration."""
 
-    def test_single_authentication_middleware(self):
+    def test_both_authentication_middlewares_present(self):
         """
-        Test: Only one AuthenticationMiddleware should be registered.
+        Test: Both AuthenticationMiddlewares should be registered.
 
-        The custom apps.core.middleware.AuthenticationMiddleware should be present,
-        but django.contrib.auth.middleware.AuthenticationMiddleware should NOT be.
+        - Custom: Sets request.user from Redis sessions for API auth
+        - Django: Required for Django admin functionality (admin.E408)
         """
         middleware_list = settings.MIDDLEWARE
 
@@ -34,11 +36,10 @@ class MiddlewareRemovalTests(TestCase):
             f"Expected 1 custom AuthenticationMiddleware, found {custom_count}"
         )
 
-        # Should have 0 Django middleware (removed per fix)
+        # Should have 1 Django middleware (required for admin)
         self.assertEqual(
-            django_count, 0,
-            f"Expected 0 Django AuthenticationMiddleware (should be removed), found {django_count}. "
-            f"This causes race conditions where request.user may be overwritten."
+            django_count, 1,
+            f"Expected 1 Django AuthenticationMiddleware (required for admin), found {django_count}"
         )
 
     def test_middleware_order(self):

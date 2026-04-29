@@ -68,18 +68,18 @@ describe('BFF Proxy Path Validation (Critical Issue C1)', () => {
     });
   });
 
-  describe('Double slash normalization', () => {
-    const doubleSlashPaths = [
-      { path: '//dogs/', normalized: '/dogs/', expected: true },
-      { path: '//dogs//list/', normalized: '/dogs/list/', expected: true },
-      { path: '//health/', normalized: '/health/', expected: true },
-    ];
+describe('Double slash normalization', () => {
+  const doubleSlashPaths = [
+    { path: '//dogs/', normalized: '/dogs/', expected: true },
+    { path: '//dogs//list/', normalized: '/dogs/list/', expected: true },
+    { path: '//health/', normalized: '/health/', expected: true },
+  ];
 
-    doubleSlashPaths.forEach(({ path, reason }) => {
-      it(`should normalize ${path}`, () => {
-        // After normalization, should be allowed
-        expect(isAllowedPath(path.replace(/\/+/g, '/'))).toBe(true);
-      });
+  doubleSlashPaths.forEach(({ path }) => {
+    it(`should normalize ${path}`, () => {
+      // After normalization, should be allowed
+      expect(isAllowedPath(path.replace(/\/+/g, '/'))).toBe(true);
     });
   });
+});
 });
