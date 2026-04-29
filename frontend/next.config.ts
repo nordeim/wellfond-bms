@@ -85,10 +85,13 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Environment variables exposed to browser (prefix with NEXT_PUBLIC_)
-  env: {
-    BACKEND_INTERNAL_URL: process.env.BACKEND_INTERNAL_URL || "http://127.0.0.1:8000",
-  },
+  // CRITICAL FIX C2: Removed env block with BACKEND_INTERNAL_URL
+  // The env block exposes variables to the browser bundle.
+  // BACKEND_INTERNAL_URL must remain server-only.
+  // It is safely accessed via process.env.BACKEND_INTERNAL_URL in:
+  // - rewrites() function above (server-side)
+  // - API route handlers (server-side)
+  // Never expose internal URLs to browser.
 
   // TypeScript configuration
   typescript: {

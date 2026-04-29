@@ -62,9 +62,19 @@ please meticulously review and analyze @Code_Review_Audit_Report_2.md and carefu
 
 ---
 
-awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your previous validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
+awesome meticulous job so far. please keep up the good work. now, I have another code audit report @Code_Review_Audit_Report.md . please meticulously review and analyze it and carefully and systematically validate the findings and claims about bugs and gaps against the codebase. some of the issues might have already been fixed in your previous remediation round. identify the root cause and the optimal fix for each validated issue in @Code_Review_Audit_Report.md . then present the validated issues in order of criticality. be very thorough and methodical in your review and validation of the report.
 
-1. Re-evaluate and re-validate the issues I identified in my previous validation
+1. Meticulously review the findings
+2. Validate them against the codebase
+3. Some issues may have been fixed in the previous remediation round
+4. Identify root causes and optimal fixes
+5. Present in order of criticality
+
+---
+
+awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
+
+1. Re-evaluate and re-validate the issues identified in earlier validation
 2. Confirm root causes and optimal fixes
 3. Create a detailed remediation plan with ToDo list
 4. Review and validate the remediation plan against the codebase

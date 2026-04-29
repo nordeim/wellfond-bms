@@ -228,5 +228,7 @@ export async function OPTIONS(_request: NextRequest) {
   });
 }
 
-// Export config for Edge Runtime
-export const runtime = 'edge';
+// CRITICAL FIX C1: Removed Edge Runtime export
+// Edge Runtime cannot read process.env at request time.
+// Default Node.js runtime allows server-side process.env access.
+// export const runtime = 'edge';  // REMOVED - causes BACKEND_INTERNAL_URL to be undefined
