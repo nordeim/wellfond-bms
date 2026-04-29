@@ -89,7 +89,10 @@ api.add_router("/compliance/nparks", nparks_router, tags=["compliance"])
 api.add_router("/compliance/gst", gst_router, tags=["compliance"])
 api.add_router("/compliance/pdpa", pdpa_router, tags=["compliance"])
 
+# Customer & Marketing routers (Phase 7)
+from apps.customers.routers import customers_router
+
+api.add_router("/customers", customers_router, tags=["customers"])
+
 # Additional routers will be registered here as apps are built:
-# api.add_router("/compliance", compliance_router, tags=["compliance"])
-# api.add_router("/customers", customers_router, tags=["customers"])
 # api.add_router("/finance", finance_router, tags=["finance"])
