@@ -220,6 +220,18 @@ class BlastService:
         if excluded > 0:
             logger.info(f"Blast {blast_id}: {excluded} customers excluded (PDPA opt-out)")
 
+        # Return early if no eligible recipients
+        if not eligible:
+            return BlastResult(
+                blast_id=blast_id,
+                total_recipients=total,
+                eligible_recipients=0,
+                excluded_count=excluded,
+                channel=str(payload.channel.value if hasattr(payload.channel, "value") else payload.channel),
+                status="NO_RECIPIENTS",
+                started_at=datetime.now(),
+            )
+
         # Initialize progress tracking
         tracker = BlastProgressTracker(blast_id)
         tracker.init_progress(len(eligible))
