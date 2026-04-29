@@ -355,24 +355,28 @@ class BlastService:
         Returns:
             Created CommunicationLog entry
         """
-        with transaction.atomic():
-            log = CommunicationLog.objects.create(
-                customer=customer,
-                blast_id=blast_id,
-                channel=channel,
-                status=status,
-                subject=subject,
-                message_preview=message_preview[:200],
-                external_id=external_id,
-                error_message=error_message,
-            )
+    with transaction.atomic():
+        # Prepare timestamp fields
+        sent_at = None
+        delivered_at = None
+        if status in ["SENT", "DELIVERED"]:
+            sent_at = datetime.now()
+        if status == "DELIVERED":
+            delivered_at = datetime.now()
 
-            if status in ["SENT", "DELIVERED"]:
-                log.sent_at = datetime.now()
-            if status == "DELIVERED":
-                log.delivered_at = datetime.now()
-
-            log.save()
+        # Create log with all fields (single save)
+        log = CommunicationLog.objects.create(
+            customer=customer,
+            blast_id=blast_id,
+            channel=channel,
+            status=status,
+            subject=subject,
+            message_preview=message_preview[:200],
+            external_id=external_id,
+            error_message=error_message,
+            sent_at=sent_at,
+            delivered_at=delivered_at,
+        )
 
         logger.info(f"Logged {channel} {status} for {customer.id}")
         return log
