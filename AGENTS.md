@@ -13,10 +13,20 @@
 - **Proxy Pattern:** Browser never contacts Django directly. All requests route through Next.js `/api/proxy/[...path]`.
 - **Session Auth:** HttpOnly, Secure, SameSite=Lax cookies. Zero JWT in client storage.
 - **Critical Auth Pattern:** Django Ninja does not reliably preserve `request.user` across decorators/pagination. Always read session directly:
-  ```python
-  from apps.core.auth import get_authenticated_user
-  user = get_authenticated_user(request)  # Reads cookie & validates Redis session
-  ```
+```python
+from apps.core.auth import get_authenticated_user
+user = get_authenticated_user(request) # Reads cookie & validates Redis session
+```
+- **Middleware Order (CRITICAL):** Django's `AuthenticationMiddleware` must run BEFORE custom middleware:
+```python
+MIDDLEWARE = [
+    # ...
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django first (admin E408)
+    "apps.core.middleware.AuthenticationMiddleware",            # Custom second (Redis auth)
+    # ...
+]
+```
+Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after to re-authenticate from Redis if needed.
 
 ### Entity Scoping (Multi-Tenancy)
 - **Mandatory:** Every data query must respect entity boundaries.
@@ -132,6 +142,9 @@ wellfond-bms/
 | **Docstrings** | Python `"""` in TypeScript | JSDoc `/** */` |
 | **Idempotency** | Using default `cache` backend | Use isolated `caches["idempotency"]` |
 | **SSE/Async** | Direct sync ORM in async routes | Wrap with `sync_to_async(thread_sensitive=True)` |
+| **BFF Proxy Runtime** | `export const runtime = 'edge'` | Remove - use default Node.js runtime |
+| **Internal URLs** | `NEXT_PUBLIC_*` for backend URLs | `BACKEND_INTERNAL_URL` server-side only |
+| **Middleware Order** | Custom auth before Django auth | Django first, then custom (E408 requirement) |
 
 ---
 

@@ -412,8 +412,12 @@ REDIS_BROKER_URL=redis://127.0.0.1:6379/2
 
 # Django
 SECRET_KEY=dev-secret-key-change-in-production-2026-wellfond-singapore
-DJANGO_SETTINGS_MODULE=wellfond.settings.development
+DJANGO_SETTINGS_MODULE=config.settings.development  # FIXED: was wellfond.settings.development
 DEBUG=True
+
+# Redis Split Instances (sessions, broker, cache, idempotency)
+REDIS_CACHE_URL=redis://127.0.0.1:6379/0
+REDIS_IDEMPOTENCY_URL=redis://127.0.0.1:6379/3
 
 # Frontend BFF proxy (connects to native Django)
 BACKEND_INTERNAL_URL=http://127.0.0.1:8000
@@ -439,6 +443,14 @@ curl http://localhost:3000
 # Test BFF proxy
 curl http://localhost:3000/api/proxy/health/
 # Expected: Proxies to Django, returns 200
+
+# Test middleware configuration
+python manage.py check
+# Expected: System check identified no issues (0 silenced)
+
+# Test Django admin accessible
+curl http://127.0.0.1:8000/admin/
+# Expected: 200 OK or 302 redirect to login
 ```
 
 ---
@@ -615,6 +627,44 @@ or use is strictly prohibited.
 ---
 
 ## 📊 Recent Changes
+
+### Security & Middleware Remediation (April 30, 2026)
+
+#### Critical Fixes Applied (Round 1 & Round 2)
+
+| Issue | Severity | Fix | Status |
+|-------|----------|-----|--------|
+| **C1-C3: Critical Issues** | 🔴 | Path traversal, duplicate middleware, idempotency expansion | ✅ Fixed |
+| **H1-H4: High Issues** | 🟠 | Redis cache isolation, URL exposure, COI async, env config | ✅ Fixed |
+| **Django Admin E408** | 🔴 | AuthenticationMiddleware conflict | ✅ Fixed |
+
+**Key Security Improvements:**
+- ✅ Path traversal protection in BFF proxy (regex validation)
+- ✅ Idempotency enforcement on all write endpoints (not just logs)
+- ✅ Dedicated Redis for idempotency cache (no eviction risk)
+- ✅ BACKEND_INTERNAL_URL removed from browser bundle
+- ✅ Django + Custom AuthenticationMiddleware order fixed
+- ✅ Edge Runtime removed from BFF proxy (process.env access)
+- ✅ PostgreSQL bound to localhost only
+- ✅ All Redis URLs explicitly configured
+
+**Middleware Order (Updated):**
+```python
+MIDDLEWARE = [
+    # ... security, CORS, session, CSRF ...
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django first
+    "apps.core.middleware.AuthenticationMiddleware",          # Custom second
+    # ... idempotency, entity scoping ...
+]
+```
+
+**How It Works:**
+1. Django wraps `request.user` in `SimpleLazyObject` (admin compatibility)
+2. Custom middleware runs after and re-authenticates from Redis
+3. Both admin and API authentication work correctly
+4. No E408 errors, no auth conflicts
+
+---
 
 ### Phase 8 Completion (April 29, 2026) — 100% Complete
 

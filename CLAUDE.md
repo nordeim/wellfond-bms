@@ -376,7 +376,17 @@ You are successful when:
 
 1. **Django Ninja Pagination**: `@paginate` decorator requires `list[Schema]` response type, not wrapped objects. Manual pagination gives more control and works with custom response structures.
 
-2. **Circular Imports in Django**: Services imported in model `save()` methods should use deferred imports (`try/except ImportError`) or move logic to signals. This prevents import cycles during app initialization.
+2. **Django Middleware Order (CRITICAL)**: 
+   - Django's `AuthenticationMiddleware` unconditionally wraps `request.user` in `SimpleLazyObject`
+   - Custom middleware must run AFTER Django's to properly override with Redis auth
+   - Running custom first causes auth to be overwritten with AnonymousUser
+   - Correct order: Django auth → Custom auth (re-authenticates from Redis if needed)
+
+3. **BFF Proxy Runtime**: Edge Runtime cannot read `process.env` at request time. Always use Node.js runtime for BFF proxy routes that need server-side env vars.
+
+4. **Next.js Env Leakage**: The `env` key in `next.config.ts` exposes values to browser bundle even without `NEXT_PUBLIC_` prefix. Use server-side only `process.env` access instead.
+
+5. **Circular Imports in Django**: Services imported in model `save()` methods should use deferred imports (`try/except ImportError`) or move logic to signals. This prevents import cycles during app initialization.
 
 3. **Self-Referential FKs**: Using `on_delete=PROTECT` on dam/sire FKs prevents accidental deletion of dogs with offspring, maintaining pedigree integrity.
 
@@ -766,6 +776,23 @@ python manage.py migrate operations zero
 python manage.py migrate operations
 ```
 
+**Django admin.E408 error (AuthenticationMiddleware)**
+```bash
+# Problem: System check error admin.E408
+# Cause: Django's AuthenticationMiddleware not in MIDDLEWARE
+# Solution: Must include BOTH middlewares in correct order:
+
+MIDDLEWARE = [
+    # ... other middlewares ...
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django first
+    "apps.core.middleware.AuthenticationMiddleware",          # Custom second
+    # ... rest of middlewares ...
+]
+
+# Django wraps request.user in SimpleLazyObject
+# Custom re-authenticates from Redis after Django's middleware
+```
+
 **Frontend proxy 404**
 ```bash
 # Verify Django running
@@ -786,6 +813,38 @@ npm run typecheck
 # - Check Pydantic schema matches ORM model
 # - Verify all required fields present
 # - Ensure no 'any' types with strict: true
+```
+
+**BFF proxy Edge Runtime error**
+```typescript
+// Problem: process.env.BACKEND_INTERNAL_URL is undefined at runtime
+// Cause: export const runtime = 'edge' prevents server-side env access
+// Solution: Remove Edge Runtime export from route.ts
+
+// BEFORE (BROKEN):
+export const runtime = 'edge';
+const BACKEND_URL = process.env.BACKEND_INTERNAL_URL;
+
+// AFTER (FIXED):
+// Remove runtime export - defaults to Node.js
+const BACKEND_URL = process.env.BACKEND_INTERNAL_URL;
+```
+
+**BACKEND_INTERNAL_URL exposed to browser**
+```typescript
+// Problem: Internal URL visible in browser DevTools
+// Cause: next.config.ts env block exposes to client bundle
+// Solution: Remove env block, use server-side process.env only
+
+// BEFORE (INSECURE):
+// next.config.ts:
+env: {
+  BACKEND_INTERNAL_URL: process.env.BACKEND_INTERNAL_URL,
+}
+
+// AFTER (SECURE):
+// Remove env block entirely
+// Access via process.env.BACKEND_INTERNAL_URL in server-side code only
 ```
 
 ### Phase 2 Specific Issues
