@@ -1,5 +1,0 @@
-- skills/browser-automation/SKILL.md
-- skills/chrome-devtools-mcp/SKILL.md
-- skills/frontend-ui-testing-journey/SKILL.md
-- skills/playwright-cli/SKILL.md
-- skills/webapp-testing-journey/SKILL.md
