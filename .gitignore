@@ -1,17 +1,196 @@
-node_modules/
-.next/
+# =============================================================================
+# Wellfond BMS - Comprehensive .gitignore
+# =============================================================================
+
+# =============================================================================
+# Environment & Secrets
+# =============================================================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# =============================================================================
+# Python / Django
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
+ENV/
+env/
 .venv/
-.venv
-vendor/
+.venv/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Rope
+.ropeproject
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# =============================================================================
+# Node.js / Next.js / Frontend
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel
+
+# Testing
+/playwright-report/
+/test-results/
+/playwright/.cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# =============================================================================
+# Docker
+# =============================================================================
+*.pid
+
+# =============================================================================
+# macOS
+# =============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# =============================================================================
+# Windows
+# =============================================================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# =============================================================================
+# Backup & Misc
+# =============================================================================
+*.bak
+*.tmp
+*.temp
+*.orig
+*.rej
+*.diff
+*.patch
+*.sublime-*
+*.code-workspace
+
+# =============================================================================
+# Project Specific
+# =============================================================================
 bak.git/
-#plan/
-.kilo/
+plan/
 backup/
 nohup.out
-.windsurfrules
-upload/
+.upload/
 .agent
 .gemini
 .claude
 .agents
+upload/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis
+dump.rdb
+*.rdb
+
+# Logs
+logs/
+*.log
+
+# Local development overrides
+docker-compose.override.yml
