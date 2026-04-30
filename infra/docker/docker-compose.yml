@@ -75,6 +75,60 @@ services:
       - wellfond-network
     restart: unless-stopped
 
+  # Backend Django - Development server
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: ../infra/docker/Dockerfile.backend.dev
+    container_name: wellfond-backend
+    environment:
+      DJANGO_SETTINGS_MODULE: wellfond.settings.development
+      DATABASE_URL: postgres://wellfond_user:${DB_PASSWORD:-wellfond_dev_password}@postgres:5432/wellfond_db
+      REDIS_URL: redis://redis:6379/0
+      DEBUG: "true"
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-not-for-production}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../backend:/app
+      - backend_static:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wellfond-network
+    restart: unless-stopped
+    command: >
+      sh -c "python wait_for_db.py &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  # Frontend Next.js - Development server
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../infra/docker/Dockerfile.frontend.dev
+    container_name: wellfond-frontend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - wellfond-network
+    restart: unless-stopped
+    command: >
+      sh -c "npm install &&
+             npm run dev"
+
 # =============================================================================
 # Named Volumes
 # =============================================================================
@@ -82,6 +136,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  backend_static:
     driver: local
 
 # =============================================================================

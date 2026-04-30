@@ -1,0 +1,64 @@
+# Wellfond BMS Frontend - Development Dockerfile
+# Node.js 24 (Current) + Next.js 16 (Active LTS) + React 19
+
+FROM node:24-alpine
+
+# ----------------------------------------------------------------------
+# Environment variables
+# ----------------------------------------------------------------------
+ENV NODE_ENV=development \
+    NEXT_TELEMETRY_DISABLED=1 \
+    npm_config_loglevel=error
+
+# ----------------------------------------------------------------------
+# Working directory
+# ----------------------------------------------------------------------
+WORKDIR /app
+
+# ----------------------------------------------------------------------
+# Install system dependencies (Alpine’s apk, NOT apt-get)
+# ----------------------------------------------------------------------
+RUN apk add --no-cache \
+    git \
+    curl \
+    ca-certificates
+
+# ----------------------------------------------------------------------
+# Copy package manifests and install ALL dependencies (including dev)
+# ----------------------------------------------------------------------
+COPY package*.json ./
+RUN npm install
+
+# ----------------------------------------------------------------------
+# Copy the rest of the project
+# ----------------------------------------------------------------------
+COPY . .
+
+# ----------------------------------------------------------------------
+# Create a non‑root user and group (Alpine‑compatible commands)
+# ----------------------------------------------------------------------
+RUN addgroup -S wellfond && \
+    adduser -S wellfond -G wellfond && \
+    chown -R wellfond:wellfond /app
+
+# ----------------------------------------------------------------------
+# Switch to the non‑root user
+# ----------------------------------------------------------------------
+USER wellfond
+
+# ----------------------------------------------------------------------
+# Expose the Next.js development port
+# ----------------------------------------------------------------------
+EXPOSE 3000
+
+# ----------------------------------------------------------------------
+# Health check (requires curl, which we installed above)
+# ----------------------------------------------------------------------
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# ----------------------------------------------------------------------
+# Default command for development
+# ----------------------------------------------------------------------
+CMD ["npm", "run", "dev"]
+

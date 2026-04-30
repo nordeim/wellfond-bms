@@ -1,0 +1,69 @@
+# Wellfond BMS Backend - Development Dockerfile
+# Python 3.13 + Django 6 + PostgreSQL client
+
+FROM python:3.13-alpine
+
+# ----------------------------------------------------------------------
+# Environment variables (identical to original – works on any platform)
+# ----------------------------------------------------------------------
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# ----------------------------------------------------------------------
+# Working directory
+# ----------------------------------------------------------------------
+WORKDIR /app
+
+# ----------------------------------------------------------------------
+# Install system dependencies (Alpine’s apk)
+# ----------------------------------------------------------------------
+# If the exact PostgreSQL 17 client is needed, enable the edge repo first:
+#   RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+RUN apk add --no-cache \
+    build-base \
+    postgresql-dev \
+    postgresql-client \
+    curl \
+    git
+
+# ----------------------------------------------------------------------
+# Install Python dependencies
+# ----------------------------------------------------------------------
+COPY requirements/base.txt /tmp/base.txt
+COPY requirements/dev.txt   /tmp/dev.txt
+
+# Concatenate and install in one step
+RUN cat /tmp/base.txt /tmp/dev.txt > /tmp/requirements.txt && \
+    pip install --upgrade pip && \
+    pip install -r /tmp/requirements.txt
+
+# ----------------------------------------------------------------------
+# Create non‑root user (Alpine‑compatible commands)
+# ----------------------------------------------------------------------
+RUN addgroup -S wellfond && \
+    adduser -S wellfond -G wellfond
+
+# ----------------------------------------------------------------------
+# Copy the project and fix ownership
+# ----------------------------------------------------------------------
+COPY . .
+RUN chown -R wellfond:wellfond /app
+
+# ----------------------------------------------------------------------
+# Switch to the non‑root user
+# ----------------------------------------------------------------------
+USER wellfond
+
+# ----------------------------------------------------------------------
+# Health check (requires curl, which we installed above)
+# ----------------------------------------------------------------------
+HEALTHCHECK --interval=60s --timeout=15s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health/ || exit 1
+
+# ----------------------------------------------------------------------
+# Default command
+# ----------------------------------------------------------------------
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
