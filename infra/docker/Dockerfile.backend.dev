@@ -59,8 +59,8 @@ USER wellfond
 # ----------------------------------------------------------------------
 # Health check (requires curl, which we installed above)
 # ----------------------------------------------------------------------
-HEALTHCHECK --interval=60s --timeout=15s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health/ || exit 1
+HEALTHCHECK --interval=60s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
 
 # ----------------------------------------------------------------------
 # Default command
