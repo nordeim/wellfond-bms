@@ -76,6 +76,10 @@ awesome meticulous job so far. you need to run typecheck and build test for the 
 
 ---
 
+please meticulously review and analyze @code_audit_new_summary.md and @REMEDIATION_PLAN_mimo.md , then validate them systenatically and critically against the codebase to confirm their validity and to identify actual root causes and optimal fixes if confirmed.
+
+---
+
 awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 1. Re-evaluate and re-validate the issues identified in earlier validation

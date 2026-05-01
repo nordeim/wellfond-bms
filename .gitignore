@@ -179,6 +179,8 @@ nohup.out
 .claude
 .agents
 upload/
+.kilo/
+backend/django.pid
 
 # Celery
 celerybeat-schedule
