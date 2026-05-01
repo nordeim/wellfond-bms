@@ -351,3 +351,120 @@ class TestAgreementStateMachine(TestCase):
         self.assertEqual(agreement.line_items.count(), 1)
         line_item = agreement.line_items.first()
         self.assertEqual(line_item.price, Decimal("500.00"))
+
+    def test_cancel_agreement_audit_log_records_correct_old_status(self):
+        """
+        Test cancel_agreement audit log records the correct old_status (H2 fix).
+
+        Given: Agreement in SIGNED state
+        When: Cancel action is performed
+        Then: Audit log records old_status as SIGNED, not CANCELLED
+        """
+        from apps.core.models import AuditLog
+
+        agreement = SalesAgreement.objects.create(
+            entity=self.entity,
+            created_by=self.user,
+            type=AgreementType.B2C,
+            status=AgreementStatus.SIGNED,
+            buyer_name="Test Buyer",
+            buyer_mobile="+6591234567",
+            buyer_email="buyer@example.com",
+            buyer_address="123 Test Street",
+            total_amount=1000.00,
+            gst_component=82.57,
+            deposit=100.00,
+            balance=900.00,
+        )
+
+        result = AgreementService.cancel_agreement(
+            agreement_id=agreement.id,
+            cancelled_by=self.user,
+            reason="Test H2 fix",
+        )
+
+        self.assertTrue(result)
+
+        audit_log = AuditLog.objects.filter(
+            resource_type="SalesAgreement",
+            resource_id=str(agreement.id),
+            action=AuditLog.Action.UPDATE,
+        ).latest("created_at")
+
+        self.assertEqual(audit_log.payload["old_status"], AgreementStatus.SIGNED)
+        self.assertEqual(audit_log.payload["new_status"], AgreementStatus.CANCELLED)
+        self.assertNotEqual(
+            audit_log.payload["old_status"],
+            audit_log.payload["new_status"],
+            "old_status and new_status should differ after cancellation",
+        )
+
+    def test_line_item_computed_properties(self):
+        """
+        Test line_total and gst_amount computed properties on AgreementLineItem.
+
+        Given: AgreementLineItem with price and gst_component
+        When: Accessing line_total and gst_amount
+        Then: Returns correct computed values
+        """
+        from apps.sales.models import AgreementLineItem
+
+        item = AgreementLineItem.objects.create(
+            agreement=SalesAgreement.objects.create(
+                entity=self.entity,
+                created_by=self.user,
+                type=AgreementType.B2C,
+                status=AgreementStatus.DRAFT,
+                buyer_name="Test Buyer",
+                buyer_mobile="+6591234567",
+                buyer_email="buyer@example.com",
+                buyer_address="123 Test Street",
+                total_amount=Decimal("0.00"),
+                gst_component=Decimal("0.00"),
+                deposit=Decimal("0.00"),
+                balance=Decimal("0.00"),
+            ),
+            dog=self.dog,
+            price=Decimal("1000.00"),
+            gst_component=Decimal("90.00"),
+        )
+
+        self.assertEqual(item.line_total, Decimal("1000.00"))
+        self.assertEqual(item.gst_amount, Decimal("90.00"))
+
+    def test_calculate_totals_uses_line_total(self):
+        """
+        Test calculate_totals works correctly with line_total property.
+
+        Given: Agreement with line items having price and gst_component
+        When: calculate_totals() is called
+        Then: Returns correct aggregated subtotal and gst
+        """
+        from apps.sales.models import AgreementLineItem
+
+        agreement = SalesAgreement.objects.create(
+            entity=self.entity,
+            created_by=self.user,
+            type=AgreementType.B2C,
+            status=AgreementStatus.DRAFT,
+            buyer_name="Test Buyer",
+            buyer_mobile="+6591234567",
+            buyer_email="buyer@example.com",
+            buyer_address="123 Test Street",
+            total_amount=Decimal("0.00"),
+            gst_component=Decimal("0.00"),
+            deposit=Decimal("0.00"),
+            balance=Decimal("0.00"),
+        )
+
+        AgreementLineItem.objects.create(
+            agreement=agreement,
+            dog=self.dog,
+            price=Decimal("500.00"),
+            gst_component=Decimal("45.00"),
+        )
+
+        totals = AgreementService.calculate_totals(agreement)
+        self.assertEqual(totals["subtotal"], Decimal("500.00"))
+        self.assertEqual(totals["gst_amount"], Decimal("45.00"))
+        self.assertEqual(totals["total"], Decimal("545.00"))

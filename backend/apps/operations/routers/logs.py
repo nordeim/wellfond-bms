@@ -66,26 +66,8 @@ def _check_permission(request, dog: Dog):
     return user
 
 
-def _check_idempotency(request, dog_id: str, log_type: str) -> bool:
-    """
-    Check if this log has already been processed (idempotency).
-    Uses X-Idempotency-Key header with Redis.
-    """
-    from django.core.cache import cache
-
-    idem_key = request.headers.get("X-Idempotency-Key")
-    if not idem_key:
-        # Missing idempotency key - return error
-        raise HttpError(400, "Missing X-Idempotency-Key header")
-
-    cache_key = f"idem:{log_type}:{dog_id}:{idem_key}"
-    if cache.get(cache_key):
-        # Already processed
-        return True
-
-    # Mark as processed (24h TTL)
-    cache.set(cache_key, True, timeout=86400)
-    return False
+# Idempotency is handled by the middleware layer (apps.core.middleware.IdempotencyMiddleware).
+# Router-level checks removed per H7 fix — avoids double-checking and HttpError(200) pattern.
 
 
 # =============================================================================
@@ -103,10 +85,6 @@ def create_in_heat_log(request, dog_id: UUID, data: InHeatCreate):
     user = _get_current_user(request)
     if not user:
         raise HttpError(401, "Authentication required")
-
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "in_heat"):
-        raise HttpError(200, "Already processed")
 
     try:
         dog = Dog.objects.get(id=dog_id)
@@ -156,10 +134,6 @@ def create_mated_log(request, dog_id: UUID, data: MatedCreate):
     user = _get_current_user(request)
     if not user:
         raise HttpError(401, "Authentication required")
-
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "mated"):
-        raise HttpError(200, "Already processed")
 
     try:
         dog = Dog.objects.get(id=dog_id)
@@ -218,10 +192,6 @@ def create_whelped_log(request, dog_id: UUID, data: WhelpedCreate):
     user = _get_current_user(request)
     if not user:
         raise HttpError(401, "Authentication required")
-
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "whelped"):
-        raise HttpError(200, "Already processed")
 
     try:
         dog = Dog.objects.get(id=dog_id)
@@ -282,10 +252,6 @@ def create_health_obs_log(request, dog_id: UUID, data: HealthObsCreate):
     if not user:
         raise HttpError(401, "Authentication required")
 
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "health_obs"):
-        raise HttpError(200, "Already processed")
-
     try:
         dog = Dog.objects.get(id=dog_id)
     except Dog.DoesNotExist:
@@ -330,10 +296,6 @@ def create_weight_log(request, dog_id: UUID, data: WeightCreate):
     if not user:
         raise HttpError(401, "Authentication required")
 
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "weight"):
-        raise HttpError(200, "Already processed")
-
     try:
         dog = Dog.objects.get(id=dog_id)
     except Dog.DoesNotExist:
@@ -369,10 +331,6 @@ def create_nursing_flag_log(request, dog_id: UUID, data: NursingFlagCreate):
     user = _get_current_user(request)
     if not user:
         raise HttpError(401, "Authentication required")
-
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "nursing_flag"):
-        raise HttpError(200, "Already processed")
 
     try:
         dog = Dog.objects.get(id=dog_id)
@@ -422,10 +380,6 @@ def create_not_ready_log(request, dog_id: UUID, data: NotReadyCreate):
     user = _get_current_user(request)
     if not user:
         raise HttpError(401, "Authentication required")
-
-    # Check idempotency
-    if _check_idempotency(request, str(dog_id), "not_ready"):
-        raise HttpError(200, "Already processed")
 
     try:
         dog = Dog.objects.get(id=dog_id)

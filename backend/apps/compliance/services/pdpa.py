@@ -104,25 +104,23 @@ class PDPAService:
         Returns:
             PDPAConsentCheckResponse with eligible/excluded split
         """
-        # Placeholder implementation - will be enhanced in Phase 7
-        # when Customer model is available
+        from apps.customers.models import Customer
 
-        # For now, assume all are eligible (Phase 7 will implement actual checks)
-        # This is a temporary implementation
+        customers = Customer.objects.filter(id__in=customer_ids)
+        eligible_ids = [c.id for c in customers if c.pdpa_consent]
+        excluded_ids = [c.id for c in customers if not c.pdpa_consent]
 
-        logger.info(f"PDPA blast eligibility check for {len(customer_ids)} customers")
-
-        # Phase 7 will:
-        # 1. Query Customer.objects.filter(id__in=customer_ids)
-        # 2. Filter for pdpa_consent=True
-        # 3. Split into eligible/excluded
+        logger.info(
+            "PDPA blast eligibility: %d eligible, %d excluded of %d total",
+            len(eligible_ids), len(excluded_ids), len(customer_ids),
+        )
 
         return PDPAConsentCheckResponse(
-            eligible_ids=customer_ids,  # Temporary - all eligible
-            excluded_ids=[],
-            eligible_count=len(customer_ids),
-            excluded_count=0,
-            exclusion_reason="PDPA consent check deferred to Phase 7 (Customer model)",
+            eligible_ids=eligible_ids,
+            excluded_ids=excluded_ids,
+            eligible_count=len(eligible_ids),
+            excluded_count=len(excluded_ids),
+            exclusion_reason="PDPA consent not given" if excluded_ids else "",
         )
 
     @staticmethod
@@ -134,10 +132,14 @@ class PDPAService:
             customer_id: Customer UUID
 
         Returns:
-            True if customer has opted in to PDPA
+            True if customer has opted in to PDPA, False otherwise
         """
-        # Placeholder - Phase 7 will implement actual check
-        return True
+        from apps.customers.models import Customer
+
+        try:
+            return Customer.objects.get(id=customer_id).pdpa_consent
+        except Customer.DoesNotExist:
+            return False
 
     @staticmethod
     def get_consent_log(customer_id: UUID, limit: int = 50) -> list[PDPAConsentLog]:
@@ -225,8 +227,11 @@ class PDPAService:
         Returns:
             Number of consented customers
         """
-        # Placeholder - Phase 7 will implement actual count
-        return 0
+        from apps.customers.models import Customer
+        return Customer.objects.filter(
+            entity_id=entity_id,
+            pdpa_consent=True,
+        ).count()
 
     @staticmethod
     def count_opted_out_customers(entity_id: UUID) -> int:
@@ -239,5 +244,8 @@ class PDPAService:
         Returns:
             Number of opted-out customers
         """
-        # Placeholder - Phase 7 will implement actual count
-        return 0
+        from apps.customers.models import Customer
+        return Customer.objects.filter(
+            entity_id=entity_id,
+            pdpa_consent=False,
+        ).count()

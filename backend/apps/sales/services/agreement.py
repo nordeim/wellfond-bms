@@ -584,6 +584,9 @@ TERMS & CONDITIONS - REHOMING
 
         from django.utils import timezone
 
+        # Capture state BEFORE mutation for correct audit trail
+        old_status = agreement.status
+
         with transaction.atomic():
             agreement.status = AgreementStatus.CANCELLED
             agreement.cancelled_at = timezone.now()
@@ -596,7 +599,7 @@ TERMS & CONDITIONS - REHOMING
                 resource_type="SalesAgreement",
                 resource_id=str(agreement_id),
                 payload={
-                    "old_status": agreement.status,
+                    "old_status": old_status,
                     "new_status": AgreementStatus.CANCELLED,
                     "reason": reason,
                 },

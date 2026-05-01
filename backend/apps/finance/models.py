@@ -153,40 +153,43 @@ class IntercompanyTransfer(models.Model):
         return f"{self.from_entity.name} → {self.to_entity.name}: {self.amount}"
 
     def save(self, *args, **kwargs):
-        """Override save to create balanced transaction records."""
+        """Override save to create balanced transaction records atomically."""
         from decimal import Decimal
+        from django.db import transaction as db_transaction
 
         is_new = self._state.adding
-        super().save(*args, **kwargs)
 
-        if is_new:
-            # Refresh to get entity names
-            from_entity = self.from_entity
-            to_entity = self.to_entity
-            from_entity_name = getattr(from_entity, 'name', str(from_entity.id))[:50]
-            to_entity_name = getattr(to_entity, 'name', str(to_entity.id))[:50]
-            
-            # Create balancing transaction records
-            # From entity: EXPENSE (debit)
-            Transaction.objects.create(
-                type=TransactionType.EXPENSE,
-                amount=self.amount,
-                entity=from_entity,
-                gst_component=Decimal("0.00"),
-                date=self.date,
-                category=TransactionCategory.OTHER,
-                description=f"Intercompany transfer to {to_entity_name}: {self.description}"[:200],
-            )
-            # To entity: REVENUE (credit)
-            Transaction.objects.create(
-                type=TransactionType.REVENUE,
-                amount=self.amount,
-                entity=to_entity,
-                gst_component=Decimal("0.00"),
-                date=self.date,
-                category=TransactionCategory.OTHER,
-                description=f"Intercompany transfer from {from_entity_name}: {self.description}"[:200],
-            )
+        with db_transaction.atomic():
+            super().save(*args, **kwargs)
+
+            if is_new:
+                # Refresh to get entity names
+                from_entity = self.from_entity
+                to_entity = self.to_entity
+                from_entity_name = getattr(from_entity, 'name', str(from_entity.id))[:50]
+                to_entity_name = getattr(to_entity, 'name', str(to_entity.id))[:50]
+
+                # Create balancing transaction records
+                # From entity: EXPENSE (debit)
+                Transaction.objects.create(
+                    type=TransactionType.EXPENSE,
+                    amount=self.amount,
+                    entity=from_entity,
+                    gst_component=Decimal("0.00"),
+                    date=self.date,
+                    category=TransactionCategory.OTHER,
+                    description=f"Intercompany transfer to {to_entity_name}: {self.description}"[:200],
+                )
+                # To entity: REVENUE (credit)
+                Transaction.objects.create(
+                    type=TransactionType.REVENUE,
+                    amount=self.amount,
+                    entity=to_entity,
+                    gst_component=Decimal("0.00"),
+                    date=self.date,
+                    category=TransactionCategory.OTHER,
+                    description=f"Intercompany transfer from {from_entity_name}: {self.description}"[:200],
+                )
 
 
 class GSTReport(models.Model):

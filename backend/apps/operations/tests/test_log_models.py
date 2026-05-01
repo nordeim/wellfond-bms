@@ -459,3 +459,37 @@ class TestLogEntityScoping:
 
         assert log.dog.entity == test_entity
         assert log.created_by.entity == test_entity
+
+
+class TestHealthRecordFollowUp:
+    """TDD tests for HealthRecord follow_up_required field (C2 fix)."""
+
+    @pytest.mark.django_db
+    def test_follow_up_required_defaults_to_false(self, test_dog):
+        """Test follow_up_required defaults to False."""
+        from apps.operations.models import HealthRecord
+        record = HealthRecord.objects.create(
+            dog=test_dog,
+            date=date.today(),
+            category="VET_VISIT",
+            description="Routine checkup",
+        )
+        assert record.follow_up_required is False
+        assert record.follow_up_date is None
+
+    @pytest.mark.django_db
+    def test_follow_up_required_true(self, test_dog):
+        """Test follow_up_required can be set to True."""
+        from apps.operations.models import HealthRecord
+        import datetime
+        follow_up = datetime.date.today() + datetime.timedelta(days=14)
+        record = HealthRecord.objects.create(
+            dog=test_dog,
+            date=date.today(),
+            category="TREATMENT",
+            description="Wound treatment",
+            follow_up_required=True,
+            follow_up_date=follow_up,
+        )
+        assert record.follow_up_required is True
+        assert record.follow_up_date == follow_up

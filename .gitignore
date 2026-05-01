@@ -181,6 +181,7 @@ nohup.out
 upload/
 .kilo/
 backend/django.pid
+**/__pycache__/
 
 # Celery
 celerybeat-schedule

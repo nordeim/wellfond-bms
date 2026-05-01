@@ -207,6 +207,16 @@ class AgreementLineItem(models.Model):
             models.Index(fields=["agreement", "dog"]),
         ]
 
+    @property
+    def line_total(self) -> Decimal:
+        """Total amount for this line item (price excluding GST)."""
+        return self.price
+
+    @property
+    def gst_amount(self) -> Decimal:
+        """GST component for this line item."""
+        return self.gst_component
+
     def __str__(self) -> str:
         return f"{self.dog.name} - ${self.price}"
 

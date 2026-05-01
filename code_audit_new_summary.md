@@ -69,3 +69,23 @@ Each fix includes:
 - Rollback strategy
 - Breaking change risk assessment
 
+---
+
+The corrected remediation plan is at REMEDIATION_PLAN_mimo_v2.md (787 lines). Here's the executive summary of what was validated and corrected:
+---
+All 13 issues confirmed as real bugs
+Every issue in the original audit was traced to exact file:line matches in the source code. No false positives.
+5 corrections to the original remediation plan
+#	Correction
+C3	Original plan's "re-export" fix would break all consumers — the proper IndexedDB module exports async functions but the hook and 7 ground pages call them sync. Requires 3-step migration (hook + pages + re-export).
+H7	Original fix is correct (remove router-level idempotency) but missed that _check_idempotency also uses the wrong cache (cache default, not caches["idempotency"]).
+H6	Original plan's union() fix across 7 models is untested and risky. Simpler DRY _collect helper with global limit is safer and sufficient.
+H9	Original plan's "remove try/except" removes resilience. Should log warning instead so a dependency break is visible but doesn't crash all saves.
+H5	Original fix is correct for SessionManager but missed a secondary instance — _check_idempotency at logs.py:74 also uses wrong cache.
+Recommended execution order
+Phase 1 (35 min, zero risk): C1+H8, C2, H2, H3, H10, H7  
+Phase 2 (37 min, low risk): H5, H9, H1, H4  
+Phase 3 (15 min, low risk): H6  
+Phase 4 (30 min, medium risk): C3  
+Phase 5 (25 min): Verification
+

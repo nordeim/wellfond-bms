@@ -197,6 +197,17 @@ class HealthRecord(models.Model):
 
     vet_name = models.CharField(max_length=100, blank=True)
 
+    # NParks compliance: follow-up tracking
+    follow_up_required = models.BooleanField(
+        default=False,
+        help_text="Whether follow-up veterinary treatment is required",
+    )
+    follow_up_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Scheduled follow-up date",
+    )
+
     # Photos (stored as JSON array of URLs)
     photos = models.JSONField(default=list, blank=True)
 
