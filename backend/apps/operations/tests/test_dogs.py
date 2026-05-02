@@ -289,3 +289,148 @@ class TestDogFilters(TestCase):
         # This should raise validation error
         with self.assertRaises(Exception):
             dog.save()
+
+
+@pytest.mark.django_db
+class TestAuditFixValidation(TestCase):
+    """RED phase tests — validate audit findings before fixes are applied.
+
+    These tests codify the anti-patterns found in the May-3 audit report.
+    They are designed to FAIL in the current codebase and PASS after fixes.
+    All tests are runnable in CI (no external dependencies beyond pytest + Django).
+    """
+
+    def setUp(self):
+        self.entity = EntityFactory()
+        self.user = UserFactory(entity=self.entity, role='admin')
+        self.dog = DogFactory(entity=self.entity, name='Original Dog')
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    # ------------------------------------------------------------------
+    # Test 1: Pydantic v2 — endpoint must NOT use .dict()
+    # ------------------------------------------------------------------
+    def test_update_dog_uses_model_dump_not_dict(self):
+        """GREEN: update_dog calls .model_dump() on the incoming data object.
+
+        Verified via source inspection — the deprecated .dict() must be absent
+        and .model_dump() must be present in the update_dog function body.
+        """
+        import inspect
+        from apps.operations.routers.dogs import update_dog
+
+        source = inspect.getsource(update_dog)
+
+        self.assertNotIn(
+            '.dict(', source,
+            'Deprecated .dict() still present in update_dog — need .model_dump()',
+        )
+        self.assertIn(
+            '.model_dump(', source,
+            'Expected .model_dump() not found in update_dog after fix',
+        )
+        # Specific check for the exact call we expect
+        self.assertIn(
+            'data.model_dump(exclude_unset=True)', source,
+            'Expected data.model_dump(exclude_unset=True) not found',
+        )
+
+    # Test 2: Pydantic v2 — direct assertion via code inspection
+    # (now covered by test_update_dog_uses_model_dump_not_dict above)
+
+    # ------------------------------------------------------------------
+    # Test 3: Q import must be at module level, not inside functions
+    # ------------------------------------------------------------------
+    def test_q_is_imported_at_module_level(self):
+        """RED: `from django.db.models import Q` must be top-level."""
+        import apps.operations.routers.dogs as dogs_module
+
+        body_source = dogs_module.__file__
+        with open(body_source) as fh:
+            source = fh.read()
+
+        # Module-level Q import should exist exactly once in import block
+        self.assertIn('from django.db.models import Q', source)
+
+        # Q should NOT still be imported inside function bodies (lazy imports)
+        import_count = source.count('from django.db.models import Q')
+        self.assertEqual(
+            import_count, 1,
+            f'Expected 1 top-level Q import, found {import_count} — '
+            f'function-body imports not yet removed',
+        )
+
+    # ------------------------------------------------------------------
+    # Test 4: list_dogs must NOT prefetch vaccinations/photos
+    # ------------------------------------------------------------------
+    def test_list_dogs_queryset_no_prefetch_vaccinations(self):
+        """RED: list_dogs returns DogSummary; vaccinations/photos not needed.
+
+        The summary endpoint should not pay the cost of prefetch_related on
+        vaccinations and photos — those are only needed by get_dog (detail).
+        """
+        import inspect
+        from apps.operations.routers.dogs import list_dogs
+
+        source = inspect.getsource(list_dogs)
+        # After fix: no prefetch_related('vaccinations', 'photos')
+        self.assertNotIn(
+            "prefetch_related('vaccinations', 'photos')",
+            source,
+            'list_dogs still prefetches vaccinations & photos — '
+            'remove for list (summary) endpoint, keep only in get_dog (detail)',
+        )
+        # list_dogs should still use select_related for the summary fields
+        self.assertIn(
+            "select_related('entity'",
+            source,
+            'list_dogs lost its required select_related — entity scoping still needed',
+        )
+
+    # ------------------------------------------------------------------
+    # Test 5: Auth helpers consolidated — use get_authenticated_user directly
+    # ------------------------------------------------------------------
+    def test_auth_helpers_use_get_authenticated_user(self):
+        """GREEN: No lazy import — _get_current_user removed, _check_permission uses direct call."""
+        import inspect
+        import apps.operations.routers.dogs as dogs_module
+
+        # _get_current_user no longer exists in the module
+        self.assertFalse(
+            hasattr(dogs_module, '_get_current_user'),
+            '_get_current_user helper still exists — should be consolidated into _check_permission',
+        )
+
+        source = inspect.getsource(dogs_module._check_permission)
+        # Must NOT contain a lazy import inside the function body
+        self.assertNotIn(
+            'from apps.core.auth import',
+            source,
+            '_check_permission still contains lazy import — '
+            'should use module-level get_authenticated_user import',
+        )
+        # Must call get_authenticated_user directly
+        self.assertIn(
+            'get_authenticated_user(request)',
+            source,
+            '_check_permission does not call get_authenticated_user directly',
+        )
+
+    def test_auth_module_imports_get_authenticated_user(self):
+        """RED: Module imports must include get_authenticated_user."""
+        import apps.operations.routers.dogs as dogs_module
+
+        self.assertTrue(
+            hasattr(dogs_module, 'get_authenticated_user') or
+            'get_authenticated_user' in str(dogs_module.__dict__),
+            'Module-level get_authenticated_user import missing',
+        )
+
+    def test_auth_module_does_not_import_authentication_service_into_dogs(self):
+        """RED: AuthenticationService import should not be in dogs.py (unused)."""
+        import apps.operations.routers.dogs as dogs_module
+
+        self.assertFalse(
+            hasattr(dogs_module, 'AuthenticationService'),
+            'Unused AuthenticationService import still present in dogs module',
+        )

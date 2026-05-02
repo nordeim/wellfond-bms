@@ -29,8 +29,7 @@ class DogFactory(factory.django.DjangoModelFactory):
     
     @factory.post_generation
     def set_age_display(obj, create, extracted, **kwargs):
-        """Set age display after creation."""
-        obj.age_display = obj._meta.model.age_display.fget(obj)
+        """Age display is a read-only @property — no manual set needed."""
 
 
 class HealthRecordFactory(factory.django.DjangoModelFactory):

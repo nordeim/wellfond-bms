@@ -4,13 +4,14 @@ Dogs Router - Wellfond BMS
 CRUD endpoints for dog management with entity scoping.
 """
 
+from django.db.models import Q
 from ninja import Router, Query
 from ninja.errors import HttpError
 
+from apps.core.auth import get_authenticated_user
 from apps.core.permissions import (
     require_admin, scope_entity, scope_entity_for_list
 )
-from apps.core.auth import AuthenticationService
 from apps.operations.models import Dog
 from ..schemas import (
     DogCreate, DogDetailResponse, DogFilterParams,
@@ -20,22 +21,16 @@ from ..schemas import (
 router = Router(tags=["dogs"])
 
 
-def _get_current_user(request):
-    """Get current user from session cookie."""
-    from apps.core.auth import get_authenticated_user
-    return get_authenticated_user(request)
-
-
 def _check_permission(request, allowed_roles=None):
-    """Check if user has required permission."""
-    user = _get_current_user(request)
-    
+    """Check if user has required authentication and role."""
+    user = get_authenticated_user(request)
+
     if not user or not user.is_authenticated:
         raise HttpError(401, "Authentication required")
-    
+
     if allowed_roles and user.role not in allowed_roles:
         raise HttpError(403, "Permission denied")
-    
+
     return user
 
 
@@ -65,9 +60,7 @@ def list_dogs(
     per_page = min(per_page, 100)
     
     # Base queryset
-    qs = Dog.objects.select_related('entity', 'dam', 'sire').prefetch_related(
-        'vaccinations', 'photos'
-    )
+    qs = Dog.objects.select_related('entity', 'dam', 'sire')
     
     # Apply entity scoping
     if user.role == 'management' and filters and filters.entity:
@@ -92,8 +85,6 @@ def list_dogs(
             qs = qs.filter(unit__icontains=filters.unit)
         
         if filters.search:
-            # Search chip or name
-            from django.db.models import Q
             qs = qs.filter(
                 Q(microchip__icontains=filters.search) |
                 Q(name__icontains=filters.search)
@@ -225,7 +216,7 @@ def update_dog(request, dog_id: str, data: DogUpdate):
         raise HttpError(403, "Access denied")
     
     # Update fields
-    update_data = data.dict(exclude_unset=True)
+    update_data = data.model_dump(exclude_unset=True)
     
     # Handle parent chips
     if 'dam_chip' in update_data:
@@ -301,8 +292,6 @@ def search_dogs(request, query: str, limit: int = 10):
     Used for chip search dropdowns.
     """
     user = _check_permission(request)
-    
-    from django.db.models import Q
     
     qs = Dog.objects.filter(
         Q(microchip__icontains=query) |
