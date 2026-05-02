@@ -426,87 +426,29 @@ def list_logs(request, dog_id: UUID, limit: int = 50):
 
     _check_permission(request, dog)
 
-    # Collect all log types
+    # Collect all log types with DRY helper
     logs = []
 
-    # In-heat logs
-    for log in dog.heat_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "in_heat",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
+    def _collect(related, log_type):
+        for log in related.select_related("created_by").order_by("-created_at")[:limit]:
+            logs.append({
+                "id": str(log.id),
+                "type": log_type,
+                "dog_id": str(dog_id),
+                "dog_name": dog.name,
+                "created_at": log.created_at.isoformat(),
+                "created_by_name": log.created_by.username if log.created_by else None,
+            })
 
-    # Mating logs
-    for log in dog.mating_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "mated",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
+    _collect(dog.heat_logs, "in_heat")
+    _collect(dog.mating_logs, "mated")
+    _collect(dog.whelping_logs, "whelped")
+    _collect(dog.health_obs_logs, "health_obs")
+    _collect(dog.weight_logs, "weight")
+    _collect(dog.nursing_flag_logs, "nursing_flag")
+    _collect(dog.not_ready_logs, "not_ready")
 
-    # Whelping logs
-    for log in dog.whelping_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "whelped",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
-
-    # Health observation logs
-    for log in dog.health_obs_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "health_obs",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
-
-    # Weight logs
-    for log in dog.weight_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "weight",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
-
-    # Nursing flag logs
-    for log in dog.nursing_flag_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "nursing_flag",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
-
-    # Not ready logs
-    for log in dog.not_ready_logs.order_by("-created_at")[:limit]:
-        logs.append({
-            "id": str(log.id),
-            "type": "not_ready",
-            "dog_id": str(dog_id),
-            "dog_name": dog.name,
-            "created_at": log.created_at.isoformat(),
-            "created_by_name": log.created_by.username if log.created_by else None,
-        })
-
-    # Sort by created_at descending
+    # Sort by created_at descending (per-dog count is small, Python sort is fast)
     logs.sort(key=lambda x: x["created_at"], reverse=True)
 
-    return {"count": len(logs), "results": logs[:limit]}
+    return {"count": len(logs[:limit]), "results": logs[:limit]}

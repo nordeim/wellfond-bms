@@ -68,12 +68,11 @@ class IdempotencyMiddleware:
 
         # Generate cache key from request fingerprint
         fingerprint = self._generate_fingerprint(request, idempotency_key)
-        
-        # Use dedicated idempotency cache to avoid eviction
-        cached_response = caches["idempotency"].get(fingerprint)
+        idempotency_cache = caches["idempotency"]
 
-        if cached_response:
-            # Return cached response with Idempotency-Replay header
+        # Fast path: check for already-completed response
+        cached_response = idempotency_cache.get(fingerprint)
+        if cached_response and cached_response.get("status") != "processing":
             response = JsonResponse(
                 cached_response["data"],
                 status=cached_response["status"],
@@ -81,13 +80,31 @@ class IdempotencyMiddleware:
             response["Idempotency-Replay"] = "true"
             return response
 
-        # Process request and cache response
+        # Atomic lock: cache.add() = Redis SET NX — returns False if key exists
+        if not idempotency_cache.add(
+            fingerprint, {"status": "processing"}, timeout=30
+        ):
+            # Another request is processing — re-check for completed response
+            cached_response = idempotency_cache.get(fingerprint)
+            if cached_response and cached_response.get("status") != "processing":
+                response = JsonResponse(
+                    cached_response["data"],
+                    status=cached_response["status"],
+                )
+                response["Idempotency-Replay"] = "true"
+                return response
+            # Still processing — return conflict
+            return JsonResponse(
+                {"error": "Request already in progress"},
+                status=409,
+            )
+
+        # We hold the lock — process request
         response = self.get_response(request)
 
         if 200 <= response.status_code < 300:
             try:
-                # Store in dedicated idempotency cache
-                caches["idempotency"].set(
+                idempotency_cache.set(
                     fingerprint,
                     {
                         "data": json.loads(response.content),
@@ -96,8 +113,10 @@ class IdempotencyMiddleware:
                     timeout=86400,  # 24 hours
                 )
             except json.JSONDecodeError:
-                # Don't cache non-JSON responses
                 pass
+        else:
+            # Remove processing marker on error so retry works
+            idempotency_cache.delete(fingerprint)
 
         return response
 

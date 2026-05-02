@@ -13,12 +13,28 @@ import {
 export function useOfflineQueue() {
   const [isOnline, setIsOnline] = useState(true);
   const [queue, setQueue] = useState<OfflineQueueItem[]>([]);
+  const [queueLoaded, setQueueLoaded] = useState(false);
+  const [queueLength, setQueueLength] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Sync queue state with storage on mount
+  // Async load queue from IndexedDB on mount
   useEffect(() => {
-    setQueue(getQueue());
+    (async () => {
+      try {
+        const items = await getQueue();
+        setQueue(items);
+        setQueueLength(await getQueueCount());
+      } finally {
+        setQueueLoaded(true);
+      }
+    })();
+  }, []);
+
+  const refreshQueue = useCallback(async () => {
+    const items = await getQueue();
+    setQueue(items);
+    setQueueLength(await getQueueCount());
   }, []);
 
   // Track online status
@@ -53,7 +69,7 @@ export function useOfflineQueue() {
   const processQueue = useCallback(async () => {
     if (isProcessing || !navigator.onLine) return;
 
-    const currentQueue = getQueue();
+    const currentQueue = await getQueue();
     if (currentQueue.length === 0) return;
 
     setIsProcessing(true);
@@ -76,18 +92,18 @@ export function useOfflineQueue() {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        removeFromQueue(item.id);
+        await removeFromQueue(item.id);
         synced++;
       } catch {
         if (item.retryCount < 3) {
           const { incrementRetry } = await import("@/lib/offline-queue");
-          incrementRetry(item.id);
+          await incrementRetry(item.id);
           failed.push({ ...item, retryCount: item.retryCount + 1 });
         }
       }
     }
 
-    setQueue(getQueue());
+    await refreshQueue();
     setIsProcessing(false);
 
     if (synced > 0) {
@@ -96,7 +112,7 @@ export function useOfflineQueue() {
         description: `${synced} logs synced`,
       });
     }
-  }, [isProcessing, toast]);
+  }, [isProcessing, toast, refreshQueue]);
 
   const queueRequest = useCallback(
     async <T>(requestFn: () => Promise<T>): Promise<T> => {
@@ -104,14 +120,14 @@ export function useOfflineQueue() {
         return requestFn();
       }
 
-      addToQueue({
+      await addToQueue({
         method: "POST",
         url: "",
         body: undefined,
         headers: {},
       });
 
-      setQueue(getQueue());
+      await refreshQueue();
 
       return new Promise((resolve, reject) => {
         const checkInterval = setInterval(() => {
@@ -129,13 +145,14 @@ export function useOfflineQueue() {
         }, 30000);
       });
     },
-    [processQueue]
+    [processQueue, refreshQueue]
   );
 
   return {
     isOnline,
     queue,
-    queueLength: getQueueCount(),
+    queueLoaded,
+    queueLength,
     isProcessing,
     queueRequest,
     processQueue,

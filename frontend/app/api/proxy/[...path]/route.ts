@@ -139,6 +139,12 @@ async function proxyRequest(
       }
     });
 
+    // Add CORS headers to actual response (not just preflight)
+    const corsHeaders = getCorsHeaders(request);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      responseHeaders.set(key, value);
+    });
+
     // Create response with streaming body
     const responseBody = response.body
       ? new ReadableStream({
@@ -198,18 +204,38 @@ export async function DELETE(request: NextRequest) {
 }
 
 // =============================================================================
+// CORS Configuration
+// =============================================================================
+
+const ALLOWED_ORIGINS = [
+  'https://wellfond.sg',
+  'https://www.wellfond.sg',
+  'http://localhost:3000',
+];
+
+function getCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const isAllowed =
+    ALLOWED_ORIGINS.includes(origin) ||
+    (process.env.NODE_ENV === 'development' &&
+     origin.startsWith('http://localhost'));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRFToken, X-Idempotency-Key',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+// =============================================================================
 // CORS Preflight
 // =============================================================================
 
-export async function OPTIONS(_request: NextRequest) {
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRFToken, X-Idempotency-Key',
-      'Access-Control-Allow-Credentials': 'true',
-    },
+    headers: getCorsHeaders(request),
   });
 }
 

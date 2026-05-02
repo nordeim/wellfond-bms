@@ -15,7 +15,7 @@ from django.contrib.auth import (
     login as django_login,
     logout as django_logout,
 )
-from django.core.cache import cache
+from django.core.cache import caches
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token, rotate_token
 
@@ -35,6 +35,11 @@ class SessionManager:
     REFRESH_DURATION = timedelta(days=7)  # Refresh token
 
     @classmethod
+    def _session_cache(cls):
+        """Get the dedicated sessions cache backend."""
+        return caches["sessions"]
+
+    @classmethod
     def create_session(cls, user: User, request: HttpRequest) -> tuple[str, str]:
         """
         Create a new session for user.
@@ -52,7 +57,8 @@ class SessionManager:
             "csrf_token": csrf_token,
         }
 
-        cache.set(
+        session_cache = cls._session_cache()
+        session_cache.set(
             cls.SESSION_KEY_PREFIX + session_key,
             session_data,
             timeout=int(cls.SESSION_DURATION.total_seconds()),
@@ -60,7 +66,7 @@ class SessionManager:
 
         # Also store refresh token (longer duration)
         refresh_key = f"{cls.SESSION_KEY_PREFIX}refresh:{session_key}"
-        cache.set(
+        session_cache.set(
             refresh_key, user.id, timeout=int(cls.REFRESH_DURATION.total_seconds())
         )
 
@@ -69,14 +75,14 @@ class SessionManager:
     @classmethod
     def get_session(cls, session_key: str) -> Optional[dict]:
         """Get session data from Redis."""
-        return cache.get(cls.SESSION_KEY_PREFIX + session_key)
+        return cls._session_cache().get(cls.SESSION_KEY_PREFIX + session_key)
 
     @classmethod
     def extend_session(cls, session_key: str, user: User) -> None:
         """Extend session TTL (called on activity)."""
         session_data = cls.get_session(session_key)
         if session_data:
-            cache.set(
+            cls._session_cache().set(
                 cls.SESSION_KEY_PREFIX + session_key,
                 session_data,
                 timeout=int(cls.SESSION_DURATION.total_seconds()),
@@ -85,8 +91,9 @@ class SessionManager:
     @classmethod
     def delete_session(cls, session_key: str) -> None:
         """Delete session from Redis."""
-        cache.delete(cls.SESSION_KEY_PREFIX + session_key)
-        cache.delete(f"{cls.SESSION_KEY_PREFIX}refresh:{session_key}")
+        session_cache = cls._session_cache()
+        session_cache.delete(cls.SESSION_KEY_PREFIX + session_key)
+        session_cache.delete(f"{cls.SESSION_KEY_PREFIX}refresh:{session_key}")
 
 
 class AuthenticationService:

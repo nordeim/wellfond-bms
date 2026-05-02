@@ -7,11 +7,14 @@ Ground Log models for Phase 3.
 
 import uuid
 from datetime import date
+import logging
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from apps.core.models import Entity, User
+
+logger = logging.getLogger(__name__)
 
 
 class Dog(models.Model):
@@ -294,8 +297,12 @@ class Vaccination(models.Model):
             from .services.vaccine import calc_vaccine_due
             self.due_date = calc_vaccine_due(self.dog, self.vaccine_name, self.date_given)
         except ImportError:
-            # Service not yet available, skip auto-calculation
-            pass
+            logger.warning(
+                "Vaccine service import failed for %s. "
+                "Due date not auto-calculated.",
+                self.vaccine_name,
+                exc_info=True,
+            )
         self.status = self._calculate_status()
         super().save(*args, **kwargs)
 
