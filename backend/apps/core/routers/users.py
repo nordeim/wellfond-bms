@@ -7,54 +7,53 @@ User management endpoints (admin only).
 from typing import List, Optional
 from uuid import UUID
 
-from ninja import Query, Router
+from ninja import Query, Router, Schema
 from ninja.errors import HttpError
-from ninja.pagination import paginate
 
+from apps.core.auth import get_authenticated_user
 from ..models import User
 from ..schemas import UserCreate, UserResponse, UserUpdate
 
 router = Router(tags=["users"])
 
 
+class UserListResponse(Schema):
+    """Manual pagination response for user list."""
+
+    count: int
+    results: List[UserResponse]
+    page: int
+    per_page: int
+
+
 def _check_admin_permission(request):
     """Check if user has admin/management permission using session cookie directly."""
-    from apps.core.auth import SessionManager, AuthenticationService
-    from apps.core.models import User
+    user = get_authenticated_user(request)
 
-    # Get session from cookie directly
-    session_key = request.COOKIES.get(AuthenticationService.COOKIE_NAME)
-    if not session_key:
+    if not user or not user.is_authenticated:
         raise HttpError(401, "Authentication required")
 
-    session_data = SessionManager.get_session(session_key)
-    if not session_data:
-        raise HttpError(401, "Session expired")
-
-    # Get user from database
-    try:
-        user = User.objects.get(id=session_data["user_id"], is_active=True)
-    except User.DoesNotExist:
-        raise HttpError(401, "User not found")
-
-    # Check role
     if user.role not in (User.Role.ADMIN, User.Role.MANAGEMENT):
         raise HttpError(403, "Permission denied: admin role required")
 
     return user
 
 
-@router.get("/", response=list[UserResponse])
-@paginate
-def list_users(request, role: Optional[str] = None, is_active: Optional[bool] = None):
+@router.get("/", response=UserListResponse)
+def list_users(request, role: Optional[str] = None, is_active: Optional[bool] = None,
+               page: int = 1, per_page: int = 25):
     """
-    List all users (admin only).
+    List all users (admin only) with manual pagination.
 
     Query params:
     role: Filter by role (management, admin, sales, ground, vet)
     is_active: Filter by active status
+    page: Page number (default 1)
+    per_page: Items per page (default 25, max 100)
     """
     _check_admin_permission(request)
+
+    per_page = min(per_page, 100)
 
     queryset = User.objects.all().order_by("-created_at")
 
@@ -63,7 +62,16 @@ def list_users(request, role: Optional[str] = None, is_active: Optional[bool] = 
     if is_active is not None:
         queryset = queryset.filter(is_active=is_active)
 
-    return queryset
+    total_count = queryset.count()
+    start = (page - 1) * per_page
+    paginated_qs = queryset[start : start + per_page]
+
+    return {
+        "count": total_count,
+        "results": list(paginated_qs),
+        "page": page,
+        "per_page": per_page,
+    }
 
 
 @router.get("/{user_id}", response=UserResponse)

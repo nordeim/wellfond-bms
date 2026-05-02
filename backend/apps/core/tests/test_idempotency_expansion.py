@@ -5,6 +5,8 @@ Critical Issue C3: Idempotency only enforced on log paths
 These tests ensure all state-changing operations require idempotency keys.
 """
 
+import uuid
+
 from django.test import TestCase, RequestFactory
 from django.http import JsonResponse
 
@@ -126,3 +128,70 @@ class IdempotencyExpansionTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn(b"idempotency", response.content.lower())
+
+
+class IdempotencyNonJsonClearTests(TestCase):
+    """RED phase: non-JSON 2xx responses must clear the processing marker.
+
+    BUG: When a 2xx response body is non-JSON (e.g. StreamingHttpResponse,
+    plain text, SSE), the inner try/except at middleware.py catches
+    json.JSONDecodeError and silently passes.  The processing marker remains
+    in Redis (set at line 84 with 30s TTL), and the successful response is
+    never cached for replay.  Subsequent retries re-process instead.
+    """
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        from django.http import StreamingHttpResponse
+
+        def _inner(_request):
+            return StreamingHttpResponse(
+                iter(["data: ok\n\n"]),
+                content_type="text/event-stream",
+                status=200,
+            )
+
+        self.middleware = IdempotencyMiddleware(_inner)
+
+    def test_non_json_2xx_does_not_leave_processing_marker(self):
+        """GREEN: non-JSON 2xx must NOT leave a stale processing marker.
+
+        We verify by sending a second request with the SAME idempotency key.
+        Before fix: second request re-processes (no cached replay available).
+        After fix: processing marker is cleared, second request goes through
+        cleanly without hitting the 409 conflict from the stale marker.
+        """
+        from django.core.cache import caches
+
+        idempotency_key = "test-key-sse-01"
+
+        # First request — non-JSON SSE response
+        request1 = self.factory.post(
+            "/api/v1/operations/logs/in-heat",
+            content_type="application/json",
+            data={"dog_id": "123"},
+            HTTP_X_IDEMPOTENCY_KEY=idempotency_key,
+        )
+        response1 = self.middleware(request1)
+        self.assertEqual(response1.status_code, 200)
+
+        # Second request — same key.
+        # Before fix: the processing marker was left behind (30s TTL).
+        #   The middleware sees a cached entry with status="processing" and
+        #   returns 409 Conflict.
+        # After fix: the processing marker is cleared, so the second request
+        #   acquires the lock fresh and proceeds normally.
+        request2 = self.factory.post(
+            "/api/v1/operations/logs/in-heat",
+            content_type="application/json",
+            data={"dog_id": "123"},
+            HTTP_X_IDEMPOTENCY_KEY=idempotency_key,
+        )
+        response2 = self.middleware(request2)
+
+        self.assertNotEqual(
+            response2.status_code, 409,
+            "Second request got 409 Conflict — processing marker from first "
+            "non-JSON response was not cleared. The middleware must delete "
+            "the processing marker when a 2xx response is non-JSON.",
+        )

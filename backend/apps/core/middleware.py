@@ -104,16 +104,22 @@ class IdempotencyMiddleware:
 
         if 200 <= response.status_code < 300:
             try:
+                response_content = (
+                    response.content
+                    if hasattr(response, "content")
+                    else b"{}"
+                )
                 idempotency_cache.set(
                     fingerprint,
                     {
-                        "data": json.loads(response.content),
+                        "data": json.loads(response_content),
                         "status": response.status_code,
                     },
                     timeout=86400,  # 24 hours
                 )
-            except json.JSONDecodeError:
-                pass
+            except (json.JSONDecodeError, AttributeError):
+                # Non-JSON response — clear processing marker so retries work
+                idempotency_cache.delete(fingerprint)
         else:
             # Remove processing marker on error so retry works
             idempotency_cache.delete(fingerprint)
