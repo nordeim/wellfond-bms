@@ -85,9 +85,17 @@ class TestDogEndpoints(TestCase):
         self.entity = EntityFactory()
         self.user = UserFactory(entity=self.entity, role='admin')
         
-        # Login to get session
-        from apps.core.auth import AuthenticationService
-        self.client.force_login(self.user)
+        # Create session-authenticated client (Ninja-compatible)
+        from django.http import HttpRequest
+        from apps.core.auth import SessionManager, AuthenticationService
+
+        request = HttpRequest()
+        request.method = "POST"
+        request.META["SERVER_NAME"] = "localhost"
+        request.META["SERVER_PORT"] = "8000"
+
+        session_key, _ = SessionManager.create_session(self.user, request)
+        self.client.cookies[AuthenticationService.COOKIE_NAME] = session_key
     
     def test_list_dogs(self):
         """Test GET /api/v1/dogs/ returns dog list."""

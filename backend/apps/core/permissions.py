@@ -55,9 +55,13 @@ def require_role(*required_roles: str) -> Callable[[F], F]:
 
 def scope_entity(queryset: QuerySet, user: User) -> QuerySet:
     """
-    Filter queryset by user's entity.
+    Filter queryset by user's entity and enforce PDPA consent.
     MANAGEMENT role sees all entities.
     All other roles see only their assigned entity.
+
+    PDPA: Models with pdpa_consent field are automatically filtered
+    to pdpa_consent=True. This is a hard, non-overridable filter per
+    compliance requirements.
 
     Usage:
         dogs = scope_entity(Dog.objects.all(), request.user)
@@ -66,15 +70,18 @@ def scope_entity(queryset: QuerySet, user: User) -> QuerySet:
         return queryset.none()
 
     # MANAGEMENT sees all
-    if user.role == User.Role.MANAGEMENT:
-        return queryset
+    if user.role != User.Role.MANAGEMENT:
+        # Others see only their entity
+        if user.entity_id:
+            queryset = queryset.filter(entity_id=user.entity_id)
+        else:
+            return queryset.none()
 
-    # Others see only their entity
-    if user.entity_id:
-        return queryset.filter(entity_id=user.entity_id)
+    # PDPA hard filter — auto-applied for models with pdpa_consent
+    if hasattr(queryset.model, "pdpa_consent"):
+        queryset = queryset.filter(pdpa_consent=True)
 
-    # No entity assigned - return empty
-    return queryset.none()
+    return queryset
 
 
 def scope_entity_for_list(
@@ -83,6 +90,7 @@ def scope_entity_for_list(
     """
     Scope queryset with optional entity override for MANAGEMENT.
     If user is MANAGEMENT and entity_param is provided, filter by that entity.
+    PDPA filter is auto-applied for models with pdpa_consent field.
     """
     if not user or not user.is_authenticated:
         return queryset.none()
@@ -90,14 +98,17 @@ def scope_entity_for_list(
     # MANAGEMENT can optionally filter by entity
     if user.role == User.Role.MANAGEMENT:
         if entity_param:
-            return queryset.filter(entity_id=entity_param)
-        return queryset
+            queryset = queryset.filter(entity_id=entity_param)
+    elif user.entity_id:
+        queryset = queryset.filter(entity_id=user.entity_id)
+    else:
+        return queryset.none()
 
-    # Others see only their entity
-    if user.entity_id:
-        return queryset.filter(entity_id=user.entity_id)
+    # PDPA hard filter — auto-applied for models with pdpa_consent
+    if hasattr(queryset.model, "pdpa_consent"):
+        queryset = queryset.filter(pdpa_consent=True)
 
-    return queryset.none()
+    return queryset
 
 
 def enforce_pdpa(queryset: QuerySet, user: User) -> QuerySet:

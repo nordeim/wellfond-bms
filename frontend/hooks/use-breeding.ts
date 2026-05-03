@@ -147,7 +147,7 @@ export function useMateCheck() {
       sire2_chip?: string | undefined;
     }) => {
       const response = await api.post<MateCheckResult>(
-        "/api/v1/breeding/mate-check/",
+        "/breeding/mate-check/",
         data
       );
       return response;
@@ -172,7 +172,7 @@ export function useMateCheckOverride() {
       reason: string;
       notes?: string | undefined;
     }) => {
-      const response = await api.post("/api/v1/breeding/mate-check/override/", data);
+      const response = await api.post("/breeding/mate-check/override/", data);
       return response;
     },
     onSuccess: () => {
@@ -194,7 +194,7 @@ export function useMateCheckHistory(params?: { page?: number; per_page?: number 
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/mate-check/history/", params ? { params: params as Record<string, string | number | undefined> } : undefined);
+      }>("/breeding/mate-check/history/", params ? { params: params as Record<string, string | number | undefined> } : undefined);
       return response;
     },
   });
@@ -218,7 +218,7 @@ export function useLitters(filters?: LitterFilters) {
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/litters/", Object.keys(params).length > 0 ? { params } : undefined);
+      }>("/breeding/litters/", Object.keys(params).length > 0 ? { params } : undefined);
       return response;
     },
   });
@@ -228,7 +228,7 @@ export function useLitter(id: string) {
   return useQuery({
     queryKey: ["litter", id],
     queryFn: async () => {
-      const response = await api.get<LitterDetail>(`/api/v1/breeding/litters/${id}/`);
+      const response = await api.get<LitterDetail>(`/breeding/litters/${id}/`);
       return response;
     },
     enabled: !!id,
@@ -247,7 +247,7 @@ export function useCreateLitter() {
       stillborn_count: number;
       notes?: string;
     }) => {
-      const response = await api.post("/api/v1/breeding/litters/", data);
+      const response = await api.post("/breeding/litters/", data);
       return response;
     },
     onSuccess: () => {
@@ -278,7 +278,7 @@ export function useUpdateLitter() {
         notes: string;
       }>;
     }) => {
-      const response = await api.patch(`/api/v1/breeding/litters/${id}/`, data);
+      const response = await api.patch(`/breeding/litters/${id}/`, data);
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -315,7 +315,7 @@ export function useAddPuppy() {
       };
     }) => {
       const response = await api.post(
-        `/api/v1/breeding/litters/${litter_id}/puppies/`,
+        `/breeding/litters/${litter_id}/puppies/`,
         data
       );
       return response;
@@ -355,7 +355,7 @@ export function useUpdatePuppy() {
       }>;
     }) => {
       const response = await api.patch(
-        `/api/v1/breeding/litters/${litter_id}/puppies/${puppy_id}/`,
+        `/breeding/litters/${litter_id}/puppies/${puppy_id}/`,
         data
       );
       return response;
@@ -389,7 +389,7 @@ export function useBreedingRecords(filters?: BreedingRecordFilters) {
         total: number;
         page: number;
         per_page: number;
-      }>("/api/v1/breeding/records/", Object.keys(params).length > 0 ? { params } : undefined);
+      }>("/breeding/records/", Object.keys(params).length > 0 ? { params } : undefined);
       return response;
     },
   });
@@ -407,7 +407,7 @@ export function useCreateBreedingRecord() {
       method: "NATURAL" | "ASSISTED";
       notes?: string;
     }) => {
-      const response = await api.post("/api/v1/breeding/records/", data);
+      const response = await api.post("/breeding/records/", data);
       return response;
     },
     onSuccess: () => {
@@ -435,7 +435,7 @@ export function useUpdateBreedingRecord() {
         notes: string;
       }>;
     }) => {
-      const response = await api.patch(`/api/v1/breeding/records/${id}/`, data);
+      const response = await api.patch(`/breeding/records/${id}/`, data);
       return response;
     },
     onSuccess: () => {

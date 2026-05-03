@@ -8,6 +8,7 @@ Run: python -m pytest apps/core/tests/test_dashboard.py -v
 """
 
 import pytest
+from conftest import authenticate_client
 from datetime import date, timedelta
 from decimal import Decimal
 from unittest.mock import patch
@@ -75,7 +76,7 @@ class TestDashboardMetricsEndpoint:
         )
 
         # Login and request
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -112,7 +113,7 @@ class TestDashboardMetricsEndpoint:
             status=Dog.Status.ACTIVE
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -129,7 +130,7 @@ class TestDashboardMetricsEndpoint:
             entity=self.holdings
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -148,7 +149,7 @@ class TestDashboardMetricsEndpoint:
             entity=self.holdings
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -167,7 +168,7 @@ class TestDashboardMetricsEndpoint:
             entity=self.holdings
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -190,7 +191,7 @@ class TestDashboardMetricsEndpoint:
             entity=self.holdings
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -210,7 +211,7 @@ class TestDashboardMetricsEndpoint:
             entity=self.holdings
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
 
         # First request
         response1 = client.get("/api/v1/dashboard/metrics")

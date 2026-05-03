@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party
+    "csp",
     "corsheaders",
     "django_celery_beat",
     # Domain apps — implemented
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -224,6 +226,20 @@ CSP_IMG_SRC = ("'self'", "data:")
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FONT_SRC = ("'self'",)
 CSP_REPORT_ONLY = False
+
+# django-csp dict configuration (modern v4 format)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": CSP_DEFAULT_SRC,
+        "script-src": CSP_SCRIPT_SRC,
+        "style-src": CSP_STYLE_SRC,
+        "img-src": CSP_IMG_SRC,
+        "connect-src": CSP_CONNECT_SRC,
+        "font-src": CSP_FONT_SRC,
+    }
+}
+
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {}  # Only active in dev when CSP_REPORT_ONLY=True
 
 # ---------------------------------------------------------------------------
 # Logging — Structured JSON

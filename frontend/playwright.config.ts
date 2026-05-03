@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
  * End-to-end testing with mobile and desktop viewports
  */
 export default defineConfig({
-  testDir: "./playwright",
+  testDir: "./e2e",
 
   // Run tests in files in parallel
   fullyParallel: true,

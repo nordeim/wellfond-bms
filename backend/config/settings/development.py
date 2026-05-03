@@ -10,9 +10,22 @@ DATABASES["default"]["PORT"] = os.environ.get("POSTGRES_PORT", "5432")
 DATABASES["default"]["USER"] = os.environ.get("POSTGRES_USER", "wellfond_user")
 DATABASES["default"]["NAME"] = os.environ.get("POSTGRES_DB", "wellfond_db")
 
-# Relaxed CSP for dev (using django-csp style settings)
+# Relaxed CSP for dev (dict format for django-csp v4)
 CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
 CSP_REPORT_ONLY = True
+
+# In dev, move enforce policy to report-only so errors don't break the UI
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {
+    "DIRECTIVES": {
+        "default-src": CSP_DEFAULT_SRC,
+        "script-src": CSP_SCRIPT_SRC,
+        "style-src": CSP_STYLE_SRC,
+        "img-src": CSP_IMG_SRC,
+        "connect-src": CSP_CONNECT_SRC,
+        "font-src": CSP_FONT_SRC,
+    }
+}
+CONTENT_SECURITY_POLICY = {}
 
 # Debug toolbar
 INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
