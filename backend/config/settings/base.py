@@ -217,29 +217,20 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
-# Content Security Policy
+# Content Security Policy (django-csp v4 dict format)
 # ---------------------------------------------------------------------------
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Tailwind JIT requires inline
-CSP_IMG_SRC = ("'self'", "data:")
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FONT_SRC = ("'self'",)
-CSP_REPORT_ONLY = False
-
-# django-csp dict configuration (modern v4 format)
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
-        "default-src": CSP_DEFAULT_SRC,
-        "script-src": CSP_SCRIPT_SRC,
-        "style-src": CSP_STYLE_SRC,
-        "img-src": CSP_IMG_SRC,
-        "connect-src": CSP_CONNECT_SRC,
-        "font-src": CSP_FONT_SRC,
+        "default-src": ["'self'"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'", "'unsafe-inline'"],  # Tailwind JIT requires inline
+        "img-src": ["'self'", "data:"],
+        "connect-src": ["'self'"],
+        "font-src": ["'self'"],
     }
 }
 
-CONTENT_SECURITY_POLICY_REPORT_ONLY = {}  # Only active in dev when CSP_REPORT_ONLY=True
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {}  # Overridden in dev
 
 # ---------------------------------------------------------------------------
 # Logging — Structured JSON

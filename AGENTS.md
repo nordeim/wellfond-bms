@@ -145,6 +145,17 @@ wellfond-bms/
 | **BFF Proxy Runtime** | `export const runtime = 'edge'` | Remove - use default Node.js runtime |
 | **Internal URLs** | `NEXT_PUBLIC_*` for backend URLs | `BACKEND_INTERNAL_URL` server-side only |
 | **Middleware Order** | Custom auth before Django auth | Django first, then custom (E408 requirement) |
+django-csp 4.0 requires the OLD CSP_* settings to be removed — their mere presence causes csp.E001.
+The CSP error is clear — django-csp 4.0 requires removal of old CSP_* prefix settings.
+Fix the CSP settings per the migration guide (remove old CSP_* settings, keep only dict format)
+- In base.py: Remove all CSP_* lines, keep only CONTENT_SECURITY_POLICY dict
+- In development.py: Remove CSP_SCRIPT_SRC and CSP_REPORT_ONLY, replace with self-contained dicts
+- Centralized PDPA in scope_entity/scope_entity_for_list rather than per-router — ensures no endpoint accidentally skips the filter. MANAGEMENT role still sees all entities but PDPA still applies.
+- authenticate_client() helper exported from conftest.py — allows both function-style and fixture-style use, since some test classes create users dynamically and need per-test auth.
+- CSP report-only in dev (CONTENT_SECURITY_POLICY={}, CONTENT_SECURITY_POLICY_REPORT_ONLY={...}) to avoid breaking HMR/inline scripts during development.
+- django-csp v4 error: csp.E001 fires if ANY old CSP_* settings remain — even if new dict config exists. All old prefix vars must be fully deleted, not just supplemented.
+- force_login breaks Ninja: Django Ninja 1.6.2 uses its own auth extraction that differs from Django's stock AuthenticationMiddleware. force_login sets request.user on the Django session but Ninja bypasses this — hence 401 responses in tests.
+- BFF double prefix: api.ts:buildUrl() prepends /api/v1 (server) or /api/proxy (client). Hooks using /api/v1/breeding/... become /api/v1/api/v1/breeding/... → 404. Also, the BFF proxy allowlist expects /breeding (not /api/v1/breeding) → 403.
 
 ---
 

@@ -8,6 +8,7 @@ Run: python -m pytest apps/core/tests/test_dashboard_integration.py -v
 """
 
 import pytest
+from conftest import authenticate_client
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -38,7 +39,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_dashboard_metrics_endpoint_returns_200(self, client):
         """Test GET /dashboard/metrics returns 200 for authenticated user."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
@@ -46,7 +47,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_response_has_required_top_level_keys(self, client):
         """Test response has all required top-level keys."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -56,7 +57,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_stats_has_required_keys(self, client):
         """Test stats object has all required keys."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -69,7 +70,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_nparks_countdown_has_required_keys(self, client):
         """Test nparks_countdown has all required keys."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -81,7 +82,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_alerts_is_array(self, client):
         """Test alerts is an array."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -89,7 +90,7 @@ class TestDashboardAPIResponseStructure:
 
     def test_recent_activity_is_array(self, client):
         """Test recent_activity is an array."""
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -216,7 +217,7 @@ class TestDashboardRoleBasedContent:
             entity=self.entity
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -232,7 +233,7 @@ class TestDashboardRoleBasedContent:
             entity=self.entity
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -248,7 +249,7 @@ class TestDashboardRoleBasedContent:
             entity=self.entity
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 
@@ -264,7 +265,7 @@ class TestDashboardRoleBasedContent:
             entity=self.entity
         )
 
-        client.force_login(user)
+        authenticate_client(client, user)
         response = client.get("/api/v1/dashboard/metrics")
         data = response.json()
 

@@ -331,7 +331,7 @@ class TestActivityFeed:
                 payload={"name": f"Dog {i}"}
             )
 
-        client.force_login(self.user)
+        authenticate_client(client, self.user)
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200

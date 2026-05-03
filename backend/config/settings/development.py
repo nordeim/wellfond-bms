@@ -10,22 +10,18 @@ DATABASES["default"]["PORT"] = os.environ.get("POSTGRES_PORT", "5432")
 DATABASES["default"]["USER"] = os.environ.get("POSTGRES_USER", "wellfond_user")
 DATABASES["default"]["NAME"] = os.environ.get("POSTGRES_DB", "wellfond_db")
 
-# Relaxed CSP for dev (dict format for django-csp v4)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
-CSP_REPORT_ONLY = True
-
-# In dev, move enforce policy to report-only so errors don't break the UI
+# Relaxed CSP for dev — report-only mode, wider script-src for HMR
 CONTENT_SECURITY_POLICY_REPORT_ONLY = {
     "DIRECTIVES": {
-        "default-src": CSP_DEFAULT_SRC,
-        "script-src": CSP_SCRIPT_SRC,
-        "style-src": CSP_STYLE_SRC,
-        "img-src": CSP_IMG_SRC,
-        "connect-src": CSP_CONNECT_SRC,
-        "font-src": CSP_FONT_SRC,
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "data:"],
+        "connect-src": ["'self'"],
+        "font-src": ["'self'"],
     }
 }
-CONTENT_SECURITY_POLICY = {}
+CONTENT_SECURITY_POLICY = {}  # No enforced policy in dev
 
 # Debug toolbar
 INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
