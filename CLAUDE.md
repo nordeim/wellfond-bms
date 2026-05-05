@@ -4,7 +4,7 @@ project_type: django-nextjs-hybrid
 version: 1.1.0
 backend_framework: Django 6.0 + Django Ninja
 frontend_framework: Next.js 16 + Tailwind CSS 4 + Radix UI
-last_updated: 2026-04-29
+last_updated: 2026-05-06
 ---
 
 # Wellfond Breeding Management System (BMS)
@@ -577,6 +577,53 @@ def authenticated_client(test_user):
 | Gotenberg in dev | Optional | PDF generation not critical for Phase 2-3 |
 | Test coverage < 85% | In Progress | Need more edge case tests (Phase 9+) |
 | E2E tests with Playwright | Planned | Critical paths: Login → Ground Log → Offline Sync |
+
+---
+
+## Round 2 Audit Remediation (May 6, 2026) — 11 Fixes Applied
+
+### Critical Fixes (6)
+
+| # | Finding | File(s) Changed | Fix |
+|---|---------|----------------|-----|
+| **C-001** | BFF proxy blocks SSE `/stream` and `/alerts` | `route.ts:66`, `route.test.ts` | Added `stream\|alerts` to path allowlist regex; 4 new tests |
+| **C-003** | Duplicate Celery beat schedules with wrong task name | `celery.py:18`, `settings/base.py:162-175` | Fixed `avs_reminder_check` → `check_avs_reminders` in celery.py; removed duplicate from settings |
+| **C-002** | `handle_bounce()` mutates immutable `CommunicationLog` | `blast.py:382-401` | Replaced mutation with append-only `create()` (new BOUNCED entry) |
+| **C-004** | `check_rehome_overdue` returned empty success | `operations/tasks.py:222-231` | Implemented using `Dog.rehome_flag` + `AuditLog` |
+| **C-005** | `archive_old_logs` counted but never deleted | `operations/tasks.py:162-204` | Implemented deletion with audit trail, 2yr retention |
+| **Additional** | `lock_expired_submissions` referenced non-existent `updated_at` | `compliance/tasks.py:151` | Removed `"updated_at"` from `update_fields` |
+
+### High-Severity Fixes (4)
+
+| # | Finding | File(s) Changed | Fix |
+|---|---------|----------------|-----|
+| **H-001** | Email/WhatsApp sending were placeholders | `blast.py:260-341` | Real Resend SDK integration for email; WhatsApp returns `FAILED` instead of fake `SENT` |
+| **H-002** | No HTTP→HTTPS redirect in nginx | `nginx.conf` | Added port 80 `server` block with `return 301 https://` |
+| **H-004** | Dashboard revenue used `signed_at` not `completed_at` | `dashboard.py:154-174` | Changed to `completed_at__date__gte/lte` for revenue recognition |
+| **M-016** | No env var validation in production | `production.py:1-5` | Added `sys.exit(1)` startup check for `DJANGO_SECRET_KEY`, `POSTGRES_PASSWORD` |
+
+### MED-001 Regressions Fixed (3)
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `test_rate_limit.py` | `NameError: Decimal not defined` | Added `from decimal import Decimal` import |
+| `test_pdpa.py` | `AssertionError: 0 != 5` + mobile unique constraint | Create real `Customer` objects with unique mobiles |
+| `test_importers.py` | `NameError: DogFactory not defined` | Added `from apps.operations.tests.factories import DogFactory` |
+
+### Key Lessons from Round 2
+
+1. **BFF proxy allowlist is a gate** — every new top-level router must update the regex in `route.ts:66` AND add tests to `__tests__/route.test.ts`. Missing this blocks SSE, alerts, and any future router.
+2. **Immutable models break mutation code** — adding `ImmutableManager` to a model also requires auditing all code that mutates it. `handle_bounce()` was written before immutability was added.
+3. **Celery beat must have ONE source of truth** — duplicate definitions in `celery.py` and `settings/base.py` create silent conflicts. Task name typos cause silent `TaskNotFoundError`.
+4. **`DecimalField(default=0.09)` is a float trap** — changing `gst_rate=0.09` to `Decimal("0.09")` required `from decimal import Decimal` in 4 files that referenced it. The float default converts to `Decimal('0.089999...')`, causing TypeErrors with `Decimal + float` arithmetic.
+5. **Revenue ≠ signing — revenue = completion** — `signed_at` and `completed_at` are different events. Revenue must be recognized at completion.
+6. **pytest-xdist causes deadlocks on shared test DB** — use `-p no:xdist` for sequential execution in development.
+
+### Test State After Round 2
+
+- **Backend:** 300 passed, 31 failed (all pre-existing), 19 errors (all pre-existing)
+- **Frontend:** 94 passed, 3 failed (all pre-existing)
+- **Zero regressions introduced**
 
 ---
 

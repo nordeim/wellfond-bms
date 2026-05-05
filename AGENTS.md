@@ -11,6 +11,7 @@
 
 ### BFF Security & Authentication
 - **Proxy Pattern:** Browser never contacts Django directly. All requests route through Next.js `/api/proxy/[...path]`.
+- **Path Allowlist:** The BFF proxy validates all paths against a regex allowlist. Adding new top-level routers (e.g., `stream`, `alerts`) requires updating the regex in `frontend/app/api/proxy/[...path]/route.ts:66`.
 - **Session Auth:** HttpOnly, Secure, SameSite=Lax cookies. Zero JWT in client storage.
 - **Critical Auth Pattern:** Django Ninja does not reliably preserve `request.user` across decorators/pagination. Always read session directly:
 ```python
@@ -145,6 +146,11 @@ wellfond-bms/
 | **CSP** | Keeping legacy `CSP_*` settings | Delete all `CSP_*` vars; use `CONTENT_SECURITY_POLICY` dict |
 | **BFF Proxy** | Double prefixing `/api/v1` in client | Let `authFetch` and proxy handle the base path |
 | **Serialization** | `float()` in calculations | Use `Decimal` throughout; convert to `float` only at API edge |
+| **Audit Immutability** | Model-level `save()`/`delete()` only | Also use `ImmutableQuerySet` to block bulk deletes |
+| **Celery Beat** | Duplicate schedules in settings + celery.py | Single source in `celery.py` with `crontab`; remove `CELERY_BEAT_SCHEDULE` |
+| **Decimal Defaults** | `DecimalField(default=0.09)` (float literal) | `DecimalField(default=Decimal("0.09"))` |
+| **Revenue Filters** | `signed_at__gte` in dashboard/finance | `completed_at__date__gte` for revenue recognition |
+| **Immutable Bounce** | Mutating `CommunicationLog.status` in `handle_bounce` | Create new BOUNCED entry (append-only) |
 
 django-csp 4.0 requires the OLD CSP_* settings to be removed — their mere presence causes csp.E001.
 The CSP error is clear — django-csp 4.0 requires removal of old CSP_* prefix settings.
@@ -170,6 +176,31 @@ Fix the CSP settings per the migration guide (remove old CSP_* settings, keep on
 - **Property Missing Errors:** Ensure `frontend/lib/types.ts` is updated when backend models change (e.g., adding `notes` to `Dog`).
 - **NotNullViolation:** Ensure `blank=True` CharFields have `default=''` to satisfy DB constraints during model instantiation.
 - **Double Prefixing:** `api.ts:buildUrl()` and BFF proxy configuration can conflict if both try to append API version prefixes.
+- **BFF SSE Blocked:** The proxy path allowlist regex in `route.ts:66` must include every top-level router path. Adding `stream` or `alerts` routers requires updating the regex. Tests for new paths must be added to `__tests__/route.test.ts`.
+- **Celery Beat Duplicates:** Beat schedules defined in both `celery.py` and `settings/base.py` cause silent configuration conflicts. Use `celery.py` as the single source of truth with `crontab` for explicit SGT scheduling. Remove `CELERY_BEAT_SCHEDULE` from settings entirely.
+- **Celery Task Names:** Task name strings in beat schedules must match the actual `@shared_task` function name exactly. A typo like `avs_reminder_check` vs `check_avs_reminders` causes silent `TaskNotFoundError` — Celery beat skips the task without alerting.
+- **ImmutableQuerySet Pattern:** Model-level `save()`/`delete()` overrides do NOT protect against `QuerySet.delete()` (bulk deletes). Use `ImmutableManager` with `ImmutableQuerySet` for audit log models:
+```python
+class ImmutableQuerySet(models.QuerySet):
+    def delete(self):
+        raise ValueError("Immutable records cannot be deleted")
+
+class ImmutableManager(models.Manager):
+    def get_queryset(self):
+        return ImmutableQuerySet(self.model, using=self._db)
+
+class AuditLog(models.Model):
+    objects = ImmutableManager()
+```
+Apply to all immutable models: `AuditLog`, `PDPAConsentLog`, `CommunicationLog`.
+- **CommunicationLog Bounce Handling:** `handle_bounce()` in `blast.py` creates a new `CommunicationLog` entry with `BOUNCED` status (append-only) instead of mutating the original. The original `SENT` entry is preserved for audit trail integrity.
+- **GST Decimal Default:** `DecimalField(default=0.09)` stores the default as a Python `float`, causing `Decimal + float` TypeErrors and silent precision loss (`Decimal(0.09)` = `0.089999...`). Always use `default=Decimal("0.09")`.
+- **Dashboard Revenue Recognition:** Revenue filtering must use `completed_at__date__gte/lte`, not `signed_at__gte/lte`. A signed agreement may complete months later or be cancelled. Revenue recognition depends on completion, not signing date.
+- **NParks lock_expired_submissions:** `save(update_fields=...)` must only reference fields that exist on the model. `NParksSubmission` has no `updated_at` field — using it in `update_fields` causes `FieldError`.
+- **Environment Variable Validation:** Production settings must validate critical environment variables at startup. A missing `DJANGO_SECRET_KEY` silently falls back to the dev-only default `"dev-only-change-in-production"`.
+- **WhatsApp Placeholder:** Return `"status": "FAILED"` instead of fake `"SENT"` for unintegrated services. False-positive success responses mask operational gaps.
+- **pytest-xdist Database Contention:** Parallel test processes share the same PostgreSQL test database, causing deadlocks, missing-table errors, and `IntegrityError: duplicate key`. Use `-p no:xdist` for reliable sequential execution in development.
+- **Customer Unique Constraints:** `Customer.mobile` has `unique=True` without `null=True` or `blank=True`. Multiple test-created `Customer` objects with default empty-string mobile collide. Always assign unique mobile values in tests.
 
 ---
 

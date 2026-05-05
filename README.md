@@ -538,7 +538,24 @@ Production uses full containerization with 11 services:
 | **8** | ✅ Complete | Apr 29, 2026 | Finance P&L, GST reports, intercompany transfers |
 | **9** | 📋 Backlog | - | Observability, production readiness |
 
-**Overall Progress:** 8 of 9 Phases Complete (89%)
+**Overall Progress:** 8 of 9 Phases Complete (89%)  
+**Round 2 Audit Status:** 11/11 fixes applied, 0 regressions, 300 backend tests passing
+
+---
+
+## 🛡️ Security & Compliance Posture (Post-Round 2)
+
+| Area | Status | Details |
+|------|--------|---------|
+| **BFF Proxy** | ✅ Hardened | Path allowlist covers all 11 routers including `stream` and `alerts` |
+| **Audit Immutability** | ✅ Hardened | `ImmutableQuerySet` blocks bulk deletes on `AuditLog`, `PDPAConsentLog`, `CommunicationLog` |
+| **CommunicationLog** | ✅ Append-Only | Bounce handling creates new entries, never mutates originals |
+| **GST Precision** | ✅ Fixed | All `gst_rate` defaults use `Decimal("0.09")` — no float arithmetic |
+| **Revenue Recognition** | ✅ Fixed | Dashboard uses `completed_at__date`, not `signed_at` |
+| **Celery Beat** | ✅ Consolidated | Single source of truth in `celery.py` with `crontab` scheduling |
+| **Env Validation** | ✅ Added | Production startup fails fast on missing `DJANGO_SECRET_KEY` |
+| **Email Integration** | ✅ Real | Resend SDK integration; graceful fallback when API key missing |
+| **Nginx** | ✅ Hardened | HTTP→HTTPS redirect, HSTS, security headers |
 
 ---
 
@@ -628,41 +645,44 @@ or use is strictly prohibited.
 
 ## 📊 Recent Changes
 
-### Security & Middleware Remediation (April 30, 2026)
+### Round 2 Audit Remediation (May 6, 2026) — 11 Fixes
 
-#### Critical Fixes Applied (Round 1 & Round 2)
+#### Critical Fixes (C-001 through C-005)
 
 | Issue | Severity | Fix | Status |
 |-------|----------|-----|--------|
-| **C1-C3: Critical Issues** | 🔴 | Path traversal, duplicate middleware, idempotency expansion | ✅ Fixed |
-| **H1-H4: High Issues** | 🟠 | Redis cache isolation, URL exposure, COI async, env config | ✅ Fixed |
-| **Django Admin E408** | 🔴 | AuthenticationMiddleware conflict | ✅ Fixed |
+| **C-001: BFF blocks SSE** | 🔴 | Added `stream\|alerts` to BFF proxy path allowlist; 4 new tests | ✅ Fixed |
+| **C-003: Duplicate Celery beat** | 🔴 | Fixed task name in celery.py; removed duplicate from settings | ✅ Fixed |
+| **C-002: CommLog bounce crash** | 🔴 | Append-only bounce handling — create new entry, never mutate | ✅ Fixed |
+| **C-004: check_rehome_overdue stub** | 🔴 | Implemented using Dog.rehome_flag + AuditLog | ✅ Fixed |
+| **C-005: archive_old_logs stub** | 🔴 | Implemented deletion with audit trail, 2yr retention | ✅ Fixed |
+| **lock_expired_submissions crash** | 🔴 | Removed non-existent `updated_at` from `update_fields` | ✅ Fixed |
 
-**Key Security Improvements:**
-- ✅ Path traversal protection in BFF proxy (regex validation)
-- ✅ Idempotency enforcement on all write endpoints (not just logs)
-- ✅ Dedicated Redis for idempotency cache (no eviction risk)
-- ✅ BACKEND_INTERNAL_URL removed from browser bundle
-- ✅ Django + Custom AuthenticationMiddleware order fixed
-- ✅ Edge Runtime removed from BFF proxy (process.env access)
-- ✅ PostgreSQL bound to localhost only
-- ✅ All Redis URLs explicitly configured
+#### High-Severity Fixes
 
-**Middleware Order (Updated):**
-```python
-MIDDLEWARE = [
-    # ... security, CORS, session, CSRF ...
-    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Django first
-    "apps.core.middleware.AuthenticationMiddleware",          # Custom second
-    # ... idempotency, entity scoping ...
-]
-```
+| Issue | Severity | Fix | Status |
+|-------|----------|-----|--------|
+| **H-001: Email/WA placeholders** | 🟠 | Real Resend SDK for email; WhatsApp returns FAILED (not fake SENT) | ✅ Fixed |
+| **H-002: No HTTP→HTTPS redirect** | 🟠 | Added port 80 → 443 redirect in nginx.conf | ✅ Fixed |
+| **H-004: Revenue uses signed_at** | 🟠 | Changed to `completed_at__date__gte/lte` for revenue recognition | ✅ Fixed |
+| **M-016: No env var validation** | 🟡 | Added `sys.exit(1)` startup check for DJANGO_SECRET_KEY | ✅ Fixed |
 
-**How It Works:**
-1. Django wraps `request.user` in `SimpleLazyObject` (admin compatibility)
-2. Custom middleware runs after and re-authenticates from Redis
-3. Both admin and API authentication work correctly
-4. No E408 errors, no auth conflicts
+#### Structural Improvements
+
+| Pattern | Description | Applied To |
+|---------|-------------|------------|
+| **ImmutableManager** | `QuerySet.delete()` bypass prevention | `AuditLog`, `PDPAConsentLog`, `CommunicationLog` |
+| **Decimal Defaults** | `DecimalField(default=Decimal("0.09"))` not `0.09` | `Entity.gst_rate` + all test factories |
+| **Celery Beat SOE** | Single source of truth in `celery.py` with `crontab` | All scheduled tasks |
+
+#### Key Lessons
+
+1. **BFF proxy regex is a gate** — every new top-level router must update `route.ts:66` and `__tests__/route.test.ts`
+2. **Immutable models break existing mutation code** — audit all mutation paths when adding `ImmutableManager`
+3. **Float defaults in DecimalField cause TypeErrors** — `Decimal("0.09")` not `0.09`
+4. **Revenue = completion, not signing** — `completed_at`, not `signed_at`
+5. **pytest-xdist causes DB deadlocks** — use `-p no:xdist` for sequential development execution
+6. **Fake "SENT" masks operational gaps** — return `FAILED` for unintegrated services
 
 ---
 

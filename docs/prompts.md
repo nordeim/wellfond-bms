@@ -88,6 +88,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. now, please meticulously review @README.md , @AGENTS.md and @CLAUDE.md and update them to align with the current codebase accurately, include your recent accomplishments, code changes, troubleshooting tips, lesson learnt and new anti-patterns to help new developers and coding agents.
+
+---
+
 awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 1. Re-evaluate and re-validate the issues identified in earlier validation

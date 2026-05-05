@@ -163,3 +163,8 @@ sales	2	test_gst.py (Thomson GST calculation — hardcoded name check vs gst_rat
 compliance	1	test_pdpa.py (1x SystemExit — likely config issue)
 All pre-existing failures confirmed via git stash clean-branch test — zero regressions introduced by our fixes.
 
+All three documents are updated and aligned:
+- AGENTS.md — Added Path Allowlist to architecture docs, added 13 new troubleshooting items, added 5 new anti-patterns (Audit Immutability, Celery Beat, Decimal Defaults, Revenue Filters, Immutable Bounce)
+- CLAUDE.md — Added Round 2 Audit Remediation section with all 11 fixes, 6 key lessons, test state summary, and bumped last_updated to 2026-05-06
+- README.md — Replaced older "Security Remediation" Recent Changes section with Round 2 Audit Remediation covering critical fixes, high-severity fixes, structural improvements, key lessons, and a new Security & Compliance Posture table
+
