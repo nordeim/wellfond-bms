@@ -6,6 +6,7 @@ Replaces force_login() which breaks Ninja routers.
 """
 
 import pytest
+from decimal import Decimal
 from django.http import HttpRequest
 
 from apps.core.models import Entity, User
@@ -45,7 +46,7 @@ def test_entity(db):
             "slug": "holdings",
             "is_active": True,
             "is_holding": True,
-            "gst_rate": 0.09,
+            "gst_rate": Decimal("0.09"),
         },
     )
     return entity

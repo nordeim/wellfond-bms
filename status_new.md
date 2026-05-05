@@ -43,3 +43,55 @@ Files Not Yet Tracked (Need git add)
 - remediation-audit-fixes.md — remediation plan document
 - remediation_plan_updated_may-5.md — updated remediation plan
 
+---
+
+Validation Report: backend/apps/core/models.py Changes in Commit a4e0a29
+Change Analysis
+The diff introduces three additions:
+#	Change	Assessment
+1	ImmutableQuerySet class	Defines QuerySet.delete() to raise ValueError("Immutable records cannot be deleted"). Correctly blocks bulk deletes (Django's QuerySet.delete() does NOT call model-level delete()).
+2	ImmutableManager class	Returns ImmutableQuerySet from get_queryset(). Standard Django custom manager pattern — correct.
+3	AuditLog.objects = ImmutableManager()	Assigns the custom manager to AuditLog.
+Cross-Model Verification
+Per the remediation plan, two other models also needed the same fix:
+Model	Has ImmutableManager?	Verified?
+AuditLog (core/models.py)	✅ Yes	Line 143
+PDPAConsentLog (compliance/models.py)	✅ Yes	Lines 164-165
+CommunicationLog (customers/models.py)	✅ Yes	Lines 123-124
+All three import ImmutableManager from apps.core.models — correct.
+Validated Behavior (Python Shell Tests)
+Test	Result
+AuditLog.objects.all() returns ImmutableQuerySet	✅ PASS
+AuditLog.objects.all().delete() raises ValueError	✅ PASS
+PDPAConsentLog.objects.all().delete() raises ValueError	✅ PASS
+CommunicationLog.objects.all().delete() raises ValueError	✅ PASS
+Single-object AuditLog().delete() raises ValueError (model-level)	✅ PASS
+Normal models (e.g., Entity) still use standard QuerySet — no regression	✅ PASS
+Test Regression Check
+The 18 pre-existing test failures (auth, permissions) are identical before and after the commit — zero regressions introduced.
+Minor Observations
+1. CRIT-004 fully resolved — QuerySet.delete() bypass is now blocked for all three immutable log models.
+2. MED-001 (gst_rate float default) not addressed — this was not part of the remediation plan for this phase.
+3. The ImmutableManager is defined in core/models.py and re-exported via from apps.core.models import ImmutableManager in sibling apps — this is clean and avoids circular imports.
+Verdict
+No regressions. Changes correctly implement the ImmutableQuerySet/ImmutableManager pattern for AuditLog, PDPAConsentLog, and CommunicationLog as specified in the remediation plan.
+
+---
+Summary — MED-001 Fix
+Root Cause
+models.DecimalField(default=0.09) stores the default as a Python float, not Decimal. Django's DecimalField.get_prep_value() handles conversion to Decimal when writing to the DB, so saved/read entities are fine. But on unsaved Entity() instances, entity.gst_rate returns a raw float (0.09). This causes:
+1. TypeError crash in agreement.py:74 where Decimal("1") + gst_rate fails because Decimal + float is unsupported
+2. Silent precision drift if any future code calls Decimal(gst_rate) on the float instead of Decimal(str(gst_rate)) — produces 0.08999999... instead of 0.09
+Changes Made
+File	Change
+backend/apps/core/models.py:116	default=0.09 → default=Decimal("0.09") (+ import)
+backend/conftest.py:48	"gst_rate": 0.09 → "gst_rate": Decimal("0.09") (+ import)
+backend/apps/core/tests/factories.py:24-25	0.00/0.09 → Decimal("0.00")/Decimal("0.09") (+ import)
+backend/apps/core/tests/test_rate_limit.py:28	gst_rate=0.09 → gst_rate=Decimal("0.09")
+No changes needed to core/schemas.py (Pydantic float for JSON serialization is lossless at 4 decimal places) or test_gst_fix.py (already uses Decimal("...")).
+Verification
+- Entity().gst_rate now returns Decimal('0.09') (was float 0.09)
+- Decimal("1") + entity.gst_rate → Decimal('1.09') — no TypeError
+- entity.gst_rate == Decimal('0.09') → True — no precision loss
+- All pre-existing test results unchanged (no regressions)
+

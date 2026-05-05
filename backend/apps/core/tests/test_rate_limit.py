@@ -25,7 +25,7 @@ class TestRateLimiting:
         self.entity = Entity.objects.create(
             name="Test Entity",
             code="TEST",
-            gst_rate=0.09
+            gst_rate=Decimal("0.09")
         )
         self.user = User.objects.create_user(
             email="test@example.com",

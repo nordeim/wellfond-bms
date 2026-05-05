@@ -4,6 +4,7 @@ Factories for creating test data for core models.
 """
 
 import factory
+from decimal import Decimal
 from factory import Faker
 
 from apps.core.models import User, Entity
@@ -22,7 +23,7 @@ class EntityFactory(factory.django.DjangoModelFactory):
     is_active = True
     is_holding = factory.LazyAttribute(lambda obj: obj.code == Entity.Code.HOLDINGS)
     gst_rate = factory.LazyAttribute(
-        lambda obj: 0.00 if obj.code == Entity.Code.THOMSON else 0.09
+        lambda obj: Decimal("0.00") if obj.code == Entity.Code.THOMSON else Decimal("0.09")
     )
     address = factory.Faker('address')
     phone = factory.Faker('bothify', text='+65 6### ####')
