@@ -21,3 +21,27 @@ Let me start reading all files systematically. I'll batch the reads efficiently.
 - Frontend test coverage minimal (~4 test files)
 - Several tasks are stubs (rehome overdue, log archival)
 - Email/WhatsApp sending are placeholders
+
+---
+
+Let me re-validate each finding by tracing the exact code paths and confirming root causes before planning fixes.Now let me trace the backend SSE endpoint registration and the frontend SSE hook to confirm the exact path mismatch.Now let me check one more thing — the NParks model for the `updated_at` field used in the lock task.Found an additional bug — `NParksSubmission` has no `updated_at` field but the lock task references it. Let me now compile the complete re-validation and remediation plan.Done. The remediation plan has been written to `/root/.openclaw/workspace/wellfond-bms/REMEDIATION_VALIDATION_AND_FIX_PLAN.md`.
+
+## Summary of Re-Validation
+
+All 10 findings were **confirmed** by tracing exact code paths. I also discovered an **11th bug** during validation:
+
+| # | Finding | Root Cause | Fix Effort |
+|---------|------------|
+| C-001 | BFF blocks `/stream` | Regex missing `stream` | 5 min |
+| C-02 | Bounce crashes on immutable model | `save()` override raises ValueError | 15 min |
+| C-003 | Duplicate beat schedules | Settings not removed after celery.py migration + **task name typo** (`avs_reminder_check` vs actual `check_avs_reminders`) | 10 min |
+| C-04 | `check_rehome_overdue` stub | Alerts service needs `user` param, task has no user context | 20 min |
+| C-005 | `archive_old_logs` stub | Original `update(is_active=False)` removed, never replaced | 15 min |
+| H-001 | Placeholder email/WA | External API integration deferred | 30 min |
+| H-002 | No HTTP→HTTPS redirect | Nginx config missing port 80 block | 5 min |
+| H-004 | Revenue uses `signed_at` | Should use `completed_at` for revenue recognition | 5 min |
+| H-010 | No CSP nonce | Complex in BFF+SPA architecture — **recommend defer** | Defer |
+| M-016 | No env var validation | Defaults mask missing production config | 5 min |
+| **NEW** | `lock_expired_submissions` references `updated_at` | Field doesn't exist on `NParksSubmission` model | 2 min |
+
+**Total estimated effort: ~2 hours** (excluding CSP nonce). The plan includes exact code snippets for each fix and a testing strategy for validation.
