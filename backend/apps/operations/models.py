@@ -55,6 +55,9 @@ class Dog(models.Model):
     gender = models.CharField(max_length=1, choices=Gender.choices)
     colour = models.CharField(max_length=50, blank=True, default='')
     
+    # PDPA: Dog models do not have pdpa_consent as they are farm assets.
+    # Personal data is scoped at the Customer/Agreement level.
+    
     # Entity (multi-tenancy)
     entity = models.ForeignKey(
         Entity,

@@ -60,46 +60,6 @@ CONTENT_SECURITY_POLICY = {
 
 ---
 
-### C2: `.env` File Committed to Repository with Credentials
-
-**File:** `.env` (root)  
-**Severity:** 🔴 CRITICAL — Credential exposure in version control
-
-The `.env` file is committed to the Git repository containing:
-- `DB_PASSWORD=wellfond_dev_password`
-- `SECRET_KEY=dev-secret-key-change-in-production-2026-wellfond-singapore`
-- `STRIPE_SECRET_KEY=sk_test_singapore_placeholder`
-- `STRIPE_WEBHOOK_SECRET=whsec_singapore_placeholder`
-
-**Impact:** Anyone with repo access has database credentials and secret keys. Even though these are "dev" values, the pattern encourages committing real secrets.
-
-**Fix:**
-1. Add `.env` to `.gitignore` (verify it's not already there)
-2. Remove `.env` from Git history: `git rm --cached .env`
-3. Provide `.env.example` with placeholder values (already exists)
-4. Rotate any credentials that were exposed
-
----
-
-### C3: `SECRET_KEY` Has Fallback Default in Base Settings
-
-**File:** `backend/config/settings/base.py` (line 12)  
-**Severity:** 🔴 CRITICAL — Insecure default secret key
-
-```python
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-in-production")
-```
-
-**Impact:** If `DJANGO_SECRET_KEY` env var is not set in production, Django runs with a known default secret key, enabling session forgery, CSRF bypass, and other cryptographic attacks.
-
-**Fix:** Remove the default or fail loudly:
-
-```python
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # No fallback — crash if missing
-```
-
----
-
 ## 🟠 HIGH-SEVERITY FINDINGS
 
 ### H1: `float()` Used in Compliance/Finance Excel Generation — Precision Loss Risk

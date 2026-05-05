@@ -197,8 +197,7 @@ class PDPAConsentLog(models.Model):
 
     def save(self, *args, **kwargs):
         """Prevent updates - append-only."""
-        # Check if record already exists in database (update vs create)
-        if self.pk and PDPAConsentLog.objects.filter(pk=self.pk).exists():
+        if not self._state.adding:
             raise ValueError("PDPAConsentLog is immutable - cannot update")
         super().save(*args, **kwargs)
 

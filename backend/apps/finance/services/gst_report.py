@@ -252,16 +252,16 @@ def gen_gst_excel(
     for txn in report.transactions:
         ws.cell(row=row, column=1, value=txn.date.isoformat())
         ws.cell(row=row, column=2, value=txn.description)
-        ws.cell(row=row, column=3, value=float(txn.value))
-        ws.cell(row=row, column=4, value=float(txn.gst_amount))
+        ws.cell(row=row, column=3, value=txn.value)
+        ws.cell(row=row, column=4, value=txn.gst_amount)
         ws.cell(row=row, column=5, value=txn.source)
         row += 1
 
     # Summary
     ws.cell(row=row + 1, column=2, value="Total Sales (Excl. GST):")
-    ws.cell(row=row + 1, column=3, value=float(report.total_sales))
+    ws.cell(row=row + 1, column=3, value=report.total_sales)
     ws.cell(row=row + 2, column=2, value="Total GST Amount:")
-    ws.cell(row=row + 2, column=4, value=float(report.total_gst))
+    ws.cell(row=row + 2, column=4, value=report.total_gst)
     ws.cell(row=row + 2, column=4).font = Font(bold=True)
 
     # Save to bytes
@@ -315,10 +315,7 @@ def gen_pnl_excel(entity_id: UUID, month: date) -> bytes:
 
     for row, (label, value) in enumerate(data, 5):
         ws.cell(row=row, column=1, value=label)
-        if isinstance(value, Decimal):
-            ws.cell(row=row, column=2, value=float(value))
-        else:
-            ws.cell(row=row, column=2, value=value)
+        ws.cell(row=row, column=2, value=value)
 
         # Bold for totals
         if label in ["Revenue", "Net Profit/(Loss)", "YTD Revenue", "YTD Net Profit/(Loss)"]:
@@ -331,7 +328,7 @@ def gen_pnl_excel(entity_id: UUID, month: date) -> bytes:
         row += 3
         for category, amount in result.by_category.items():
             ws.cell(row=row, column=1, value=f"  {category}")
-            ws.cell(row=row, column=2, value=float(amount))
+            ws.cell(row=row, column=2, value=amount)
             row += 1
 
     # Save to bytes

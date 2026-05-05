@@ -32,11 +32,12 @@ Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after 
 - **Mandatory:** Every data query must respect entity boundaries.
 - **Pattern:** `queryset = scope_entity(Model.objects.all(), request.user)`
 - **RBAC:** `MANAGEMENT` sees all entities. All other roles see only their assigned `entity_id`.
+- **PDPA:** Centralized PDPA filtering in `scope_entity` based on model attributes. Dogs are farm assets (no PII); consent applies to Customers/Agreements.
 
 ### Compliance & Determinism
 - **NO AI in Compliance:** `apps/compliance/` and financial calculations must use pure Python/SQL. Deterministic only.
-- **Audit Immutability:** `AuditLog` and locked submissions are append-only. No `UPDATE`/`DELETE`.
-- **PDPA Hard Filter:** `WHERE pdpa_consent=true` enforced at QuerySet level. Never expose PII without explicit consent.
+- **Audit Immutability:** `AuditLog` and locked submissions are append-only. No `UPDATE`/`DELETE`. Use `self._state.adding` in `save()`.
+- **PDPA Hard Filter:** `WHERE pdpa_consent=true` enforced at QuerySet level (via `scope_entity`). Never expose PII without explicit consent.
 - **GST Formula:** `Decimal(price) * 9 / 109`, rounding `ROUND_HALF_UP`. Thomson entity is 0% exempt (case-insensitive check).
 - **Fiscal Year:** Singapore FY starts April (month 4). YTD calculations must roll over in April, not January.
 
@@ -49,11 +50,11 @@ Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after 
 - **Pydantic v2:** 
   - Use `Schema.model_validate(obj, from_attributes=True)`. Never use `from_orm()`.
   - Use `Optional[T]` for nullable fields. `T | None` breaks Pydantic v2 compatibility.
-- **Database:** UUID PKs, `created_at`/`updated_at`, soft-delete via `is_active`. Never hard-delete.
+- **Security (CSP):** `django-csp` 4.0+ requires removing all legacy `CSP_*` prefixed settings. Use only the `CONTENT_SECURITY_POLICY` dict.
+- **Database:** UUID PKs, `created_at`/`updated_at`, soft-delete via `is_active`. Never hard-delete. Ensure `default=''` for CharFields to avoid `NotNullViolation`.
 - **Idempotency:** All state-changing POSTs require `X-Idempotency-Key` (UUIDv4). Cache responses in `caches["idempotency"]` with 24h TTL.
 - **SSE/Async:** Use `sync_to_async(thread_sensitive=True)` for DB calls inside async generators to prevent thread pool exhaustion.
 - **Circular Imports:** Defer service imports inside model methods or use signals. Never import services at module level in `models.py`.
-- **New Record Detection:** Use `self._state.adding` in `save()`, not `self.pk`.
 
 ### Frontend (Next.js + TypeScript)
 - **Routing:** App Router with route groups: `(auth)`, `(protected)`, `(ground)` (mobile-optimized, no sidebar).
@@ -64,7 +65,7 @@ Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after 
   - `strict: true`. Never use `any` (use `unknown`).
   - Optional props must explicitly allow `undefined`: `entityId?: string | undefined`
   - Use `interface` for objects, `type` for unions.
-- **Data Fetching:** Use `authFetch` wrapper (`lib/api.ts`). Injects idempotency keys and handles BFF proxy routing.
+- **Data Fetching:** Use `authFetch` wrapper (`lib/api.ts`). Injects idempotency keys and handles BFF proxy routing. Avoid double prefixing (`/api/v1` is handled by proxy).
 - **Docstrings:** Use JSDoc `/** */` in TS/JS. Never use Python-style `"""`.
 
 ---
@@ -73,14 +74,8 @@ Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after 
 - **Methodology:** TDD mandatory. Red → Green → Refactor → Verify.
 - **Frameworks:** `pytest` (backend), `Vitest` (frontend unit), `Playwright` (E2E).
 - **Coverage Target:** ≥85% backend. Critical paths covered in E2E.
-- **Auth Fixtures:** `force_login` breaks Ninja routers. Use session-based fixtures:
-  ```python
-  @pytest.fixture
-  def authenticated_client(test_user):
-      key, _ = SessionManager.create_session(test_user, request)
-      client.cookies[AuthenticationService.COOKIE_NAME] = key
-      return client
-  ```
+- **Auth Fixtures:** `force_login` breaks Ninja routers. Use `authenticate_client()` helper from `conftest.py` to set valid session cookies.
+- **UUIDs:** `NinjaJSONEncoder` handles UUID objects natively; do not manually cast to string for API responses.
 - **Pagination:** `@paginate` decorator fails with wrapped/custom response objects. Implement manual pagination for all list endpoints.
 - **Test Data:** Must match model choices exactly (`"F"`/`"M"`, `"ACTIVE"`, `"NATURAL"`). Include `dob` and explicit `slug` for entities.
 
@@ -131,6 +126,7 @@ wellfond-bms/
 | Category | ❌ Avoid | ✅ Do Instead |
 |----------|----------|---------------|
 | **Auth** | Relying on `request.user` with Ninja | Read session cookie via `get_authenticated_user(request)` |
+| **Financial** | `float()` in Excel exports | Pass `Decimal` directly to `openpyxl` |
 | **Pydantic** | `from_orm()` or `T \| None` | `model_validate(..., from_attributes=True)` & `Optional[T]` |
 | **Pagination** | `@paginate` with wrapped responses | Manual slice & count pagination |
 | **Entity Scope** | Hardcoding IDs or unscoped queries | `scope_entity(qs, user)` on every query |
@@ -145,6 +141,10 @@ wellfond-bms/
 | **BFF Proxy Runtime** | `export const runtime = 'edge'` | Remove - use default Node.js runtime |
 | **Internal URLs** | `NEXT_PUBLIC_*` for backend URLs | `BACKEND_INTERNAL_URL` server-side only |
 | **Middleware Order** | Custom auth before Django auth | Django first, then custom (E408 requirement) |
+| **CSP** | Keeping legacy `CSP_*` settings | Delete all `CSP_*` vars; use `CONTENT_SECURITY_POLICY` dict |
+| **BFF Proxy** | Double prefixing `/api/v1` in client | Let `authFetch` and proxy handle the base path |
+| **Serialization** | `float()` in calculations | Use `Decimal` throughout; convert to `float` only at API edge |
+
 django-csp 4.0 requires the OLD CSP_* settings to be removed — their mere presence causes csp.E001.
 The CSP error is clear — django-csp 4.0 requires removal of old CSP_* prefix settings.
 Fix the CSP settings per the migration guide (remove old CSP_* settings, keep only dict format)
@@ -160,6 +160,15 @@ Fix the CSP settings per the migration guide (remove old CSP_* settings, keep on
 - the 500 is NotNullViolation on colour (NOT a UUID issue). The NinjaJSONEncoder handles UUIDs natively.
 - backend/apps/operations/models.py - add default='' to colour, unit, and notes
   colour = models.CharField(max_length=50, blank=True, default='')
+
+---
+
+## 🔍 Troubleshooting & Lessons Learnt
+- **csp.E001 Error:** Triggered by any remaining `CSP_*` prefixed settings in Django configuration after upgrading to `django-csp` 4.0.
+- **401 Unauthorized in Tests:** Usually caused by using `force_login` instead of session-based cookies which Ninja requires.
+- **Property Missing Errors:** Ensure `frontend/lib/types.ts` is updated when backend models change (e.g., adding `notes` to `Dog`).
+- **NotNullViolation:** Ensure `blank=True` CharFields have `default=''` to satisfy DB constraints during model instantiation.
+- **Double Prefixing:** `api.ts:buildUrl()` and BFF proxy configuration can conflict if both try to append API version prefixes.
 
 ---
 

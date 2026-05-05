@@ -228,8 +228,8 @@ def export_gst_ledger(
         for row_num, entry in enumerate(entries, 8):
             ws.cell(row=row_num, column=1, value=entry.agreement_number)
             ws.cell(row=row_num, column=2, value=entry.buyer_name)
-            ws.cell(row=row_num, column=3, value=float(entry.total_sales))
-            ws.cell(row=row_num, column=4, value=float(entry.gst_component))
+            ws.cell(row=row_num, column=3, value=entry.total_sales)
+            ws.cell(row=row_num, column=4, value=entry.gst_component)
             ws.cell(row=row_num, column=5, value=entry.created_at.strftime("%Y-%m-%d"))
         
         # Auto-adjust columns

@@ -107,10 +107,10 @@ export default function WhelpLogPage() {
       });
 
       router.push("/ground");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to save",
-        description: error.message || "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
     } finally {

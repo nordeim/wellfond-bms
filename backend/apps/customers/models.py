@@ -189,7 +189,7 @@ class CommunicationLog(models.Model):
 
     def save(self, *args, **kwargs):
         """Prevent updates - append-only."""
-        if self.pk and CommunicationLog.objects.filter(pk=self.pk).exists():
+        if not self._state.adding:
             raise ValueError("CommunicationLog is immutable - cannot update")
         super().save(*args, **kwargs)
 

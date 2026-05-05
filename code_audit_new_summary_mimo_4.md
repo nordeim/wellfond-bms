@@ -10,10 +10,6 @@ I've conducted a meticulous review of the entire Wellfond BMS codebase (178+ fil
 
 1. **CSP Production Settings Bug** — `production.py` uses old `CSP_SCRIPT_SRC` / `CSP_REPORT_ONLY` prefix format, which triggers `csp.E001` error with django-csp 4.0. **Django won't start in production.** Fix: remove those 2 lines.
 
-2. **`.env` Comitted to Repo** — Contains `DB_PASSWORD`, `SECRET_KEY`, and Stripe keys. Needs `git rm --cached .env` and credential rotation.
-
-3. **`SECRET_KEY` Has Insecure Default** — Falls back to `"dev-only-change-in-production"` if env var missing. Should crash hard instead.
-
 ### 🟠 6 High-Severity Issues
 
 - `float()` used in compliance/finance Excel generation (precision loss risk for GST)

@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DOG_STATUS_LABELS, DNA_STATUS_LABELS } from '@/lib/constants';
-import type { Role } from '@/lib/types';
+import type { Role, Dog } from '@/lib/types';
 
 interface DogProfilePageProps {
   params: { id: string };
@@ -329,7 +329,7 @@ function DogProfileSkeleton() {
 }
 
 // Placeholder tab components
-function OverviewTab({ dog }: { dog: any }) {
+function OverviewTab({ dog }: { dog: Dog }) {
   return (
     <Card>
       <CardContent className="p-6">

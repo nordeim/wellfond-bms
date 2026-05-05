@@ -55,10 +55,10 @@ export default function WeightLogPage() {
       // Reset for next entry
       setWeight("");
       setDogId("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to save",
-        description: error.message || "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
     } finally {

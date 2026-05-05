@@ -76,6 +76,7 @@ export interface Dog {
   sireId: string | null;
   unit: string;
   dnaStatus: DNAStatus;
+  notes: string;
   imageUrl: string | null;
   // Extended properties
   ageYears?: number;

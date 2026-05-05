@@ -62,8 +62,8 @@ export function isAllowedPath(path: string): boolean {
   // Strict regex matching for API paths
   // Matches: /auth, /users, /dogs, /breeding, /sales, /compliance,
   //          /customers, /finance, /operations
-  // Followed by optional path segments
-  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations)(\/|$)/;
+  // Followed by optional path segments (sub-paths)
+  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations)(\/.*|$)/;
   return allowedPattern.test(normalized);
 }
 

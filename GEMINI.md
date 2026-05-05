@@ -44,7 +44,8 @@ Wellfond BMS is an enterprise-grade platform engineered specifically for Singapo
 ### 3.3 Compliance Determinism & Audit Immutability
 - **Pure Logic:** Regulatory calculations (NParks Excel, GST, AVS transfers) must be deterministic Python/SQL.
 - **Zero AI in Compliance:** Importing AI libraries (Anthropic, OpenAI, etc.) is strictly forbidden in `apps/compliance/`.
-- **Immutability:** `AuditLog` and locked `NParksSubmission` records prohibit `UPDATE` and `DELETE`. Soft-delete (`is_active`) is used elsewhere.
+- **Audit Immutability:** `AuditLog` and locked `NParksSubmission` records prohibit `UPDATE` and `DELETE`. Soft-delete (`is_active`) is used elsewhere.
+- **Model Save Check:** Always use `self._state.adding` in `save()` to detect new records. Avoid `self.pk` as it can be misleading in update scenarios.
 
 ### 3.4 Idempotency & Offline Sync
 - **Idempotency Keys:** All state-changing PWA requests (POST/PUT/PATCH) require an `X-Idempotency-Key` (UUIDv4).
@@ -57,6 +58,7 @@ Wellfond BMS is an enterprise-grade platform engineered specifically for Singapo
 ### 4.1 Backend (Django + Ninja)
 - **Routers:** Each app owns `routers/{feature}.py`. Register in `backend/api/__init__.py`.
 - **Pydantic v2:** Use `Model.model_validate(obj, from_attributes=True)` for serialization. Never use `from_orm()`.
+- **Security (CSP):** `django-csp` 4.0+ requires removing all legacy `CSP_*` prefixed settings. Use only the `CONTENT_SECURITY_POLICY` (and `REPORT_ONLY`) dictionaries.
 - **Error Handling:** Use `ninja.errors.HttpError`. Custom exception handler in `api/__init__.py`. Never expose sensitive data in errors.
 - **Code Style:** `black` formatting, `isort` imports, Google-style docstrings, type hints on all public functions, 100-char line limit.
 
@@ -178,7 +180,10 @@ wellfond-bms/
 
 ### 🚫 Strict Anti-Patterns
 - NO JWT/tokens in browser storage.
-- NO `request.user` reliance in Ninja endpoints.
+- NO `request.user` reliance in Ninja endpoints (Ninja bypasses standard Django auth middleware).
+- NO `float()` in financial Excel exports (pass `Decimal` directly to `openpyxl`).
+- NO `self.pk` checks for new record detection (use `self._state.adding`).
+- NO `force_login` in Ninja router tests (use session-based fixtures).
 - NO bypassing the BFF proxy.
 - NO custom UI components when shadcn/Radix exists.
 - NO hardcoded entity filters; use `scope_entity()`.
@@ -192,9 +197,11 @@ wellfond-bms/
 |---------|------------|
 | Session not persisting | Verify Redis connection (`redis-cli ping`), check `SESSION_ENGINE`, validate cookie domain/SameSite settings |
 | Ninja router 404 | Ensure `api.add_router()` in `api/__init__.py`, check import errors, clear `__pycache__` |
+| CSP Error `csp.E001` | Remove all legacy `CSP_*` settings from `base.py` and `development.py`. Use only `CONTENT_SECURITY_POLICY` dict. |
 | Frontend proxy 404 | Verify Django running on `:8000`, check `app/api/proxy/[...path]/route.ts`, test backend directly via `curl` |
 | Type/Schema mismatch | Run `npm run typecheck`, ensure Pydantic schema fields exactly match ORM model, verify `from_attributes=True` |
 | Celery tasks stuck | Check broker URL, verify worker/beat are running, inspect Redis queue depth |
+| Test 401 on Ninja | `force_login` is insufficient for Ninja. Use `authenticated_client` fixture to set valid session cookie. |
 
 ---
 
@@ -222,3 +229,12 @@ All implementation tasks must follow this structured approach:
 | **Redis Isolation** | Manifest mentions "triple-instance isolation", while env vars show logical DB separation (0, 1). | Logical DB separation is acceptable for dev/staging. Production should use separate Redis instances or ACLs to enforce true isolation. |
 
 *This document is a living artifact. Update it as architectural shifts occur or conflicts are resolved.*
+
+---
+
+## 💡 Lessons Learnt (Recent)
+- **Financial Precision:** `openpyxl` handles `Decimal` natively, preserving precision. Never use `float()` for financial data in Excel generation.
+- **API Serialization:** Standard JSON encoders do not support `Decimal`. Convert to `float` or `string` only at the final API serialization layer (Routers/Pydantic schemas).
+- **Django Ninja Auth:** Standard Django `force_login` fails for Ninja routes in tests because Ninja extracts authentication details directly from cookies/headers, bypassing some standard middleware. Always use session-based fixtures for authenticating test clients.
+- **Model Immutability:** Using `_state.adding` is the most reliable way to prevent updates on append-only models, as it correctly identifies new records even when primary keys are pre-assigned.
+- **Frontend/Backend Alignment:** The frontend `lib/types.ts` must be manually kept in sync with Django models. Missing properties (like `notes` on `Dog`) are a common source of TypeScript compilation errors.

@@ -269,7 +269,7 @@ class NParksService:
                     ws.cell(row=current_row, column=10, value=agreement.buyer_mobile)
                     ws.cell(row=current_row, column=11, value=agreement.buyer_email)
                     ws.cell(row=current_row, column=12, value=agreement.completed_at.strftime("%Y-%m-%d"))
-                    ws.cell(row=current_row, column=13, value=float(item.line_total))
+                    ws.cell(row=current_row, column=13, value=item.line_total)
 
                     current_row += 1
 

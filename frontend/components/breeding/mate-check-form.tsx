@@ -118,7 +118,7 @@ export function MateCheckForm() {
         onSuccess: (data) => {
           setResult(data);
         },
-        onError: (err: any) => {
+        onError: (err: { message?: string }) => {
           setError(err?.message || "Failed to perform mate check");
         },
       }

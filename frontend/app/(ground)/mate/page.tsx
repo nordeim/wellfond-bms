@@ -63,10 +63,10 @@ export default function MateLogPage() {
       });
 
       router.push("/ground");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to save",
-        description: error.message || "Sire not found or invalid chip",
+        description: error instanceof Error ? error.message : "Sire not found or invalid chip",
         variant: "destructive",
       });
     } finally {
