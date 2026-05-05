@@ -324,18 +324,18 @@ export function useUpdatePDPAConsent() {
   })
 }
 
-export function usePDPALog(customerId: string | null) {
+export function usePDPALog(customer_id: string | null) {
   return useQuery({
-    queryKey: [PDPA_KEY, "log", customerId],
+    queryKey: [PDPA_KEY, "log", customer_id],
     queryFn: async () => {
-      if (!customerId) return []
+      if (!customer_id) return []
       const response = await api.get<{
         items: PDPAConsentLog[]
         total: number
-      }>(`/compliance/pdpa/log?customer_id=${customerId}`)
+      }>(`/compliance/pdpa/log?customer_id=${customer_id}`)
       return response
     },
-    enabled: !!customerId,
+    enabled: !!customer_id,
     staleTime: 30000,
   })
 }

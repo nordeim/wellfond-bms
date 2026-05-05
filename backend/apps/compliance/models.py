@@ -15,6 +15,8 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
+from apps.core.models import ImmutableManager
+
 
 class NParksStatus(models.TextChoices):
     """NParks submission status."""
@@ -158,6 +160,9 @@ class PDPAConsentLog(models.Model):
     Records all consent changes for compliance.
     No UPDATE or DELETE allowed (enforced at DB level).
     """
+
+    objects = ImmutableManager()
+
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     # Customer (UUID reference - will become ForeignKey when customers app exists)
@@ -204,3 +209,4 @@ class PDPAConsentLog(models.Model):
     def delete(self, *args, **kwargs):
         """Prevent deletion - append-only."""
         raise ValueError("PDPAConsentLog is immutable - cannot delete")
+

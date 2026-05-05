@@ -13,7 +13,6 @@ import { api } from '@/lib/api';
 import type {
   Dog,
   DogCreate,
-  DogDetailResponse,
   DogFilterParams,
   DogListResponse,
   DogUpdate,
@@ -70,8 +69,8 @@ export function useDog(id: string | null) {
     queryKey: [DOG_DETAIL_KEY, id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await api.get<DogDetailResponse>(`/dogs/${id}`);
-      return response.dog;
+      const response = await api.get<Dog>(`/dogs/${id}`);
+      return response;
     },
     enabled: !!id,
     staleTime: 60000, // 1 minute

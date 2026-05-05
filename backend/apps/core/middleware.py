@@ -128,15 +128,13 @@ class IdempotencyMiddleware:
 
     def _generate_fingerprint(self, request: HttpRequest, idempotency_key: str) -> str:
         """Generate unique fingerprint for request."""
-        user_id = (
-            request.user.id
-            if hasattr(request, "user") and request.user.is_authenticated
-            else "anon"
-        )
+        # Use session cookie instead of request.user.id to avoid reliance on
+        # middleware order or lazy objects initialization
+        session_id = request.COOKIES.get("sessionid", "anon")
         path = request.path
         body = request.body.decode() if request.body else ""
 
-        data = f"{user_id}:{path}:{body}:{idempotency_key}"
+        data = f"{session_id}:{path}:{body}:{idempotency_key}"
         return f"idempotency:{hashlib.sha256(data.encode()).hexdigest()}"
 
     def _is_idempotency_required(self, path: str) -> bool:

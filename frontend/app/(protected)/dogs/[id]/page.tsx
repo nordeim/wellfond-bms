@@ -52,9 +52,9 @@ function isTabLocked(tab: string, userRole: Role): boolean {
   return !TAB_ACCESS[tab].includes(userRole);
 }
 
-function getAgeDot(ageYears: number): { color: string; label: string } {
-  if (ageYears >= 6) return { color: 'bg-[#D94040]', label: '6+ years' };
-  if (ageYears >= 5) return { color: 'bg-[#D4920A]', label: '5-6 years' };
+function getAgeDot(age_years: number): { color: string; label: string } {
+  if (age_years >= 6) return { color: 'bg-[#D94040]', label: '6+ years' };
+  if (age_years >= 5) return { color: 'bg-[#D4920A]', label: '5-6 years' };
   return { color: 'bg-[#4EAD72]', label: '< 5 years' };
 }
 
@@ -103,7 +103,7 @@ function DogProfileClient({ id, userRole }: { id: string; userRole: Role }) {
     notFound();
   }
 
-  const ageDot = getAgeDot(dog.ageYears || 0);
+  const ageDot = getAgeDot(dog.age_years || 0);
   const isFemale = dog.gender === 'F';
 
   return (
@@ -134,10 +134,10 @@ function DogProfileClient({ id, userRole }: { id: string; userRole: Role }) {
                 </Badge>
                 <Badge
                   className={`${
-                    DNA_STATUS_COLORS[dog.dnaStatus] || 'bg-[#4A7A94]'
+                    DNA_STATUS_COLORS[dog.dna_status] || 'bg-[#4A7A94]'
                   } text-white`}
                 >
-                  {DNA_STATUS_LABELS[dog.dnaStatus] || dog.dnaStatus}
+                  {DNA_STATUS_LABELS[dog.dna_status] || dog.dna_status}
                 </Badge>
                 <Badge variant="outline">{dog.breed}</Badge>
                 <Badge variant="secondary">{dog.gender === 'M' ? 'Male' : 'Female'}</Badge>
@@ -147,7 +147,7 @@ function DogProfileClient({ id, userRole }: { id: string; userRole: Role }) {
 
             {/* Right: Stats */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard label="Age" value={dog.ageDisplay || '-'} />
+              <StatCard label="Age" value={dog.age_display || '-'} />
               <StatCard label="Weight" value="-" /> {/* TODO: Latest weight */}
               <StatCard label="Vaccines" value="-" /> {/* TODO: Vaccine status */}
               <StatCard label="Litters" value="-" /> {/* TODO: Litter count */}
@@ -177,30 +177,30 @@ function DogProfileClient({ id, userRole }: { id: string; userRole: Role }) {
           </div>
 
           {/* Pedigree Info */}
-          {(dog.damId || dog.sireId) && (
+          {(dog.dam_id || dog.sire_id) && (
             <div className="mt-6 grid gap-4 border-t border-[#C0D8EE] pt-4 sm:grid-cols-2">
-              {dog.damId && (
+              {dog.dam_id && (
                 <div>
                   <span className="text-sm text-[#4A7A94]">Dam</span>
                   <div className="font-medium">
                     <Link
-                      href={`/dogs/${dog.damId}`}
+                      href={`/dogs/${dog.dam_id}`}
                       className="text-[#0D2030] hover:text-[#F97316] hover:underline"
                     >
-                      {dog.damName || dog.damId}
+                      {dog.dam_name || dog.dam_id}
                     </Link>
                   </div>
                 </div>
               )}
-              {dog.sireId && (
+              {dog.sire_id && (
                 <div>
                   <span className="text-sm text-[#4A7A94]">Sire</span>
                   <div className="font-medium">
                     <Link
-                      href={`/dogs/${dog.sireId}`}
+                      href={`/dogs/${dog.sire_id}`}
                       className="text-[#0D2030] hover:text-[#F97316] hover:underline"
                     >
-                      {dog.sireName || dog.sireId}
+                      {dog.sire_name || dog.sire_id}
                     </Link>
                   </div>
                 </div>

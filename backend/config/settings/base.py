@@ -161,7 +161,7 @@ CELERY_TASK_ROUTES = {
 }
 CELERY_BEAT_SCHEDULE = {
     "avs-reminder-check": {
-        "task": "apps.sales.tasks.avs_reminder_check",
+        "task": "apps.sales.tasks.check_avs_reminders",
         "schedule": 60 * 60 * 24,  # Daily
     },
     "check-overdue-vaccines": {

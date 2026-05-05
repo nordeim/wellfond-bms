@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
+import { AuthInitializer } from "@/components/layout/auth-initializer";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={figtree.variable}>
       <body className="min-h-screen bg-brand-bg text-brand-text font-figtree antialiased">
-        {children}
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
       </body>
     </html>
   );

@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from django.db import models
 
-from apps.core.models import Entity, User
+from apps.core.models import Entity, User, ImmutableManager
 
 
 class HousingType(models.TextChoices):
@@ -119,6 +119,8 @@ class CommunicationLog(models.Model):
     Records all sent messages for compliance and audit.
     Append-only - no updates or deletes allowed.
     """
+
+    objects = ImmutableManager()
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
@@ -261,3 +263,4 @@ class Segment(models.Model):
         self.customer_count = 0
         self.count_updated_at = None
         self.save(update_fields=["customer_count", "count_updated_at"])
+

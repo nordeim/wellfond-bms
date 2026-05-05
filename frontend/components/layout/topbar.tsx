@@ -152,11 +152,11 @@ export function Topbar({ user }: TopbarProps) {
                 className="flex items-center gap-2 text-left hover:bg-[#E8F4FF]"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F97316] text-white">
-                  {user.firstName?.[0]?.toUpperCase() || <User className="h-4 w-4" />}
+                  {user.first_name?.[0]?.toUpperCase() || <User className="h-4 w-4" />}
                 </div>
                 <div className="hidden flex-col items-start md:flex">
                   <span className="text-sm font-medium text-[#0D2030]">
-                    {user.firstName} {user.lastName}
+                    {user.first_name} {user.last_name}
                   </span>
                   <span className="text-xs text-[#4A7A94]">{user.email}</span>
                 </div>
@@ -165,7 +165,7 @@ export function Topbar({ user }: TopbarProps) {
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-4 py-2">
                 <p className="text-sm font-medium text-[#0D2030]">
-                  {user.firstName} {user.lastName}
+                  {user.first_name} {user.last_name}
                 </p>
                 <p className="text-xs text-[#4A7A94]">{user.email}</p>
               </div>

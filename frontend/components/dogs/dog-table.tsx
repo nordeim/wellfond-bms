@@ -67,10 +67,10 @@ const DNA_STATUS_COLORS: Record<string, string> = {
   EXCLUDED: 'bg-[#D94040]',
 };
 
-function getAgeDot(ageYears: number): { color: string; label: string } {
-  if (ageYears >= 6) return { color: 'bg-[#D94040]', label: '6+' };
-  if (ageYears >= 5) return { color: 'bg-[#D4920A]', label: '5-6' };
-  if (ageYears >= 3) return { color: 'bg-[#D4920A]', label: '3-5' };
+function getAgeDot(age_years: number): { color: string; label: string } {
+  if (age_years >= 6) return { color: 'bg-[#D94040]', label: '6+' };
+  if (age_years >= 5) return { color: 'bg-[#D4920A]', label: '5-6' };
+  if (age_years >= 3) return { color: 'bg-[#D4920A]', label: '3-5' };
   return { color: 'bg-[#4EAD72]', label: '<3' };
 }
 
@@ -118,7 +118,7 @@ function DogRow({ dog }: { dog: Dog }) {
   const deleteMutation = useDeleteDog();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const ageDot = getAgeDot(dog.ageYears || 0);
+  const ageDot = getAgeDot(dog.age_years || 0);
 
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete ${dog.name}?`)) return;
@@ -135,7 +135,7 @@ function DogRow({ dog }: { dog: Dog }) {
   };
 
   const handleWhatsAppCopy = () => {
-    const text = `*${dog.name}*\nChip: ${dog.microchip}\nBreed: ${dog.breed}\nGender: ${dog.gender === 'M' ? 'Male' : 'Female'}\nAge: ${dog.ageDisplay}`;
+    const text = `*${dog.name}*\nChip: ${dog.microchip}\nBreed: ${dog.breed}\nGender: ${dog.gender === 'M' ? 'Male' : 'Female'}\nAge: ${dog.age_display}`;
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
   };
@@ -169,7 +169,7 @@ function DogRow({ dog }: { dog: Dog }) {
         </div>
       </TableCell>
       <TableCell>
-        <span className="text-sm text-[#4A7A94]">{dog.ageDisplay}</span>
+        <span className="text-sm text-[#4A7A94]">{dog.age_display}</span>
       </TableCell>
       <TableCell>
         <Badge variant="secondary" className="text-xs">
@@ -178,23 +178,23 @@ function DogRow({ dog }: { dog: Dog }) {
       </TableCell>
       <TableCell>
         <div className="text-xs">
-          {dog.damName && (
-            <div className="text-[#4A7A94]">Dam: {dog.damName.slice(0, 15)}</div>
+          {dog.dam_name && (
+            <div className="text-[#4A7A94]">Dam: {dog.dam_name.slice(0, 15)}</div>
           )}
-          {dog.sireName && (
-            <div className="text-[#4A7A94]">Sire: {dog.sireName.slice(0, 15)}</div>
+          {dog.sire_name && (
+            <div className="text-[#4A7A94]">Sire: {dog.sire_name.slice(0, 15)}</div>
           )}
         </div>
       </TableCell>
       <TableCell>
-        {dog.dnaStatus && (
+        {dog.dna_status && (
           <Badge
             className={cn(
               'text-xs text-white',
-              DNA_STATUS_COLORS[dog.dnaStatus] || 'bg-[#4A7A94]'
+              DNA_STATUS_COLORS[dog.dna_status] || 'bg-[#4A7A94]'
             )}
           >
-            {DNA_STATUS_LABELS[dog.dnaStatus] || dog.dnaStatus}
+            {DNA_STATUS_LABELS[dog.dna_status] || dog.dna_status}
           </Badge>
         )}
       </TableCell>

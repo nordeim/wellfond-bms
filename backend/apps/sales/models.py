@@ -46,6 +46,7 @@ class AVSStatus(models.TextChoices):
     SENT = "SENT", "Sent"
     COMPLETED = "COMPLETED", "Completed"
     ESCALATED = "ESCALATED", "Escalated"
+    EXPIRED = "EXPIRED", "Expired"
 
 
 class SignerType(models.TextChoices):

@@ -46,7 +46,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <div>
           <h1 className="text-2xl font-bold text-[#0D2030]">Dashboard</h1>
           <p className="text-sm text-[#4A7A94]">
-            Welcome back, {user.firstName || user.username}
+            Welcome back, {user.first_name || user.username}
           </p>
         </div>
         <QuickActions role={user.role} />

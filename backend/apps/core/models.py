@@ -9,6 +9,16 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+class ImmutableQuerySet(models.QuerySet):
+    def delete(self):
+        raise ValueError("Immutable records cannot be deleted")
+
+
+class ImmutableManager(models.Manager):
+    def get_queryset(self):
+        return ImmutableQuerySet(self.model, using=self._db)
+
+
 class User(AbstractUser):
     """
     Custom User model with RBAC and entity scoping support.
@@ -129,6 +139,8 @@ class AuditLog(models.Model):
     Immutable audit log for compliance.
     No UPDATE or DELETE allowed (enforced via save/delete overrides).
     """
+
+    objects = ImmutableManager()
 
     class Action(models.TextChoices):
         CREATE = "create", "Create"

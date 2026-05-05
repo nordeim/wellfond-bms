@@ -51,7 +51,7 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      await login({ username: email, password });
+      await login({ email, password });
 
       // Redirect based on return URL or default to dashboard
       const redirectPath = returnUrl.startsWith('/login') ? '/dashboard' : returnUrl;

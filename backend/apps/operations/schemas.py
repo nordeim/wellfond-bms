@@ -58,7 +58,7 @@ class DogCreate(Schema):
     dob: date
     gender: str = Field(..., pattern=r"^[MF]$")
     colour: Optional[str] = Field(None, max_length=50)
-    entity_id: str
+    entity_id: UUID
     status: Optional[str] = Field("ACTIVE")
     dam_chip: Optional[str] = Field(
         None, pattern=r"^\d{9,15}$", description="Mother's microchip"
@@ -77,8 +77,9 @@ class DogUpdate(Schema):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     breed: Optional[str] = Field(None, min_length=1, max_length=100)
     dob: Optional[date] = None
+    gender: Optional[str] = Field(None, pattern=r"^[MF]$")
     colour: Optional[str] = Field(None, max_length=50)
-    entity_id: Optional[str] = None
+    entity_id: Optional[UUID] = None
     status: Optional[str] = None
     dam_chip: Optional[str] = Field(
         None, pattern=r"^\d{9,15}$", description="Mother's microchip"

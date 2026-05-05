@@ -126,8 +126,8 @@ async function apiRequest<T>(
         const data = await refreshResponse.json();
         const { setSession, setCsrfToken } = await import('./auth');
         setSession(data.user);
-        setCsrfToken(data.csrfToken);
-
+        // FIX CRIT-003: Use snake_case csrf_token from LoginResponse
+        setCsrfToken(data.csrf_token);
         // Retry original request
         return apiRequest<T>(path, options, true);
       }
@@ -207,7 +207,8 @@ export async function login(credentials: LoginRequest): Promise<User> {
   // Store session in memory
   const { setSession, setCsrfToken } = await import('./auth');
   setSession(data.user);
-  setCsrfToken(data.csrfToken);
+  // FIX CRIT-003: Use snake_case csrf_token
+  setCsrfToken(data.csrf_token);
 
   toast.success('Login successful');
   return data.user;
@@ -227,7 +228,8 @@ export async function refreshSession(): Promise<User | null> {
     const data = await api.post<LoginResponse>('/auth/refresh', {});
     const { setSession, setCsrfToken } = await import('./auth');
     setSession(data.user);
-    setCsrfToken(data.csrfToken);
+    // FIX CRIT-003: Use snake_case csrf_token
+    setCsrfToken(data.csrf_token);
     return data.user;
   } catch {
     const { clearSession } = await import('./auth');
@@ -248,10 +250,11 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function fetchCsrfToken(): Promise<string> {
-  const data = await api.get<{ csrfToken: string }>('/auth/csrf', {
+  const data = await api.get<{ csrf_token: string }>('/auth/csrf', {
     skipAuth: true,
   });
   const { setCsrfToken } = await import('./auth');
-  setCsrfToken(data.csrfToken);
-  return data.csrfToken;
+  // FIX CRIT-003: Use snake_case csrf_token
+  setCsrfToken(data.csrf_token);
+  return data.csrf_token;
 }

@@ -14,23 +14,23 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: Role;
-  entityId: string | null;
-  pdpaConsent: boolean;
-  isActive: boolean;
-  createdAt: string;
+  entity_id: string | null;
+  pdpa_consent: boolean;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
 export interface LoginResponse {
   user: User;
-  csrfToken: string;
+  csrf_token: string;
 }
 
 // =============================================================================
@@ -44,15 +44,15 @@ export interface Entity {
   name: string;
   code: EntityCode;
   slug: string;
-  isActive: boolean;
-  isHolding: boolean;
-  gstRate: number;
-  avsLicenseNumber: string | null;
-  avsLicenseExpiry: string | null;
+  is_active: boolean;
+  is_holding: boolean;
+  gst_rate: number;
+  avs_license_number: string | null;
+  avs_license_expiry: string | null;
   address: string | null;
   phone: string | null;
   email: string | null;
-  createdAt: string;
+  created_at: string;
 }
 
 // =============================================================================
@@ -70,19 +70,19 @@ export interface Dog {
   dob: string;
   gender: 'M' | 'F';
   colour: string;
-  entityId: string;
+  entity_id: string;
   status: DogStatus;
-  damId: string | null;
-  sireId: string | null;
+  dam_id: string | null;
+  sire_id: string | null;
   unit: string;
-  dnaStatus: DNAStatus;
+  dna_status: DNAStatus;
   notes: string;
-  imageUrl: string | null;
+  image_url: string | null;
   // Extended properties
-  ageYears?: number;
-  ageDisplay?: string;
-  damName?: string;
-  sireName?: string;
+  age_years?: number;
+  age_display?: string;
+  dam_name?: string;
+  sire_name?: string;
 }
 
 // =============================================================================
@@ -93,12 +93,12 @@ export type MatingStatus = 'PLANNED' | 'CONFIRMED' | 'PREGNANT' | 'WHELPED';
 
 export interface Mating {
   id: string;
-  sireId: string;
-  damId: string;
-  matingDate: string;
-  dueDate: string;
+  sire_id: string;
+  dam_id: string;
+  mating_date: string;
+  due_date: string;
   status: MatingStatus;
-  entityId: string;
+  entity_id: string;
 }
 
 // =============================================================================
@@ -109,12 +109,12 @@ export type SaleStage = 'INQUIRY' | 'RESERVED' | 'CONTRACT' | 'AVS_SUBMITTED' | 
 
 export interface Sale {
   id: string;
-  puppyId: string;
-  customerId: string;
+  puppy_id: string;
+  customer_id: string;
   stage: SaleStage;
   price: number;
-  depositAmount: number;
-  entityId: string;
+  deposit_amount: number;
+  entity_id: string;
 }
 
 // =============================================================================
@@ -145,7 +145,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: string;
-  requiredRoles: Role[];
+  required_roles: Role[];
 }
 
 export interface BreadcrumbItem {
@@ -163,11 +163,11 @@ export interface AuditLog {
   uuid: string;
   actor: User | null;
   action: AuditAction;
-  resourceType: string;
-  resourceId: string;
+  resource_type: string;
+  resource_id: string;
   payload: Record<string, unknown>;
-  ipAddress: string | null;
-  createdAt: string;
+  ip_address: string | null;
+  created_at: string;
 }
 
 // =============================================================================
@@ -196,10 +196,10 @@ export interface DogCreate {
   dob: string;
   gender: 'M' | 'F';
   colour: string;
-  entityId: string;
+  entity_id: string;
   unit?: string;
-  damId?: string | null;
-  sireId?: string | null;
+  dam_id?: string | null;
+  sire_id?: string | null;
 }
 
 export interface DogUpdate extends Partial<DogCreate> {}
@@ -211,7 +211,7 @@ export interface DogListResponse {
 
 export interface DogDetailResponse {
   dog: Dog;
-  healthRecords?: HealthRecord[];
+  health_records?: HealthRecord[];
   vaccinations?: Vaccination[];
 }
 
@@ -223,35 +223,35 @@ export interface DogDetailResponse {
 
 export interface HealthRecord {
   id: string;
-  dogId: string;
+  dog_id: string;
   type: string;
   description: string;
   date: string;
-  vetName?: string;
+  vet_name?: string;
 }
 
 export interface HealthRecordCreate {
-  dogId: string;
+  dog_id: string;
   type: string;
   description: string;
   date: string;
-  vetName?: string;
+  vet_name?: string;
 }
 
 export interface Vaccination {
   id: string;
-  dogId: string;
+  dog_id: string;
   name: string;
   date: string;
-  dueDate: string;
+  due_date: string;
   status: 'GIVEN' | 'DUE' | 'OVERDUE';
 }
 
 export interface VaccinationCreate {
-  dogId: string;
+  dog_id: string;
   name: string;
   date: string;
-  dueDate: string;
+  due_date: string;
 }
 
 // =============================================================================
@@ -264,10 +264,10 @@ export interface AlertCard {
   title: string;
   message?: string;
   severity?: 'info' | 'warning' | 'critical';
-  dogId?: string;
-  dogName?: string;
-  createdAt?: string;
-  actionUrl?: string;
+  dog_id?: string;
+  dog_name?: string;
+  created_at?: string;
+  action_url?: string;
   // Dashboard card display properties
   color?: string;
   trend?: 'up' | 'down' | 'flat';
@@ -342,85 +342,85 @@ export interface DashboardMetrics {
 
 export interface InHeatLog {
   id: string;
-  dogId: string;
-  draminskiReading: number;
-  matingWindow: 'EARLY' | 'RISING' | 'FAST' | 'PEAK' | 'MATE_NOW';
+  dog_id: string;
+  draminski_reading: number;
+  mating_window: 'EARLY' | 'RISING' | 'FAST' | 'PEAK' | 'MATE_NOW';
   notes?: string;
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface MatedLog {
   id: string;
-  dogId: string;
-  sireId: string;
-  sireName: string;
+  dog_id: string;
+  sire_id: string;
+  sire_name: string;
   method: 'natural' | 'ai' | 'surgical';
-  sire2Id?: string;
-  sire2Name?: string;
+  sire2_id?: string;
+  sire2_name?: string;
   notes?: string;
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface WhelpedLog {
   id: string;
-  dogId: string;
+  dog_id: string;
   method: 'natural' | 'c_section' | 'assisted';
-  aliveCount: number;
-  stillbornCount: number;
+  alive_count: number;
+  stillborn_count: number;
   pups: WhelpedPup[];
   notes?: string;
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface WhelpedPup {
   id: string;
   gender: 'male' | 'female';
   colour: string;
-  birthWeight: number;
+  birth_weight: number;
 }
 
 export interface HealthObsLog {
   id: string;
-  dogId: string;
+  dog_id: string;
   category: string;
   description: string;
   temperature?: number;
   weight?: number;
   photos?: string[];
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface WeightLog {
   id: string;
-  dogId: string;
+  dog_id: string;
   weight: number;
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface NursingFlagLog {
   id: string;
-  dogId: string;
+  dog_id: string;
   section: string;
-  pupNumber?: number;
-  flagType: string;
+  pup_number?: number;
+  flag_type: string;
   photos?: string[];
   severity: 'info' | 'warning' | 'serious';
-  createdAt: string;
-  createdByName?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export interface NotReadyLog {
   id: string;
-  dogId: string;
+  dog_id: string;
   notes?: string;
-  expectedDate?: string;
-  createdAt: string;
-  createdByName?: string;
+  expected_date?: string;
+  created_at: string;
+  created_by_name?: string;
 }
 
 export type SortField = 'name' | 'created_at' | 'breed' | 'status' | 'unit' | 'microchip' | 'dob' | 'gender' | 'entity' | 'updated_at' | 'id';

@@ -131,15 +131,15 @@ export function useCustomerList(options: UseCustomerListOptions = {}) {
 // Customer Detail Hook
 // =============================================================================
 
-export function useCustomer(customerId: string | null) {
+export function useCustomer(customer_id: string | null) {
   return useQuery({
-    queryKey: [CUSTOMER_DETAIL_KEY, customerId],
+    queryKey: [CUSTOMER_DETAIL_KEY, customer_id],
     queryFn: async () => {
-      if (!customerId) return null
-      const response = await api.get<CustomerDetail>(`/customers/${customerId}`)
+      if (!customer_id) return null
+      const response = await api.get<CustomerDetail>(`/customers/${customer_id}`)
       return response
     },
-    enabled: !!customerId,
+    enabled: !!customer_id,
     staleTime: 60000,
   })
 }
@@ -181,21 +181,21 @@ export function useUpdateCustomer() {
 
   return useMutation({
     mutationFn: async ({
-      customerId,
+      customer_id,
       data,
     }: {
-      customerId: string
+      customer_id: string
       data: Partial<Customer>
     }) => {
       const response = await api.patch<{ id: string; message: string }>(
-        `/customers/${customerId}`,
+        `/customers/${customer_id}`,
         data
       )
       return response
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [CUSTOMERS_KEY] })
-      queryClient.invalidateQueries({ queryKey: [CUSTOMER_DETAIL_KEY, variables.customerId] })
+      queryClient.invalidateQueries({ queryKey: [CUSTOMER_DETAIL_KEY, variables.customer_id] })
     },
   })
 }
@@ -208,16 +208,16 @@ export function useUpdatePDPAConsent() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ customerId, consent }: { customerId: string; consent: boolean }) => {
+    mutationFn: async ({ customer_id, consent }: { customer_id: string; consent: boolean }) => {
       const response = await api.patch<{ customer_id: string; is_consented: boolean }>(
-        `/customers/${customerId}/consent`,
+        `/customers/${customer_id}/consent`,
         { consent }
       )
       return response
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [CUSTOMERS_KEY] })
-      queryClient.invalidateQueries({ queryKey: [CUSTOMER_DETAIL_KEY, variables.customerId] })
+      queryClient.invalidateQueries({ queryKey: [CUSTOMER_DETAIL_KEY, variables.customer_id] })
     },
   })
 }

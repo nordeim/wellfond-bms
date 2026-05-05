@@ -217,7 +217,7 @@ def cleanup_expired_avs_tokens():
     )
 
     count = expired.count()
-    expired.delete()
+    expired.update(status=AVSStatus.EXPIRED)
 
     logger.info(f"Cleaned up {count} expired AVS transfers")
 

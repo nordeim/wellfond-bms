@@ -88,8 +88,12 @@ async function proxyRequest(
   const path = request.nextUrl.pathname.replace('/api/proxy', '');
   const searchParams = request.nextUrl.search;
 
+  // Defensive guard: strip /api/v1 from path if it's already there
+  // to avoid double prefixing when buildUrl includes it for server-side calls
+  const cleanPath = path.startsWith('/api/v1') ? path.replace('/api/v1', '') : path;
+
   // Validate path
-  if (!isAllowedPath(path)) {
+  if (!isAllowedPath(cleanPath)) {
     return NextResponse.json(
       { error: 'Forbidden', message: 'Path not allowed' },
       { status: 403 }
@@ -97,7 +101,7 @@ async function proxyRequest(
   }
 
   // Build backend URL
-  const backendUrl = `${BACKEND_URL}/api/v1${path}${searchParams}`;
+  const backendUrl = `${BACKEND_URL}/api/v1${cleanPath}${searchParams}`;
 
   // Strip headers and set new ones
   const headers = stripHeaders(request.headers);

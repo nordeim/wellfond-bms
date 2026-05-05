@@ -40,6 +40,7 @@ Django wraps `request.user` in `SimpleLazyObject`. Custom middleware runs after 
 - **PDPA Hard Filter:** `WHERE pdpa_consent=true` enforced at QuerySet level (via `scope_entity`). Never expose PII without explicit consent.
 - **GST Formula:** `Decimal(price) * 9 / 109`, rounding `ROUND_HALF_UP`. Thomson entity is 0% exempt (case-insensitive check).
 - **Fiscal Year:** Singapore FY starts April (month 4). YTD calculations must roll over in April, not January.
+- **Puppy PDPA:** Puppy buyer fields (`buyer_name`, `buyer_contact`) contain PII but the `Puppy` model lacks a `pdpa_consent` field. To ensure compliance, these fields must ONLY be accessed via joins with `SalesAgreement` (which enforces consent filtering in `scope_entity`). Direct queries for PII on the `Puppy` model are prohibited.
 
 ---
 

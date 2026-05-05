@@ -76,7 +76,8 @@ export function setCsrfToken(token: string | null): void {
 
 /**
  * Check if user is authenticated.
- * Checks memory cache first, then falls back to cookie check.
+ * Checks memory cache first.
+ * Note: document.cookie check removed as HttpOnly cookies are not accessible.
  */
 export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') {
@@ -84,12 +85,7 @@ export function isAuthenticated(): boolean {
   }
 
   // Check memory cache
-  if (cachedUser) {
-    return true;
-  }
-
-  // Check for session cookie
-  return document.cookie.includes('sessionid=');
+  return !!cachedUser;
 }
 
 /**
@@ -166,7 +162,7 @@ export function canAccessEntity(entityId: string): boolean {
   }
 
   // Others see only their entity
-  return user.entityId === entityId;
+  return user.entity_id === entityId;
 }
 
 // =============================================================================

@@ -21,9 +21,9 @@ export function RoleBar({ user, className }: RoleBarProps) {
   }
 
   const roleLabel = ROLE_LABELS[user.role] || user.role;
-  const entityName = user.entityId
-    ? ENTITY_LABELS[user.entityId as keyof typeof ENTITY_LABELS] || 'Unknown Entity'
-    : 'No Entity';
+  const entityName = user.entity_id
+    ? ENTITY_LABELS[user.entity_id as keyof typeof ENTITY_LABELS] || 'Unknown Entity'
+    : 'All Entities';
 
   return (
     <div
