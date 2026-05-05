@@ -156,6 +156,10 @@ Fix the CSP settings per the migration guide (remove old CSP_* settings, keep on
 - django-csp v4 error: csp.E001 fires if ANY old CSP_* settings remain — even if new dict config exists. All old prefix vars must be fully deleted, not just supplemented.
 - force_login breaks Ninja: Django Ninja 1.6.2 uses its own auth extraction that differs from Django's stock AuthenticationMiddleware. force_login sets request.user on the Django session but Ninja bypasses this — hence 401 responses in tests.
 - BFF double prefix: api.ts:buildUrl() prepends /api/v1 (server) or /api/proxy (client). Hooks using /api/v1/breeding/... become /api/v1/api/v1/breeding/... → 404. Also, the BFF proxy allowlist expects /breeding (not /api/v1/breeding) → 403.
+- UUID serialization is NOT a problem: NinjaJSONEncoder extends DjangoJSONEncoder which handles UUID objects natively.
+- the 500 is NotNullViolation on colour (NOT a UUID issue). The NinjaJSONEncoder handles UUIDs natively.
+- backend/apps/operations/models.py - add default='' to colour, unit, and notes
+  colour = models.CharField(max_length=50, blank=True, default='')
 
 ---
 

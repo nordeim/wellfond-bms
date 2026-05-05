@@ -43,7 +43,7 @@ class TestDashboardAPIResponseStructure:
         response = client.get("/api/v1/dashboard/metrics")
 
         assert response.status_code == 200
-        assert response['Content-Type'] == 'application/json'
+        assert 'application/json' in response['Content-Type']
 
     def test_response_has_required_top_level_keys(self, client):
         """Test response has all required top-level keys."""

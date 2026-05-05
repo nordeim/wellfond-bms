@@ -183,14 +183,14 @@ def create_dog(request, data: DogCreate):
         breed=data.breed,
         dob=data.dob,
         gender=data.gender,
-        colour=data.colour,
+        colour=data.colour or "",
         entity_id=data.entity_id,
         status=data.status or 'ACTIVE',
         dam=dam,
         sire=sire,
-        unit=data.unit,
+        unit=data.unit or "",
         dna_status=data.dna_status or 'PENDING',
-        notes=data.notes,
+        notes=data.notes or "",
         created_by=user,
     )
     

@@ -33,7 +33,8 @@ def get_vaccine_overdue(entity_id: str | None = None) -> List[dict]:
             "type": "vaccine_overdue",
             "title": f"{dog.name} - Vaccine Overdue",
             "count": dog.vaccinations.filter(status=Vaccination.Status.OVERDUE).count(),
-            "dog": dog,
+            "dog_id": str(dog.id),
+            "dog_name": dog.name,
         }
         for dog in dogs[:10]  # Limit to 10 most recent
     ]
@@ -65,7 +66,8 @@ def get_vaccine_due_soon(days: int = 30, entity_id: str | None = None) -> List[d
                 status=Vaccination.Status.DUE_SOON,
                 due_date__lte=cutoff
             ).count(),
-            "dog": dog,
+            "dog_id": str(dog.id),
+            "dog_name": dog.name,
         }
         for dog in dogs[:10]
     ]
@@ -107,7 +109,8 @@ def get_rehome_overdue(user: "User", entity_id: str | None = None) -> List[dict]
                 "title": f"{dog.name} - Rehome Age ({dog.age_display})",
                 "count": 1,
                 "color": "red" if flag == "red" else "yellow",
-                "dog": dog,
+                "dog_id": str(dog.id),
+                "dog_name": dog.name,
             })
     
     return alerts[:10]
@@ -141,7 +144,8 @@ def get_in_heat(entity_id: str | None = None) -> List[dict]:
                 "type": "in_heat",
                 "title": f"{log.dog.name} - In Heat ({log.mating_window})",
                 "count": 1,
-                "dog": log.dog,
+                "dog_id": str(log.dog.id),
+                "dog_name": log.dog.name,
                 "mating_window": log.mating_window,
             })
 
@@ -170,7 +174,8 @@ def get_nursing_flags(entity_id: str | None = None) -> List[dict]:
             "type": "nursing_flag",
             "title": f"{log.dog.name} - {log.flag_type}",
             "count": 1,
-            "dog": log.dog,
+            "dog_id": str(log.dog.id),
+            "dog_name": log.dog.name,
             "severity": log.severity,
             "flag_type": log.flag_type,
         }
@@ -228,7 +233,8 @@ def get_missing_parents(entity_id: str | None = None) -> List[dict]:
             "type": "missing_parents",
             "title": f"{dog.name} - Incomplete Pedigree",
             "count": (1 if not dog.dam else 0) + (1 if not dog.sire else 0),
-            "dog": dog,
+            "dog_id": str(dog.id),
+            "dog_name": dog.name,
         }
         for dog in dogs[:10]
     ]
@@ -342,11 +348,11 @@ def get_pending_alerts(user: "User") -> List[dict]:
     nursing = get_nursing_flags(entity_id)
     for alert in nursing:
         events.append({
-            "id": f"nursing-{alert['dog'].id}",
+            "id": f"nursing-{alert['dog_id']}",
             "type": "nursing_flag",
             "title": alert["title"],
-            "dog_id": str(alert["dog"].id),
-            "dog_name": alert["dog"].name,
+            "dog_id": alert["dog_id"],
+            "dog_name": alert["dog_name"],
             "severity": alert.get("severity"),
             "timestamp": date.today().isoformat(),
         })
@@ -355,11 +361,11 @@ def get_pending_alerts(user: "User") -> List[dict]:
     heat = get_in_heat(entity_id)
     for alert in heat:
         events.append({
-            "id": f"heat-{alert['dog'].id}",
+            "id": f"heat-{alert['dog_id']}",
             "type": "heat_cycle",
             "title": alert["title"],
-            "dog_id": str(alert["dog"].id),
-            "dog_name": alert["dog"].name,
+            "dog_id": alert["dog_id"],
+            "dog_name": alert["dog_name"],
             "mating_window": alert.get("mating_window"),
             "timestamp": date.today().isoformat(),
         })
@@ -368,11 +374,11 @@ def get_pending_alerts(user: "User") -> List[dict]:
     vaccines = get_vaccine_overdue(entity_id)
     for alert in vaccines:
         events.append({
-            "id": f"vaccine-{alert['dog'].id}",
+            "id": f"vaccine-{alert['dog_id']}",
             "type": "overdue_vaccine",
             "title": alert["title"],
-            "dog_id": str(alert["dog"].id),
-            "dog_name": alert["dog"].name,
+            "dog_id": alert["dog_id"],
+            "dog_name": alert["dog_name"],
             "count": alert["count"],
             "timestamp": date.today().isoformat(),
         })
@@ -381,11 +387,11 @@ def get_pending_alerts(user: "User") -> List[dict]:
     rehome = get_rehome_overdue(user, entity_id)
     for alert in rehome:
         events.append({
-            "id": f"rehome-{alert['dog'].id}",
+            "id": f"rehome-{alert['dog_id']}",
             "type": "rehome_overdue",
             "title": alert["title"],
-            "dog_id": str(alert["dog"].id),
-            "dog_name": alert["dog"].name,
+            "dog_id": alert["dog_id"],
+            "dog_name": alert["dog_name"],
             "color": alert.get("color"),
             "timestamp": date.today().isoformat(),
         })

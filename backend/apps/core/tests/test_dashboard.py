@@ -177,7 +177,7 @@ class TestDashboardMetricsEndpoint:
         # Required sections per plan_dashboard_page.md
         assert "stats" in data
         assert "alerts" in data
-        assert "npars_countdown" in data
+        assert "nparks_countdown" in data
         assert "recent_activity" in data
         assert "role" in data
 
@@ -198,8 +198,8 @@ class TestDashboardMetricsEndpoint:
         data = response.json()
 
         # Countdown should be between 1-31
-        assert 1 <= data["npars_countdown"]["days"] <= 31
-        assert "status" in data["npars_countdown"]  # upcoming | due_soon | overdue
+        assert 1 <= data["nparks_countdown"]["days"] <= 31
+        assert "status" in data["nparks_countdown"]  # upcoming | due_soon | overdue
 
     def test_caching_returns_same_response_within_60s(self, client, django_user_model):
         """Test Redis caching - same response within 60s window."""

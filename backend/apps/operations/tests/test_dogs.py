@@ -122,7 +122,8 @@ class TestDogEndpoints(TestCase):
         response = self.client.post(
             '/api/v1/dogs/',
             data=data,
-            content_type='application/json'
+            content_type='application/json',
+            HTTP_X_IDEMPOTENCY_KEY='550e8400-e29b-41d4-a716-446655440001'
         )
         
         self.assertEqual(response.status_code, 200)
@@ -146,7 +147,8 @@ class TestDogEndpoints(TestCase):
         response = self.client.post(
             '/api/v1/dogs/',
             data=data,
-            content_type='application/json'
+            content_type='application/json',
+            HTTP_X_IDEMPOTENCY_KEY='550e8400-e29b-41d4-a716-446655440002'
         )
         
         self.assertEqual(response.status_code, 422)
@@ -171,7 +173,8 @@ class TestDogEndpoints(TestCase):
         response = self.client.patch(
             f'/api/v1/dogs/{dog.id}/',
             data=data,
-            content_type='application/json'
+            content_type='application/json',
+            HTTP_X_IDEMPOTENCY_KEY='550e8400-e29b-41d4-a716-446655440003'
         )
         
         self.assertEqual(response.status_code, 200)
@@ -182,7 +185,10 @@ class TestDogEndpoints(TestCase):
         """Test DELETE /api/v1/dogs/{id} soft-deletes a dog."""
         dog = DogFactory(entity=self.entity)
         
-        response = self.client.delete(f'/api/v1/dogs/{dog.id}/')
+        response = self.client.delete(
+            f'/api/v1/dogs/{dog.id}/',
+            HTTP_X_IDEMPOTENCY_KEY='550e8400-e29b-41d4-a716-446655440004'
+        )
         
         self.assertEqual(response.status_code, 200)
         
@@ -255,8 +261,8 @@ class TestDogFilters(TestCase):
         self.user = UserFactory(entity=self.entity, role='admin')
         
         # Create dogs with various attributes
-        DogFactory(entity=self.entity, status='ACTIVE', breed='Poodle')
-        DogFactory(entity=self.entity, status='RETIRED', breed='Labrador')
+        DogFactory(entity=self.entity, status='ACTIVE', breed='Poodle', gender='F')
+        DogFactory(entity=self.entity, status='RETIRED', breed='Labrador', gender='F')
         DogFactory(entity=self.entity, gender='M', unit='Unit A')
         DogFactory(entity=self.entity, gender='F', unit='Unit B')
     
@@ -281,22 +287,19 @@ class TestDogFilters(TestCase):
         self.assertEqual(unit_a.count(), 1)
     
     def test_chip_format_validation(self):
-        """Test microchip must be 9-15 digits."""
-        from django.core.exceptions import ValidationError
+        """Test microchip must be 9-15 digits (schema-level validation)."""
+        from apps.operations.schemas import DogCreate
+        from pydantic import ValidationError
         
-        # Try to create with invalid chip
-        dog = Dog(
-            microchip='123',  # Too short
-            name='Invalid',
-            breed='Test',
-            dob=date.today(),
-            gender='M',
-            entity=self.entity
-        )
-        
-        # This should raise validation error
-        with self.assertRaises(Exception):
-            dog.save()
+        with self.assertRaises(ValidationError):
+            DogCreate(
+                microchip='123',  # Too short (< 9 digits)
+                name='Invalid',
+                breed='Test',
+                dob='2020-01-01',
+                gender='M',
+                entity_id=str(self.entity.id),
+            )
 
 
 @pytest.mark.django_db

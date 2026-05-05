@@ -25,7 +25,7 @@ class EntityFactory(factory.django.DjangoModelFactory):
         lambda obj: 0.00 if obj.code == Entity.Code.THOMSON else 0.09
     )
     address = factory.Faker('address')
-    phone = factory.Faker('phone_number')
+    phone = factory.Faker('bothify', text='+65 6### ####')
     email = factory.Faker('company_email')
 
 

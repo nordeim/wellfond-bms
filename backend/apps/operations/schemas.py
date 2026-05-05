@@ -5,8 +5,9 @@ Phase 2: Domain Foundation - Request/Response schemas
 Phase 3: Ground Operations Log Schemas
 """
 
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
+from uuid import UUID
 
 from ninja import Schema
 from pydantic import Field, field_validator
@@ -21,14 +22,14 @@ from apps.core.schemas import EntityResponse
 class DogSummary(Schema):
     """Lightweight dog representation for lists."""
 
-    id: str
+    id: UUID
     microchip: str = Field(..., pattern=r"^\d{9,15}$")
     name: str
     breed: str
     dob: date
     gender: str = Field(..., pattern=r"^[MF]$")
     colour: Optional[str] = None
-    entity_id: str
+    entity_id: UUID
     status: str
     unit: Optional[str] = None
     dna_status: str
@@ -39,13 +40,13 @@ class DogSummary(Schema):
 class DogDetail(DogSummary):
     """Full dog representation with relationships."""
 
-    dam_id: Optional[str] = None
+    dam_id: Optional[UUID] = None
     dam_name: Optional[str] = None
-    sire_id: Optional[str] = None
+    sire_id: Optional[UUID] = None
     sire_name: Optional[str] = None
     notes: Optional[str] = None
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class DogCreate(Schema):

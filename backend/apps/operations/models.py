@@ -53,8 +53,8 @@ class Dog(models.Model):
     breed = models.CharField(max_length=100)
     dob = models.DateField(help_text="Date of birth")
     gender = models.CharField(max_length=1, choices=Gender.choices)
-    colour = models.CharField(max_length=50, blank=True)
-
+    colour = models.CharField(max_length=50, blank=True, default='')
+    
     # Entity (multi-tenancy)
     entity = models.ForeignKey(
         Entity,
@@ -90,7 +90,7 @@ class Dog(models.Model):
     )
 
     # Location/Unit
-    unit = models.CharField(max_length=50, blank=True, db_index=True)
+    unit = models.CharField(max_length=50, blank=True, default='', db_index=True)
 
     # DNA status
     dna_status = models.CharField(
@@ -101,7 +101,7 @@ class Dog(models.Model):
     dna_notes = models.TextField(blank=True)
 
     # Notes
-    notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True, default='')
 
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

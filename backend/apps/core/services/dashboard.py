@@ -125,7 +125,7 @@ def get_recent_activity(user: "User", limit: int = 10) -> List[Dict[str, Any]]:
     
     return [
         {
-            "id": str(log.uuid),
+            "id": str(log.id),
             "action": log.action,
             "resource_type": log.resource_type,
             "resource_id": log.resource_id,
@@ -144,7 +144,7 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
     if user.role not in ["management", "admin", "sales"]:
         return None
     
-    from apps.sales.models import SalesAgreement
+    from apps.sales.models import SalesAgreement, AgreementStatus
     
     # Calculate date range
     end_date = date.today()
@@ -152,7 +152,7 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
     
     # Base queryset
     agreements = SalesAgreement.objects.filter(
-        status=SalesAgreement.Status.COMPLETED,
+        status=AgreementStatus.COMPLETED,
         signed_at__gte=start_date,
         signed_at__lte=end_date,
     )
@@ -174,7 +174,7 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
         )
         
         total_sales = month_agreements.aggregate(
-            total=Sum('total_price')
+            total=Sum('total_amount')
         )['total'] or Decimal('0')
         
         # Calculate GST (price * 9 / 109)
@@ -250,16 +250,16 @@ def get_dashboard_metrics(user: "User") -> Dict[str, Any]:
     
     if user.role in ["sales", "admin", "management"]:
         # Sales sees pipeline metrics
-        from apps.sales.models import SalesAgreement
+        from apps.sales.models import SalesAgreement, AgreementStatus
         pipeline = SalesAgreement.objects.filter(
-            status__in=[SalesAgreement.Status.DRAFT, SalesAgreement.Status.SIGNED]
+            status__in=[AgreementStatus.DRAFT, AgreementStatus.SIGNED]
         )
         if entity_id:
             pipeline = pipeline.filter(entity_id=entity_id)
         
         response["sales_pipeline"] = {
-            "draft_count": pipeline.filter(status=SalesAgreement.Status.DRAFT).count(),
-            "signed_count": pipeline.filter(status=SalesAgreement.Status.SIGNED).count(),
+            "draft_count": pipeline.filter(status=AgreementStatus.DRAFT).count(),
+            "signed_count": pipeline.filter(status=AgreementStatus.SIGNED).count(),
         }
     
     return response
