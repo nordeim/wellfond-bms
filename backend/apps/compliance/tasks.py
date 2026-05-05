@@ -148,7 +148,7 @@ def lock_expired_submissions(self):
                 with transaction.atomic():
                     submission.status = NParksStatus.LOCKED
                     submission.locked_at = timezone.now()
-                    submission.save(update_fields=["status", "locked_at", "updated_at"])
+                    submission.save(update_fields=["status", "locked_at"])
                     
                     logger.info(f"Auto-locked NParks submission {submission.id}")
                     locked_count += 1

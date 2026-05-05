@@ -63,7 +63,7 @@ export function isAllowedPath(path: string): boolean {
   // Matches: /auth, /users, /dogs, /breeding, /sales, /compliance,
   //          /customers, /finance, /operations
   // Followed by optional path segments (sub-paths)
-  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations)(\/.*|$)/;
+  const allowedPattern = /^\/(auth|users|dogs|breeding|sales|compliance|customers|finance|operations|stream|alerts)(\/.*|$)/;
   return allowedPattern.test(normalized);
 }
 

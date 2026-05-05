@@ -159,11 +159,14 @@ def send_whelping_reminders():
     }
 
 
-@shared_task
-def archive_old_logs():
+@shared_task(bind=True, max_retries=2)
+def archive_old_logs(self):
     """
-    Archive logs older than retention period.
-    Runs monthly.
+    Delete ground operation logs older than retention period.
+    Runs monthly via Celery beat.
+
+    Retention: 2 years (730 days).
+    Logs deletion counts to audit trail before removing.
     """
     from .models import (
         InHeatLog,
@@ -174,13 +177,13 @@ def archive_old_logs():
         NursingFlagLog,
         NotReadyLog,
     )
+    from apps.core.models import AuditLog
 
-    retention_days = 365 * 2  # 2 years
+    retention_days = 365 * 2
     cutoff_date = timezone.now() - timedelta(days=retention_days)
 
     archived_counts = {}
 
-    # Archive each log type
     log_models = [
         InHeatLog,
         MatedLog,
@@ -194,13 +197,28 @@ def archive_old_logs():
     for model in log_models:
         old_logs = model.objects.filter(created_at__lt=cutoff_date)
         count = old_logs.count()
-        # FIX CRIT-008: Remove invalid update(is_active=False) as log models lack this field
-        # TODO: Implement actual archival (e.g. move to archive table)
-        archived_counts[model.__name__] = count
+        if count > 0:
+            archived_counts[model.__name__] = count
+            old_logs.delete()
+
+    if archived_counts:
+        AuditLog.objects.create(
+            actor=None,
+            action=AuditLog.Action.DELETE,
+            resource_type="GroundLogArchive",
+            resource_id="system",
+            payload={
+                "retention_days": retention_days,
+                "cutoff_date": cutoff_date.isoformat(),
+                "deleted_counts": archived_counts,
+            },
+        )
+        logger.info(f"Archived old logs: {archived_counts}")
 
     return {
         "status": "success",
         "archived_counts": archived_counts,
+        "cutoff_date": cutoff_date.isoformat(),
     }
 
 
@@ -220,15 +238,65 @@ def check_overdue_vaccines():
     return {"status": "success", "overdue_count": overdue_count}
 
 
-@shared_task
-def check_rehome_overdue():
+@shared_task(bind=True, max_retries=2)
+def check_rehome_overdue(self):
     """
     Check for dogs approaching or past rehome age.
-    Runs daily via Celery beat.
+    Runs daily via Celery beat at 8:05am SGT.
+
+    Flags dogs aged 5+ (yellow) and 6+ (red) using Dog.rehome_flag.
+    Logs results to AuditLog for management dashboard visibility.
     """
-    # FIX CRIT-006: Define missing task referenced in schedule
-    # Logic is implemented in alerts service retrieval
-    return {"status": "success"}
+    from .models import Dog
+    from apps.core.models import AuditLog
+
+    today = date.today()
+    five_years_ago = today - timedelta(days=5 * 365)
+
+    dogs = Dog.objects.filter(
+        dob__lte=five_years_ago,
+        status=Dog.Status.ACTIVE,
+    ).select_related("entity")
+
+    flagged = {"yellow": [], "red": []}
+
+    for dog in dogs:
+        flag = dog.rehome_flag
+        if flag:
+            flagged[flag].append({
+                "dog_id": str(dog.id),
+                "dog_name": dog.name,
+                "entity": dog.entity.name if dog.entity else "Unknown",
+                "age": dog.age_display,
+            })
+
+    total_flagged = len(flagged["yellow"]) + len(flagged["red"])
+
+    if total_flagged > 0:
+        logger.warning(
+            f"Rehome overdue: {len(flagged['red'])} red, "
+            f"{len(flagged['yellow'])} yellow flags"
+        )
+
+        AuditLog.objects.create(
+            actor=None,
+            action=AuditLog.Action.UPDATE,
+            resource_type="RehomeOverdue",
+            resource_id="system",
+            payload={
+                "red_count": len(flagged["red"]),
+                "yellow_count": len(flagged["yellow"]),
+                "red_dogs": flagged["red"][:20],
+                "yellow_dogs": flagged["yellow"][:20],
+            },
+        )
+
+    return {
+        "status": "success",
+        "red_count": len(flagged["red"]),
+        "yellow_count": len(flagged["yellow"]),
+        "total_flagged": total_flagged,
+    }
 
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=300)

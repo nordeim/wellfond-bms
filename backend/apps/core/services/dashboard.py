@@ -153,8 +153,8 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
     # Base queryset
     agreements = SalesAgreement.objects.filter(
         status=AgreementStatus.COMPLETED,
-        signed_at__gte=start_date,
-        signed_at__lte=end_date,
+        completed_at__date__gte=start_date,
+        completed_at__date__lte=end_date,
     )
     
     # Entity scoping
@@ -169,8 +169,8 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
         month_end = (current.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         
         month_agreements = agreements.filter(
-            signed_at__gte=current,
-            signed_at__lte=month_end
+            completed_at__date__gte=current,
+            completed_at__date__lte=month_end
         )
         
         total_sales = month_agreements.aggregate(

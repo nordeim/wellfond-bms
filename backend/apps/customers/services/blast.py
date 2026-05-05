@@ -267,8 +267,7 @@ class BlastService:
         """
         Send email via Resend SDK.
 
-        PLACEHOLDER: Replace with actual Resend SDK integration
-        https://resend.com/docs/api-reference/emails/send-email
+        Falls back to logged placeholder if RESEND_API_KEY is not configured.
 
         Args:
             customer: Customer to email
@@ -279,28 +278,40 @@ class BlastService:
         Returns:
             Dict with status and external_id
         """
-        # Validate rate limit
+        if not customer.email:
+            return {"status": "FAILED", "error": "No email address"}
+
         if not BlastService._rate_limiter.acquire():
             logger.warning(f"Rate limit hit for email to {customer.email}")
             return {"status": "RATE_LIMITED", "error": "Rate limit exceeded"}
 
-        # PLACEHOLDER: Replace with actual Resend SDK call
-        # import resend
-        # resend.api_key = settings.RESEND_API_KEY
-        # response = resend.Emails.send({
-        #     "from": "marketing@wellfond.sg",
-        #     "to": customer.email,
-        #     "subject": subject,
-        #     "html": body,
-        # })
+        try:
+            import resend
+            from django.conf import settings
 
-        # Simulated response for now
-        logger.info(f"EMAIL [PLACEHOLDER] to {customer.email}: {subject[:50]}...")
+            api_key = getattr(settings, "RESEND_API_KEY", None)
+            if not api_key:
+                logger.warning(f"RESEND_API_KEY not configured; email to {customer.email} logged only")
+                return {"status": "FAILED", "error": "RESEND_API_KEY not configured"}
 
-        return {
-            "status": "SENT",
-            "external_id": f"resend_placeholder_{customer.id}",
-        }
+            resend.api_key = api_key
+            response = resend.Emails.send({
+                "from": getattr(settings, "EMAIL_FROM", "noreply@wellfond.sg"),
+                "to": customer.email,
+                "subject": subject,
+                "html": body,
+            })
+
+            return {
+                "status": "SENT",
+                "external_id": response.get("id", ""),
+            }
+        except ImportError:
+            logger.warning(f"Resend SDK not installed; email to {customer.email} logged only")
+            return {"status": "FAILED", "error": "Resend SDK not installed"}
+        except Exception as e:
+            logger.error(f"Email send failed to {customer.email}: {e}")
+            return {"status": "FAILED", "error": str(e)}
 
     @staticmethod
     def send_whatsapp(
@@ -309,10 +320,10 @@ class BlastService:
         blast_id: Optional[UUID] = None,
     ) -> dict:
         """
-        Send WhatsApp via Business Cloud API.
+        Send WhatsApp via Meta Business Cloud API.
 
-        PLACEHOLDER: Replace with actual WhatsApp Business SDK integration
-        https://developers.facebook.com/docs/whatsapp/cloud-api
+        Not yet integrated — returns FAILED until Meta Business verification
+        and phone number registration are complete.
 
         Args:
             customer: Customer to message
@@ -320,25 +331,19 @@ class BlastService:
             blast_id: Optional blast ID for tracking
 
         Returns:
-            Dict with status and external_id
+            Dict with status and error
         """
-        # Validate rate limit
+        if not customer.mobile:
+            return {"status": "FAILED", "error": "No mobile number"}
+
         if not BlastService._rate_limiter.acquire():
             logger.warning(f"Rate limit hit for WA to {customer.mobile}")
             return {"status": "RATE_LIMITED", "error": "Rate limit exceeded"}
 
-        # PLACEHOLDER: Replace with actual WhatsApp API call
-        # Would use requests.post to:
-        # https://graph.facebook.com/v18.0/{phone_number_id}/messages
-        # with authentication and proper formatting
-
-        # Simulated response for now
-        logger.info(f"WHATSAPP [PLACEHOLDER] to {customer.mobile}: {body[:50]}...")
-
-        return {
-            "status": "SENT",
-            "external_id": f"wa_placeholder_{customer.id}",
-        }
+        logger.warning(
+            f"WhatsApp Business API not configured — message NOT sent to {customer.mobile}"
+        )
+        return {"status": "FAILED", "error": "WhatsApp API not configured"}
 
     @staticmethod
     def log_communication(
@@ -383,19 +388,30 @@ class BlastService:
         """
         Handle bounced message.
 
+        Creates a new CommunicationLog entry with BOUNCED status.
+        The original SENT entry is preserved for audit trail integrity.
+
         Args:
             customer: Customer
             external_id: External provider ID
             reason: Bounce reason
         """
         try:
-            log = CommunicationLog.objects.get(
+            original_log = CommunicationLog.objects.get(
                 external_id=external_id,
                 customer=customer,
             )
-            log.status = "BOUNCED"
-            log.error_message = reason
-            log.save()
+            CommunicationLog.objects.create(
+                customer=customer,
+                blast_id=original_log.blast_id,
+                channel=original_log.channel,
+                status="BOUNCED",
+                subject=original_log.subject,
+                message_preview=f"[BOUNCE] {reason}"[:200],
+                external_id=external_id,
+                error_message=reason,
+                sent_at=datetime.now(),
+            )
             logger.warning(f"Bounced: {external_id} - {reason}")
         except CommunicationLog.DoesNotExist:
             logger.error(f"Bounce for unknown message: {external_id}")

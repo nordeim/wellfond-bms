@@ -159,21 +159,6 @@ CELERY_TASK_ROUTES = {
     "apps.customers.tasks.*": {"queue": "default"},
     "apps.operations.tasks.*": {"queue": "low"},
 }
-CELERY_BEAT_SCHEDULE = {
-    "avs-reminder-check": {
-        "task": "apps.sales.tasks.check_avs_reminders",
-        "schedule": 60 * 60 * 24,  # Daily
-    },
-    "check-overdue-vaccines": {
-        "task": "apps.operations.tasks.check_overdue_vaccines",
-        "schedule": 60 * 60 * 24,  # Daily
-    },
-    "check-rehome-overdue": {
-        "task": "apps.operations.tasks.check_rehome_overdue",
-        "schedule": 60 * 60 * 24,  # Daily
-    },
-}
-
 # ---------------------------------------------------------------------------
 # Password validation
 # ---------------------------------------------------------------------------

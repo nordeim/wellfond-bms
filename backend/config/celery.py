@@ -15,7 +15,7 @@ app.autodiscover_tasks()
 # ---------------------------------------------------------------------------
 app.conf.beat_schedule = {
     "avs-reminder-check": {
-        "task": "apps.sales.tasks.avs_reminder_check",
+        "task": "apps.sales.tasks.check_avs_reminders",
         "schedule": crontab(hour=9, minute=0),  # Daily 9am SGT
     },
     "check-overdue-vaccines": {

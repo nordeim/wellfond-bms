@@ -1,6 +1,20 @@
 """Production settings."""
 
+import sys
 from .base import *  # noqa: F401,F403
+
+# ---------------------------------------------------------------------------
+# Validate required environment variables
+# ---------------------------------------------------------------------------
+_REQUIRED_ENV_VARS = [
+    "DJANGO_SECRET_KEY",
+    "POSTGRES_PASSWORD",
+]
+
+_missing = [var for var in _REQUIRED_ENV_VARS if not os.environ.get(var)]  # noqa: F405
+if _missing:
+    print(f"FATAL: Missing required environment variables: {', '.join(_missing)}")
+    sys.exit(1)
 
 DEBUG = False
 
