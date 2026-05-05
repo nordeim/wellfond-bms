@@ -14,10 +14,26 @@ SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() == "
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 X_FRAME_OPTIONS = "DENY"
 
-# Session cookies — secure in production
+# Session & CSRF cookies — secure flag only over HTTPS
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# Strict CSP (no unsafe-eval)
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_REPORT_ONLY = False
+# ---------------------------------------------------------------------------
+# Content Security Policy (django-csp v4 – enforced mode)
+# ---------------------------------------------------------------------------
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'", "'unsafe-inline'"],  # Tailwind JIT requires inline styles
+        "img-src": ["'self'", "data:"],
+        "connect-src": ["'self'"],
+        "font-src": ["'self'"],
+    }
+}
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {}  # No report-only policy; enforcement is active
+
+# ---------------------------------------------------------------------------
+# CSRF trusted origins (set via environment variable if needed)
+# ---------------------------------------------------------------------------
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if os.environ.get("CSRF_TRUSTED_ORIGINS") else []
