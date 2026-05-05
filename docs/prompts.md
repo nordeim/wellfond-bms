@@ -84,6 +84,10 @@ awesome meticulous job so far. please keep up the good work. now, please plan an
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review and analyze the test failures in `python -m pytest apps/customers/tests/ -v --tb=short -p no:xdist 2>&1` , particularly the issue of 'missing tables', systematically and methodically compare to (validate against) the actual codebase to identify the root causes and the optimal fixes. carefully evaluate and do a thorough investigation to validate the root causes and find the optimal fixes for the test failures.
+
+---
+
 awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 1. Re-evaluate and re-validate the issues identified in earlier validation

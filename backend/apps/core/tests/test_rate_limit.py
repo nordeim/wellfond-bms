@@ -6,6 +6,7 @@ TDD Phase 3: Write failing test before implementation.
 """
 
 import pytest
+from decimal import Decimal
 from django.test import Client
 from django.core.cache import cache
 

@@ -10,6 +10,7 @@ import pytest
 from django.test import TestCase
 
 from apps.core.tests.factories import EntityFactory, UserFactory
+from apps.operations.tests.factories import DogFactory
 from apps.operations.models import Dog
 from apps.operations.services.importers import (
     import_dogs, import_litters, ImportResult, validate_microchip

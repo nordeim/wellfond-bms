@@ -13,6 +13,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.core.models import Entity, User
+from apps.customers.models import Customer
 
 from ..models import PDPAConsentLog, PDPAAction
 from ..services.pdpa import PDPAService
@@ -150,15 +151,27 @@ class TestPDPAConsentLog(TestCase):
         """
         Test blast eligibility splits customers correctly.
         """
-        # Create test customer IDs
-        customer_ids = [uuid.uuid4() for _ in range(5)]
+        from apps.customers.models import Customer
 
-        # Mock check (Phase 7 will implement actual filtering)
+        consented = Customer.objects.create(
+            pdpa_consent=True,
+            mobile=f"+65-{uuid.uuid4().hex[:8]}",
+            entity=self.entity,
+        )
+        not_consented = Customer.objects.create(
+            pdpa_consent=False,
+            mobile=f"+65-{uuid.uuid4().hex[:8]}",
+            entity=self.entity,
+        )
+
+        customer_ids = [consented.id, not_consented.id]
         result = PDPAService.check_blast_eligibility(customer_ids)
 
         self.assertIsInstance(result.eligible_ids, list)
         self.assertIsInstance(result.excluded_ids, list)
         self.assertEqual(result.eligible_count + result.excluded_count, len(customer_ids))
+        self.assertEqual(result.eligible_count, 1)
+        self.assertEqual(result.excluded_count, 1)
 
     def test_no_override_path(self):
         """
