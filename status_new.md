@@ -708,3 +708,78 @@ Relevant Files
 - backend/apps/operations/tests/test_vaccination_importerror.py: H-006 import error tests.
 - backend/apps/customers/tests/test_segment_filters_json.py: H-010 filters_json validation tests.
 - backend/apps/operations/tests/test_whelpedpup_entity.py: H-011 entity FK tests.
+
+---
+
+📊 What Was Updated
+1. README.md (972 → 1056 lines, +84 lines)
+Added a complete Round 3 Audit Remediation section documenting:
+- 7 Critical fixes (C-001 through C-007)
+- 12 High-Severity fixes (H-001 through H-012) 
+- 6 new migrations created during remediation
+- 19 test files (36 backend + 8 frontend = 44 tests, all passing)
+- 12 key lessons learned from the remediation
+---
+2. AGENTS.md (229 → 254 lines, +25 lines)
+Updated with 12 new anti-patterns in the "Anti-Patterns & Critical Gotchas" table:
+New Anti-Pattern	What It Prevents
+Secret Key Fallback	Silent security downgrade
+Unique CharField without null	IntegrityError on empty strings
+BFF URL unvalidated	Runtime silent failures
+PII on models without consent	PDPA/GDPR violations
+Hard Delete on compliance	Irreversible audit loss
+Idempotent Non-JSON	Duplicate processing
+Idempotent Mutable	Mutating append-only data
+Broad ImportError	Swallowing legitimate errors
+Cascade Entity	Accidental child data loss
+UUIDs returned raw	Serialization failures
+Unvalidated JSONField	Injection/broken rendering
+Missing Entity FK	Data orphaning
+Also added 4 new troubleshooting tips:
+- Idempotency non-JSON responses
+- JSONField schema validation
+- UUID to string conversion
+- Entity FK from day one
+---
+3. CLAUDE.md (947 → 1193 lines, +246 lines)
+Added three major sections:
+1. Round 3 Audit Remediation — Complete documentation of C-001 through H-012 with files changed and fixes applied
+2. 12 New Anti-Patterns in the "Anti-Patterns to Avoid" section
+3. "Round 3 Fixes" Troubleshooting with code examples for:
+   - SECRET_KEY fallback
+   - Customer.mobile uniqueness
+   - BACKEND_INTERNAL_URL validation
+   - NParks soft delete
+   - lock_expired_submissions FieldError
+   - Idempotency double-processing
+   - GSTLedger mutation
+   - Segment.filters_json validation
+   - WhelpedPup entity FK
+   - Testing tips and migration order
+---
+✅ Verification Status
+Check	Status
+README.md Round 3 section	✅ Present
+All 7 Critical fixes documented	✅ C-001 to C-007
+All 12 High fixes documented	✅ H-001 to H-012
+12 new anti-patterns in AGENTS.md	✅ Added
+Round 3 section in CLAUDE.md	✅ Added
+Round 3 troubleshooting in CLAUDE.md	✅ Added
+Test consistency (44/44 passing)	✅ 36 backend + 8 frontend
+Zero regressions	✅ Confirmed
+---
+📚 Key Takeaways for Future Developers
+1. Secret keys must fail loud — No fallback strings
+2. unique=True needs null=True on CharField
+3. Validate env vars at build AND runtime
+4. PII must flow through consent-gated models (SalesAgreement)
+5. Soft delete (is_active=False) for all compliance data
+6. Idempotency markers are response-type aware
+7. get_or_create not update_or_create for append-only data
+8. Catch only the import statement, never the function call
+9. Use PROTECT not CASCADE for entity FKs
+10. str() UUIDs before JSON callers
+11. Validate JSONField with clean()
+12. Design entity FK from day one — never retroactively
+All three documents are now consistent, accurate, and complete for the security audit remediation.
+
