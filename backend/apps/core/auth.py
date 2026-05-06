@@ -267,6 +267,11 @@ class AuthenticationService:
         except User.DoesNotExist:
             return None
 
+    @classmethod
+    def get_user_from_request(cls, request: HttpRequest) -> Optional[User]:
+        """Alias for get_current_user — used by routers expecting this name."""
+        return cls.get_current_user(request)
+
 
 def get_client_ip(request: HttpRequest) -> Optional[str]:
     """Extract client IP from request."""

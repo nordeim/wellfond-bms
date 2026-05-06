@@ -100,6 +100,16 @@ async function proxyRequest(
     );
   }
 
+  // Content-Length limit: 10 MB max request body
+  const MAX_BODY_SIZE = 10 * 1024 * 1024;
+  const contentLength = request.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+    return NextResponse.json(
+      { error: 'Request body too large' },
+      { status: 413 }
+    );
+  }
+
   // Build backend URL
   const backendUrl = `${BACKEND_URL}/api/v1${cleanPath}${searchParams}`;
 

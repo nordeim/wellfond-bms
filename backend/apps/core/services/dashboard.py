@@ -183,23 +183,27 @@ def get_revenue_summary(user: "User", months: int = 6) -> Dict[str, Any] | None:
         monthly_data.append({
             "month": current.strftime("%Y-%m"),
             "month_label": current.strftime("%b %Y"),
-            "total_sales": float(total_sales),
-            "gst_collected": float(gst_collected),
+            "total_sales": str(total_sales),
+            "gst_collected": str(gst_collected),
         })
         
         current = month_end + timedelta(days=1)
         if current > end_date:
             break
     
-    # Totals
-    total_revenue = sum(m["total_sales"] for m in monthly_data)
-    total_gst = sum(m["gst_collected"] for m in monthly_data)
+    # Totals — sum Decimals directly, convert only at final result
+    total_revenue = sum(
+        Decimal(m["total_sales"]) for m in monthly_data
+    )
+    total_gst = sum(
+        Decimal(m["gst_collected"]) for m in monthly_data
+    )
     
     return {
         "period_months": months,
         "monthly_data": monthly_data,
-        "total_revenue": total_revenue,
-        "total_gst": total_gst,
+        "total_revenue": str(total_revenue),
+        "total_gst": str(total_gst),
     }
 
 

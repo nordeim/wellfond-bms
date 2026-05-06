@@ -20,6 +20,15 @@ const API_BASE_URL = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:8000'
 // BFF proxy path (Next.js handles this)
 const PROXY_PREFIX = '/api/proxy';
 
+// SECURITY: Prevent BACKEND_INTERNAL_URL from leaking to browser bundle.
+// NEXT_PUBLIC_* env vars are inlined by Next.js at build time and exposed to client JS.
+if (typeof window !== 'undefined' && process.env.BACKEND_INTERNAL_URL) {
+  console.error(
+    '[SECURITY] BACKEND_INTERNAL_URL is exposed in the browser bundle. '
+    + 'This environment variable must NOT be prefixed with NEXT_PUBLIC_.'
+  );
+}
+
 // =============================================================================
 // Error Handling
 // =============================================================================

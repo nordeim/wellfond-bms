@@ -92,6 +92,11 @@ awesome meticulous job so far. now, please meticulously review @README.md , @AGE
 
 ---
 
+please meticulously review and analyze @code_audit_new_summary_mimo_7.md , @wellfond-bms-audit-report.md and @wellfond-bms-remediation-plan.md , then validate the remediation plan against the codebase for correct alignment. 
+Now perform deep validation of every finding in the remediation plan against the actual source code. Start by verifying the root causes, line numbers, import paths,
+
+---
+
 awesome meticulous job on your review and analysis. please keep up the good work. now, please meticulously re-evaluate and re-validated the identified issues in your earlier validation round and to confirm the root cause and the optimal fix, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fix for the re-confirmed issues. review and validate the remediation plan against the codebase for correct alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 1. Re-evaluate and re-validate the issues identified in earlier validation

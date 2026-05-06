@@ -167,6 +167,7 @@ Fix the CSP settings per the migration guide (remove old CSP_* settings, keep on
 - the 500 is NotNullViolation on colour (NOT a UUID issue). The NinjaJSONEncoder handles UUIDs natively.
 - backend/apps/operations/models.py - add default='' to colour, unit, and notes
   colour = models.CharField(max_length=50, blank=True, default='')
+- Parallel test execution (pytest-xdist) causes deadlock detected and database does not exist errors — always use -p no:xdist for sequential runs
 
 ---
 

@@ -327,25 +327,51 @@ def get_all_alert_cards(user: "User", entity_id: str | None = None) -> List[dict
 # =============================================================================
 
 
-def get_pending_alerts(user: "User") -> List[dict]:
+def get_pending_alerts(
+    user: "User" = None,
+    *,
+    user_id: str = None,
+    entity_id: str = None,
+    role: str = None,
+    since_id: int = 0,
+    dog_id: str = None,
+) -> List[dict]:
     """
     Get pending alerts for SSE stream.
+
+    Accepts either a User object OR keyword arguments for async context
+    where passing ORM objects across thread boundaries is unsafe.
 
     Returns alerts that have not been acknowledged.
     Deduplicates by dog+type.
 
     Args:
         user: Current user for entity scoping
+        user_id: User UUID (kwarg path for async SSE context)
+        entity_id: Entity UUID (kwarg path for async SSE context)
+        role: User role string (kwarg path for async SSE context)
+        since_id: Last seen event ID for deduplication
+        dog_id: Filter alerts to specific dog
 
     Returns:
         List of alert events for SSE
     """
-    entity_id = str(user.entity_id) if user.entity_id and user.role != "management" else None
+    if user is not None:
+        resolved_entity_id = (
+            str(user.entity_id)
+            if user.entity_id and user.role != "management"
+            else None
+        )
+    else:
+        if role == "management":
+            resolved_entity_id = None
+        else:
+            resolved_entity_id = entity_id
 
     events = []
 
     # Nursing flags (highest priority for SSE)
-    nursing = get_nursing_flags(entity_id)
+    nursing = get_nursing_flags(resolved_entity_id)
     for alert in nursing:
         events.append({
             "id": f"nursing-{alert['dog_id']}",
@@ -358,7 +384,7 @@ def get_pending_alerts(user: "User") -> List[dict]:
         })
 
     # Heat cycles
-    heat = get_in_heat(entity_id)
+    heat = get_in_heat(resolved_entity_id)
     for alert in heat:
         events.append({
             "id": f"heat-{alert['dog_id']}",
@@ -371,7 +397,7 @@ def get_pending_alerts(user: "User") -> List[dict]:
         })
 
     # Vaccine overdue
-    vaccines = get_vaccine_overdue(entity_id)
+    vaccines = get_vaccine_overdue(resolved_entity_id)
     for alert in vaccines:
         events.append({
             "id": f"vaccine-{alert['dog_id']}",
@@ -384,7 +410,7 @@ def get_pending_alerts(user: "User") -> List[dict]:
         })
 
     # Rehome overdue
-    rehome = get_rehome_overdue(user, entity_id)
+    rehome = get_rehome_overdue(user, resolved_entity_id)
     for alert in rehome:
         events.append({
             "id": f"rehome-{alert['dog_id']}",
@@ -395,6 +421,10 @@ def get_pending_alerts(user: "User") -> List[dict]:
             "color": alert.get("color"),
             "timestamp": date.today().isoformat(),
         })
+
+    # Filter by specific dog if requested
+    if dog_id:
+        events = [e for e in events if e.get("dog_id") == dog_id]
 
     return events
 

@@ -4,9 +4,13 @@ Celery Tasks for Operations
 Background tasks for async processing and scheduled jobs.
 """
 
+import logging
 from celery import shared_task
+from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta, date
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -58,7 +62,7 @@ def generate_health_alert(self, log_id: str, alert_type: str):
             return {"status": "error", "message": "Unknown alert type"}
 
         # Create alert event
-        event = create_alert_event(log)
+        event = create_alert_event(alert_type, log)
 
         return {
             "status": "success",
@@ -194,26 +198,33 @@ def archive_old_logs(self):
         NotReadyLog,
     ]
 
-    for model in log_models:
-        old_logs = model.objects.filter(created_at__lt=cutoff_date)
-        count = old_logs.count()
-        if count > 0:
-            archived_counts[model.__name__] = count
-            old_logs.delete()
+    with transaction.atomic():
+        for model in log_models:
+            old_logs = model.objects.filter(created_at__lt=cutoff_date)
+            count = old_logs.count()
+            if count > 0:
+                archived_counts[model.__name__] = count
 
-    if archived_counts:
-        AuditLog.objects.create(
-            actor=None,
-            action=AuditLog.Action.DELETE,
-            resource_type="GroundLogArchive",
-            resource_id="system",
-            payload={
-                "retention_days": retention_days,
-                "cutoff_date": cutoff_date.isoformat(),
-                "deleted_counts": archived_counts,
-            },
-        )
-        logger.info(f"Archived old logs: {archived_counts}")
+        if archived_counts:
+            AuditLog.objects.create(
+                actor=None,
+                action=AuditLog.Action.DELETE,
+                resource_type="GroundLogArchive",
+                resource_id="system",
+                payload={
+                    "retention_days": retention_days,
+                    "cutoff_date": cutoff_date.isoformat(),
+                    "deleted_counts": archived_counts,
+                },
+            )
+
+            logger.info(f"Archiving old logs: {archived_counts}")
+
+            for model in log_models:
+                if model.__name__ in archived_counts:
+                    model.objects.filter(created_at__lt=cutoff_date).delete()
+
+            logger.info(f"Archived old logs: {archived_counts}")
 
     return {
         "status": "success",
@@ -329,10 +340,10 @@ def sync_offline_queue(self, user_id: str):
 
             # Import and call appropriate service
             if log_type == "in_heat":
-                from .services import create_in_heat_log
+                from .services.log_creators import create_in_heat_log
                 create_in_heat_log(dog_id, data, idem_key)
             elif log_type == "mated":
-                from .services import create_mated_log
+                from .services.log_creators import create_mated_log
                 create_mated_log(dog_id, data, idem_key)
             # ... other log types
 
