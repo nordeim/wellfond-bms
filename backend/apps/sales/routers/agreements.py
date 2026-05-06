@@ -47,7 +47,9 @@ def create_agreement(request, data: AgreementCreate):
     if not user:
         raise HttpError(401, "Authentication required")
 
-    require_entity_access(request)
+    # Entity access check — non-management users can only create for their own entity
+    if user.role not in ["MANAGEMENT", "ADMIN"] and str(data.entity_id) != str(user.entity_id):
+        raise HttpError(403, "Cannot create agreement for different entity")
 
     try:
         agreement = AgreementService.create_agreement(

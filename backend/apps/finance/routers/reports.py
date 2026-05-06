@@ -14,6 +14,7 @@ Base: /api/v1/finance/
 Tags: ["finance"]
 """
 import datetime
+from datetime import date
 from typing import Any
 from uuid import UUID
 

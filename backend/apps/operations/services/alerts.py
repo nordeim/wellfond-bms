@@ -7,6 +7,8 @@ Dashboard alert cards data provider.
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, List
 
+from django.db import models
+
 if TYPE_CHECKING:
     from apps.core.models import User
     from ..models import Dog
@@ -238,9 +240,6 @@ def get_missing_parents(entity_id: str | None = None) -> List[dict]:
         }
         for dog in dogs[:10]
     ]
-
-
-from django.db import models
 
 
 def get_all_alert_cards(user: "User", entity_id: str | None = None) -> List[dict]:

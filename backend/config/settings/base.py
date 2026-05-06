@@ -126,6 +126,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "sessions"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG  # Secure flag — True in production, False in dev
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days
 
 # ---------------------------------------------------------------------------
