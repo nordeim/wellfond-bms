@@ -151,6 +151,18 @@ wellfond-bms/
 | **Decimal Defaults** | `DecimalField(default=0.09)` (float literal) | `DecimalField(default=Decimal("0.09"))` |
 | **Revenue Filters** | `signed_at__gte` in dashboard/finance | `completed_at__date__gte` for revenue recognition |
 | **Immutable Bounce** | Mutating `CommunicationLog.status` in `handle_bounce` | Create new BOUNCED entry (append-only) |
+| **Secret Key Fallback** | Hard-coding SECRET_KEY fallback in settings | Use `os.environ["DJANGO_SECRET_KEY"]` with no fallback — fail loud |
+| **Unique CharField** | `CharField(unique=True)` without `null=True` | Add `null=True, blank=True` + convert `""` to `None` in `save()` |
+| **BFF URL** | `BACKEND_INTERNAL_URL` unvalidated in BFF proxy | Validate at build time (next.config.ts) AND runtime (route.ts) |
+| **PII Unchecked** | Storing PII fields on models without `pdpa_consent` | Route through consent-gated models (e.g., `SalesAgreement`); remove or gate |
+| **Hard Delete** | `.delete()` on compliance/audit records | Soft delete (`is_active=False`) for all compliance models |
+| **Idempotent Non-JSON** | Deleting processing marker on any success | Only delete on verified JSON 200; non-JSON (PDF/SSE) keeps marker for TTL |
+| **Idempotent Mutable** | Using `update_or_create()` on immutable models | Use `get_or_create()` or pure `create()` for append-only models |
+| **Broad ImportError** | Catching `ImportError` around entire function calls | Wrap only the `import` statement, not the function call |
+| **Cascade Entity** | `on_delete=CASCADE` on FKs to entities | Use `on_delete=PROTECT` for entity FKs to prevent accidental data loss |
+| **UUID Raw** | Returning UUID objects unsafely from model helpers | Always `str()` UUIDs before returning to JSON-bound callers |
+| **Unvalidated JSON** | Accepting arbitrary `JSONField` without schema validation | Add `clean()` with structure/key validation for all user-provided JSON |
+| **Missing Entity FK** | Models that should be entity-scoped lacking `entity` FK | Design `entity` FK into models from day one; never retroactively |
 
 django-csp 4.0 requires the OLD CSP_* settings to be removed — their mere presence causes csp.E001.
 The CSP error is clear — django-csp 4.0 requires removal of old CSP_* prefix settings.
@@ -202,6 +214,19 @@ Apply to all immutable models: `AuditLog`, `PDPAConsentLog`, `CommunicationLog`.
 - **WhatsApp Placeholder:** Return `"status": "FAILED"` instead of fake `"SENT"` for unintegrated services. False-positive success responses mask operational gaps.
 - **pytest-xdist Database Contention:** Parallel test processes share the same PostgreSQL test database, causing deadlocks, missing-table errors, and `IntegrityError: duplicate key`. Use `-p no:xdist` for reliable sequential execution in development.
 - **Customer Unique Constraints:** `Customer.mobile` has `unique=True` without `null=True` or `blank=True`. Multiple test-created `Customer` objects with default empty-string mobile collide. Always assign unique mobile values in tests.
+- **Idempotency Non-JSON Responses:** The idempotency middleware must NOT delete processing markers on non-JSON success responses (e.g., PDF, SSE). These responses cannot be cached or verified. Only JSON 200 responses should clear the marker. For non-JSON, let the 24h TTL expire the marker naturally, or error responses delete it.
+- **JSONField Schema Validation:** Never accept arbitrary `JSONField` data without `clean()` structure validation. `Segment.filters_json` caused broken frontend rendering because it accepted any JSON. Always validate keys and structure:
+  ```python
+  def clean(self):
+      if self.filters_json == ""all"":
+          return
+      if not isinstance(self.filters_json, dict):
+          raise ValidationError("filters_json must be a dict or 'all'")
+      if set(self.filters_json.keys()) - {"AND", "OR"}:
+          raise ValidationError("Only 'AND', 'OR' keys allowed")
+  ```
+- **UUID to String Conversion:** `NinjaJSONEncoder` handles UUIDs in API responses, but model helper methods must `str()` UUIDs before returning to JSON-bound callers (e.g., `refresh()` returning `user.entity_id`).
+- **Entity FK from Day One:** Adding `entity` FK to models retroactively (e.g., `WhelpedPup`) requires a migration and may leave existing data orphaned. Design entity scoping into models from the start.
 - need to set env variable 'DJANGO_SECRET_KEY="test-key"' before executing `backend/` scripts
 - export BACKEND_INTERNAL_URL='http://127.0.0.1:8000' before `npm run build` in `frontend/`
 

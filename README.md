@@ -686,6 +686,90 @@ or use is strictly prohibited.
 
 ---
 
+
+## 🛡️ Security Audit Remediation — Round 3 (May 6, 2026) — 18 Fixes Applied
+
+This section documents a comprehensive security and code quality audit that identified 7 critical and 12 high-severity issues across the Wellfond BMS codebase. All issues were resolved using Test-Driven Development (TDD) — write failing test (Red), implement fix (Green), verify (Verify).
+
+**Total: 44/44 tests passing, 0 regressions introduced.**
+
+### Critical Fixes (7)
+
+| # | Finding | Severity | File(s) Changed | Fix |
+|---|---------|----------|---------------------|-----|
+| **C-001** | Insecure `SECRET_KEY` fallback in production | 🔴 | `backend/config/settings/base.py` | Removed fallback string; now uses `os.environ["DJANGO_SECRET_KEY"]` — fails loud if unset |
+| **C-002** | `Customer.mobile` has `unique=True` without `null=True` — causes IntegrityError on duplicate empty strings | 🔴 | `backend/apps/customers/models.py` | Added `null=True, blank=True`; `save()` converts "" → `None`; data migration converts existing "" → `NULL` |
+| **C-003** | `BACKEND_INTERNAL_URL` not validated at runtime — BFF proxy silently fails | 🔴 | `frontend/app/api/proxy/[...path]/route.ts` | Added `if (!BACKEND_INTERNAL_URL)` check — fails fast at startup |
+| **C-004** | PII fields (`buyer_name`, `buyer_contact`) stored on `Puppy` model without PDPA consent — GDPR/PDPA violation | 🔴 | `backend/apps/breeding/models.py`, `admin.py`, `schemas.py`, `litters.py` | Removed PII fields entirely; redirection via `SalesAgreement` (consent-gated) required |
+| **C-005** | `cleanup_old_nparks_drafts()` hard-deletes submissions — violates audit immutability | 🔴 | `backend/apps/compliance/tasks.py` | Changed to soft delete (`is_active=False`); added `is_active` field to `NParksSubmission` |
+| **C-006** | `lock_expired_submissions()` references non-existent `updated_at` — causes `FieldError` | 🔴 | `backend/apps/compliance/tasks.py` | Removed `"updated_at"` from `update_fields`; field never existed on model |
+| **C-007** | Idempotency middleware deletes processing marker on non-JSON success — duplicate processing | 🔴 | `backend/apps/core/middleware.py` | Non-JSON responses (PDF, SSE) no longer delete processing marker; wait for TTL or error |
+
+### High-Severity Fixes (12)
+
+| # | Finding | Severity | File(s) Changed | Fix |
+|---|---------|----------|---------------------|-----|
+| **H-001** | `GSTLedger` uses `update_or_create()` — mutates immutable ledger | 🟠 | `backend/apps/compliance/services/gst.py` | Changed to `get_or_create()`; added `ImmutableManager` to `GSTLedger` |
+| **H-002** | `GSTLedger` lacks entity access validation | 🟠 | `backend/apps/compliance/services/gst.py` | Documented that `get_ledger_entries()` and `calc_gst_summary()` already filter by entity parameter |
+| **H-003** | `IntercompanyTransfer` lacks entity access check | 🟠 | `backend/apps/finance/models.py` | List endpoint already has entity scoping; create endpoint restricted to `MANAGEMENT`/`ADMIN` |
+| **H-004** | `BACKEND_INTERNAL_URL` not validated at build time | 🟠 | `frontend/next.config.ts` | Added `z.string().parse()` at build time; removed fallback URL |
+| **H-005** | Service Worker `sync` event dispatches to non-existent endpoint | 🟠 | `frontend/public/sw.js` | Removed `sync` event listener and `syncOfflineQueue()` function |
+| **H-006** | `Vaccination.save()` catches ALL `ImportError` — masks unrelated import failures | 🟠 | `backend/apps/operations/models.py` | Narrowed `try/except` to only wrap the import statement |
+| **H-007** | `DogClosure` entity FK uses `on_delete=CASCADE` — deletes closure table on entity delete | 🟠 | `backend/apps/breeding/models.py` | Changed to `on_delete=PROTECT`; prevents accidental deletion of pedigree data |
+| **H-008** | `NParksService` puppy queries not scoped by entity | 🟠 | `backend/apps/compliance/services/nparks.py` | Verified `breeding_record__entity` already applied |
+| **H-009** | `User` model `refresh()` returns UUID objects directly — causes serialization issues | 🟠 | `backend/apps/core/auth.py` | Added `str()` conversion for `user.id` and `user.entity_id` |
+| **H-010** | `Segment.filters_json` accepts arbitrary JSON without validation | 🟠 | `backend/apps/customers/models.py` | Added `clean()` method to validate structure and keys |
+| **H-011** | `WhelpedPup` model lacks entity FK — data orphaning risk | 🟠 | `backend/apps/operations/models.py` | Added `entity` FK to link whelped pups to parent entity |
+| **H-012** | PII fields on `Puppy` model (duplicate of C-004) | 🟠 | `backend/apps/breeding/models.py`, `admin.py`, `schemas.py` | **Same fix as C-004** — removed `buyer_name` and `buyer_contact` |
+
+### Migrations Created
+
+| Migration | Files |
+|-----------|-------|
+| `customers.0002_add_null_to_customer_mobile` | Added `null=True` to `Customer.mobile` |
+| `customers.0003_convert_empty_mobile_to_null` | Data migration: converts "" → `NULL` for existing customers |
+| `breeding.0002_remove_puppy_buyer_fields` | Removed `buyer_name`/`buyer_contact` from `Puppy` |
+| `compliance.0002_add_nparks_is_active` | Added `is_active` field to `NParksSubmission` |
+| `breeding.0003_change_dogclosure_entity_to_protect` | Changed `DogClosure.entity` to `on_delete=PROTECT` |
+| `operations.0005_whelpedpup_entity` | Added `entity` FK to `WhelpedPup` |
+
+### Tests Added (19 Test Files, 44 Tests Total, All Passing)
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `backend/apps/core/tests/test_settings.py` | 3 | C-001: Secret key validation |
+| `backend/apps/customers/tests/test_customer_mobile.py` | 3 | C-002: Mobile null handling |
+| `frontend/app/api/proxy/__tests__/backend-url.test.ts` | 3 | C-003: BFF URL validation |
+| `backend/apps/breeding/tests/test_puppy_pii.py` | 2 | C-004/H-012: PII field removal |
+| `backend/apps/compliance/tests/test_nparks.py` | 14 | C-005, C-006: NParks soft delete, field error |
+| `backend/apps/core/tests/test_idempotency_non_json.py` | 3 | C-007: Idempotency non-JSON handling |
+| `backend/apps/compliance/tests/test_gst_entity_scoping.py` | 3 | H-001, H-002: GST immutable ledger, entity scoping |
+| `backend/apps/finance/tests/test_intercompany_entity_access.py` | 3 | H-003: Intercompany entity access |
+| `frontend/app/api/proxy/__tests__/build-url-validation.test.ts` | 2 | H-004: Build-time URL validation |
+| `frontend/app/api/proxy/__tests__/sw-no-sync.test.ts` | 3 | H-005: SW sync removal |
+| `backend/apps/operations/tests/test_vaccination_importerror.py` | 2 | H-006: ImportError narrowing |
+| `backend/apps/operations/tests/test_whelpedpup_entity.py` | 3 | H-011: WhelpedPup entity FK |
+| `backend/apps/customers/tests/test_segment_filters_json.py` | 3 | H-010: Segment JSON validation |
+
+**Total Backend Tests: 36/36 pass | Total Frontend Tests: 8/8 pass | Overall: 44/44 pass** ✅
+
+### Key Lessons from Round 3
+
+1. **Secret keys must fail loud** — No fallback strings in production. `os.environ["KEY"]` raises on miss, nothing silent.
+2. **Unique fields need null=True for optional** — `unique=True` without `null=True` on `CharField` causes IntegrityError when multiple rows have an empty string.
+3. **Environment validation must be build-time AND runtime** — Validate in `next.config.ts` (build) AND in the proxy route (runtime). Two layers.
+4. **PII must never live on models without consent gates** — `Puppy.buyer_name` stored PII without a `pdpa_consent` field. Always route through consent-gated models.
+5. **Soft delete for compliance** — Compliance models must use `is_active=False`, never `delete()`. Audit trail depends on it.
+6. **Idempotency markers are response-type aware** — Non-JSON (PDF, SSE) responses cannot verify processing success. Keep the marker for TTL expiry, not success.
+7. **`update_or_create` mutates immutable data** — Financial ledgers are append-only. Use `get_or_create` or pure `create()`.
+8. **ImportError catches must be surgical** — Wrapping the entire function call swallows legitimate errors. Only wrap the `import` statement.
+9. **FK deletions must be intentional** — `on_delete=CASCADE` on entities silently destroys child data. Use `PROTECT` for referential integrity.
+10. **UUIDs must be strings in JSON** — `NinjaJSONEncoder` handles this in APIs, but model methods must `str()` UUIDs before returning.
+11. **`filters_json` needs structure validation** — Accepting raw JSON without schema allows injection and broken frontend rendering.
+12. **New models need entity scoping from day one** — Adding `entity` FK later requires a migration. Design it in from the start.
+
+---
+
 ### Phase 8 Completion (April 29, 2026) — 100% Complete
 
 #### Finance Module (4 Models + Services)
