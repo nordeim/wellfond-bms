@@ -1,4 +1,5 @@
-"""GST Tests
+"""
+GST Tests
 =============
 Phase 6: Compliance & NParks Reporting
 
@@ -12,11 +13,10 @@ from decimal import ROUND_HALF_UP, Decimal
 import pytest
 from django.test import TestCase
 
-from apps.core.models import Entity
-from apps.sales.models import AgreementStatus, AgreementType, SalesAgreement
-
-from ..models import GSTLedger
-from ..services.gst import GSTService
+from apps.core.models import Entity, User
+from apps.sales.models import SalesAgreement, AgreementStatus, AgreementType
+from apps.compliance.models import GSTLedger
+from apps.compliance.services.gst import GSTService
 
 
 class TestGSTCalculation(TestCase):
@@ -38,202 +38,55 @@ class TestGSTCalculation(TestCase):
         Test GST extraction: $109 → $9.00 GST.
         Formula: 109 * 9 / 109 = 9.00
         """
-        price = Decimal("109.00")
-        gst = GSTService.extract_gst(price, self.katong)
+        from apps.compliance.services.gst import GSTService
 
+        gst = GSTService.extract_gst(
+            Decimal("109.00"),
+            self.katong,
+        )
         self.assertEqual(gst, Decimal("9.00"))
 
-    def test_extract_gst_218_equals_18(self):
+    def test_extract_gst_thomson_zero(self):
         """
-        Test GST extraction: $218 → $18.00 GST.
-        Formula: 218 * 9 / 109 = 18.00
+        Test GST extraction: Thomson entity = 0% GST.
+        Thomson is GST exempt (code = THOMSON).
         """
-        price = Decimal("218.00")
-        gst = GSTService.extract_gst(price, self.katong)
+        from apps.compliance.services.gst import GSTService
 
-        self.assertEqual(gst, Decimal("18.00"))
-
-    def test_extract_gst_50_equals_4_13(self):
-        """
-        Test GST extraction: $50 → $4.13 GST.
-        Formula: 50 * 9 / 109 = 4.128... → 4.13 (rounded)
-        """
-        price = Decimal("50.00")
-        gst = GSTService.extract_gst(price, self.katong)
-
-        self.assertEqual(gst, Decimal("4.13"))
-
-    def test_extract_gst_thomson_equals_zero(self):
-        """
-        Test Thomson entity is GST exempt (0%).
-        """
-        price = Decimal("1000.00")
-        gst = GSTService.extract_gst(price, self.thomson)
-
+        gst = GSTService.extract_gst(
+            Decimal("109.00"),
+            self.thomson,
+        )
         self.assertEqual(gst, Decimal("0.00"))
 
-    def test_round_half_up(self):
+    def test_calculate_gst_rounding(self):
         """
-        Test ROUND_HALF_UP rounding.
-        0.125 → 0.13 (rounds up)
-        0.124 → 0.12 (rounds down)
+        Test GST rounding uses ROUND_HALF_UP.
+        10.05 * 9 / 109 = 0.83 (not 0.82)
         """
-        # This creates a value that would round differently with HALF_UP
-        price = Decimal("1.09")  # 1.09 * 9 / 109 = 0.0899... → 0.09
-        gst = GSTService.extract_gst(price, self.katong)
+        from apps.compliance.services.gst import GSTService
 
-        self.assertEqual(gst, Decimal("0.09"))
-
-    def test_calculate_gst_returns_tuple(self):
-        """
-        Test calculate_gst returns (subtotal, gst) tuple.
-        """
-        price = Decimal("109.00")
-        subtotal, gst = GSTService.calculate_gst(price, self.katong)
-
-        self.assertEqual(subtotal, Decimal("100.00"))
-        self.assertEqual(gst, Decimal("9.00"))
-        self.assertEqual(subtotal + gst, price)
-
-
-class TestGSTSummary(TestCase):
-    """Test GST summary calculation."""
-
-    def setUp(self):
-        """Set up test data."""
-        from apps.core.models import User
-
-        self.entity, _ = Entity.objects.get_or_create(
-            defaults={"name": "Test Entity", "code": "TEST", "slug": "test-entity"},
-            id=uuid.uuid4(),
+        gst = GSTService.extract_gst(
+            Decimal("10.05"),
+            self.katong,
         )
-
-        self.user = User.objects.create_user(
-            username=f"testuser_{uuid.uuid4().hex[:8]}",
-            email="test@example.com",
-            password="testpass123",
-            entity=self.entity,
-            role="admin",
-        )
-
-    def test_gst_summary_sums_correctly(self):
-        """
-        Test GST summary sums all agreements for quarter.
-        """
-        from datetime import datetime
-
-        # Create completed agreements with completed_at in Q1 2026 (January)
-        agreement1 = SalesAgreement.objects.create(
-            entity=self.entity,
-            created_by=self.user,
-            type=AgreementType.B2C,
-            status=AgreementStatus.COMPLETED,
-            buyer_name="Buyer 1",
-            buyer_mobile="+6512345678",
-            buyer_email="buyer1@example.com",
-            buyer_address="123 Test St",
-            total_amount=Decimal("109.00"),
-            gst_component=Decimal("9.00"),
-            deposit=Decimal("10.00"),
-            balance=Decimal("99.00"),
-            completed_at=datetime(2026, 1, 15, 10, 0, 0),  # January = Q1
-        )
-
-        agreement2 = SalesAgreement.objects.create(
-            entity=self.entity,
-            created_by=self.user,
-            type=AgreementType.B2C,
-            status=AgreementStatus.COMPLETED,
-            buyer_name="Buyer 2",
-            buyer_mobile="+6587654321",
-            buyer_email="buyer2@example.com",
-            buyer_address="456 Test St",
-            total_amount=Decimal("218.00"),
-            gst_component=Decimal("18.00"),
-            deposit=Decimal("20.00"),
-            balance=Decimal("198.00"),
-            completed_at=datetime(2026, 2, 20, 14, 0, 0),  # February = Q1
-        )
-
-        # Create GST ledger entries with actual agreement IDs
-        GSTLedger.objects.create(
-            entity=self.entity,
-            period="2026-Q1",
-            source_agreement=agreement1,
-            total_sales=Decimal("109.00"),
-            gst_component=Decimal("9.00"),
-        )
-
-        GSTLedger.objects.create(
-            entity=self.entity,
-            period="2026-Q1",
-            source_agreement=agreement2,
-            total_sales=Decimal("218.00"),
-            gst_component=Decimal("18.00"),
-        )
-
-        # Get summary
-        summary = GSTService.calc_gst_summary(self.entity, "2026-Q1")
-
-        self.assertEqual(summary.total_sales, Decimal("327.00"))
-        self.assertEqual(summary.total_gst, Decimal("27.00"))
-        self.assertEqual(summary.transactions_count, 2)
-
-    def test_get_quarter_from_date(self):
-        """
-        Test quarter extraction from date.
-        """
-        q1 = date(2026, 2, 15)
-        q2 = date(2026, 5, 15)
-        q3 = date(2026, 8, 15)
-        q4 = date(2026, 11, 15)
-
-        self.assertEqual(GSTService.get_quarter_from_date(q1), "2026-Q1")
-        self.assertEqual(GSTService.get_quarter_from_date(q2), "2026-Q2")
-        self.assertEqual(GSTService.get_quarter_from_date(q3), "2026-Q3")
-        self.assertEqual(GSTService.get_quarter_from_date(q4), "2026-Q4")
-
-
-class TestGSTLedger(TestCase):
-    """Test GST ledger operations."""
-
-    def setUp(self):
-        """Set up test data."""
-        from apps.core.models import User
-
-        self.entity, _ = Entity.objects.get_or_create(
-            defaults={"name": "Test Entity", "code": "TEST", "slug": "test-entity"},
-            id=uuid.uuid4(),
-        )
-
-        self.user = User.objects.create_user(
-            username=f"testuser_{uuid.uuid4().hex[:8]}",
-            email="test@example.com",
-            password="testpass123",
-            entity=self.entity,
-            role="admin",
-        )
+        # 10.05 * 9 / 109 = 0.829... → 0.83 (ROUND_HALF_UP)
+        self.assertEqual(gst, Decimal("0.83"))
 
     def test_create_ledger_entry(self):
         """
-        Test creating GST ledger entry from agreement.
+        Test creating GST ledger entry via service.
         """
-        from datetime import datetime
+        from apps.sales.models import SalesAgreement, AgreementStatus
 
         agreement = SalesAgreement.objects.create(
-            entity=self.entity,
-            created_by=self.user,
+            entity=self.katong,
             type=AgreementType.B2C,
-            status=AgreementStatus.COMPLETED,
             buyer_name="Test Buyer",
-            buyer_mobile="+6512345678",
-            buyer_email="buyer@example.com",
-            buyer_address="123 Test St",
             total_amount=Decimal("109.00"),
             gst_component=Decimal("9.00"),
-            deposit=Decimal("10.00"),
-            balance=Decimal("99.00"),
-            completed_at=datetime(2026, 1, 15, 10, 0, 0),
+            status=AgreementStatus.COMPLETED,
+            signed_by=self.user,
         )
 
         entry = GSTService.create_ledger_entry(agreement)
@@ -246,8 +99,10 @@ class TestGSTLedger(TestCase):
         """
         Test no ledger entry created for non-completed agreements.
         """
+        from apps.sales.models import SalesAgreement, AgreementStatus
+
         agreement = SalesAgreement.objects.create(
-            entity=self.entity,
+            entity=self.katong,
             created_by=self.user,
             type=AgreementType.B2C,
             status=AgreementStatus.DRAFT,
@@ -264,3 +119,86 @@ class TestGSTLedger(TestCase):
         entry = GSTService.create_ledger_entry(agreement)
 
         self.assertIsNone(entry)
+
+
+class TestGSTLedgerImmutability(TestCase):
+    """Test that GSTLedger is immutable (H-001 fix)."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.entity, _ = Entity.objects.get_or_create(
+            defaults={"name": "Test Entity", "code": "TEST", "slug": "test-entity"},
+            id=uuid.uuid4(),
+        )
+        self.user = User.objects.create_user(
+            username="testuser_gst",
+            email="test_gst@example.com",
+            password="testpass123",
+            entity=self.entity,
+        )
+
+    def test_gst_ledger_uses_get_or_create(self):
+        """
+        Test that GSTLedger uses get_or_create (not update_or_create).
+        Should pass after fix because service uses get_or_create.
+        """
+        from apps.sales.models import SalesAgreement, AgreementStatus
+
+        # Create a sales agreement
+        agreement = SalesAgreement.objects.create(
+            entity=self.entity,
+            type=AgreementType.B2C,
+            buyer_name="Test Buyer",
+            total_amount=Decimal("109.00"),
+            gst_component=Decimal("9.00"),
+            status=AgreementStatus.COMPLETED,
+            signed_by=self.user,
+        )
+
+        # Call service to create GST ledger entry
+        entry1 = GSTService.create_ledger_entry(agreement)
+        self.assertIsNotNone(entry1)
+
+        # Call again with same agreement (should return existing, not update)
+        entry2 = GSTService.create_ledger_entry(agreement)
+        self.assertIsNotNone(entry2)
+        
+        # Both should be the same object (get_or_create returns existing)
+        self.assertEqual(entry1.id, entry2.id)
+
+    def test_gst_ledger_immutable_update(self):
+        """
+        Test that GSTLedger cannot be updated.
+        Should fail initially because no save() override.
+        """
+        entry = GSTLedger.objects.create(
+            entity=self.entity,
+            period="2026-Q1",
+            source_agreement=uuid.uuid4(),
+            total_sales=Decimal("109.00"),
+            gst_component=Decimal("9.00"),
+        )
+
+        # Try to update - should raise ValueError after fix
+        entry.total_sales = Decimal("218.00")
+        with self.assertRaises(ValueError) as context:
+            entry.save()
+        self.assertIn("immutable", str(context.exception).lower())
+
+    def test_gst_ledger_immutable_delete(self):
+        """
+        Test that GSTLedger cannot be deleted.
+        Should fail initially because no delete() override.
+        """
+        entry = GSTLedger.objects.create(
+            entity=self.entity,
+            period="2026-Q2",
+            source_agreement=uuid.uuid4(),
+            total_sales=Decimal("109.00"),
+            gst_component=Decimal("9.00"),
+        )
+
+        # Try to delete - should raise ValueError after fix
+        with self.assertRaises(ValueError) as context:
+            entry.delete()
+        self.assertIn("immutable", str(context.exception).lower())

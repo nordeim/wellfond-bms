@@ -300,8 +300,6 @@ class PuppyUpdate(Schema):
     confirmed_sire: Optional[str] = Field(None, pattern=r"^(SIRE1|SIRE2|UNCONFIRMED)$")
     paternity_method: Optional[str] = Field(None, pattern=r"^(VISUAL|DNA|UNCONFIRMED)$")
     status: Optional[str] = Field(None, pattern=r"^(ALIVE|REHOMED|DECEASED)$")
-    buyer_name: Optional[str] = Field(None, max_length=100)
-    buyer_contact: Optional[str] = Field(None, max_length=100)
     sale_date: Optional[date] = None
 
 
@@ -318,7 +316,6 @@ class PuppyListItem(Schema):
     confirmed_sire: str
     paternity_method: str
     status: str
-    buyer_name: Optional[str] = None
     sale_date: Optional[date] = None
 
 
@@ -340,8 +337,6 @@ class PuppyDetail(Schema):
     paternity_method: str
     status: str
 
-    buyer_name: Optional[str] = None
-    buyer_contact: Optional[str] = None
     sale_date: Optional[date] = None
 
     created_at: str

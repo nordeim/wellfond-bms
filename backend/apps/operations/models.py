@@ -298,7 +298,6 @@ class Vaccination(models.Model):
         # Import here to avoid circular import
         try:
             from .services.vaccine import calc_vaccine_due
-            self.due_date = calc_vaccine_due(self.dog, self.vaccine_name, self.date_given)
         except ImportError:
             logger.warning(
                 "Vaccine service import failed for %s. "
@@ -306,6 +305,10 @@ class Vaccination(models.Model):
                 self.vaccine_name,
                 exc_info=True,
             )
+        else:
+            # Import succeeded, calculate due date
+            self.due_date = calc_vaccine_due(self.dog, self.vaccine_name, self.date_given)
+        
         self.status = self._calculate_status()
         super().save(*args, **kwargs)
 
@@ -531,6 +534,13 @@ class WhelpedPup(models.Model):
         WhelpedLog,
         on_delete=models.CASCADE,
         related_name="pups",
+    )
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.PROTECT,
+        related_name="whelped_pups",
+        null=True,
+        blank=True,
     )
     gender = models.CharField(max_length=1, choices=Gender.choices)
     colour = models.CharField(max_length=50, blank=True)

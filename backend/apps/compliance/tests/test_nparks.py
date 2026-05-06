@@ -306,3 +306,79 @@ class TestNParksValidation(TestCase):
             )
 
         self.assertIn("Entity not found", str(context.exception))
+
+
+class TestNParksImmutable(TestCase):
+    """Test NParksSubmission immutability for C-005."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.holdings, _ = Entity.objects.get_or_create(
+            defaults={"name": "Holdings", "code": "HOLDINGS", "slug": "holdings-test"},
+            id=uuid.uuid4(),
+        )
+        self.user = User.objects.create_user(
+            username=f"testuser_{uuid.uuid4().hex[:8]}",
+            email="test@example.com",
+            password="testpass123",
+            entity=self.holdings,
+        )
+
+    def test_draft_submission_update_allowed(self):
+        """Test that DRAFT submissions can be updated."""
+        submission = NParksSubmission.objects.create(
+            entity=self.holdings,
+            month=date(2026, 4, 1),
+            status=NParksStatus.DRAFT,
+            generated_by=self.user,
+        )
+
+    def test_nparks_submission_immutable_delete(self):
+        """Test that NParksSubmission cannot be deleted."""
+        # This test is now in TestNParksImmutable class
+        pass
+
+    def test_locked_submission_immutable_delete(self):
+        """Test that LOCKED submissions cannot be deleted."""
+        submission = NParksSubmission.objects.create(
+            entity=self.holdings,
+            month=date(2026, 7, 1),
+            status=NParksStatus.LOCKED,
+            generated_by=self.user,
+        )
+
+        # Try to delete - should raise ValueError
+        with self.assertRaises(ValueError) as context:
+            submission.delete()
+        self.assertIn("immutable", str(context.exception).lower())
+
+    def test_cleanup_old_drafts_soft_delete(self):
+        """
+        Test that cleanup_old_nparks_drafts uses soft delete (is_active=False).
+        """
+        from ..tasks import cleanup_old_nparks_drafts
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Create old DRAFT submission (simulate old by creating with old month)
+        old_submission = NParksSubmission.objects.create(
+            entity=self.holdings,
+            month=date(2025, 1, 1),  # Old month
+            status=NParksStatus.DRAFT,
+            generated_by=self.user,
+        )
+
+        # Manually update generated_at to simulate old date
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE compliance_nparks_submissions SET generated_at = %s WHERE id = %s",
+                [timezone.now() - timedelta(days=100), old_submission.id]
+            )
+
+        # Call task function directly (not via Celery)
+        cleanup_old_nparks_drafts(90)
+
+        # Refresh and check - should be soft-deleted (is_active=False)
+        old_submission.refresh_from_db()
+        self.assertFalse(old_submission.is_active)

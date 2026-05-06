@@ -95,13 +95,6 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Background sync for offline queue
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-offline-queue") {
-    event.waitUntil(syncOfflineQueue());
-  }
-});
-
 // Push notifications (for alerts)
 self.addEventListener("push", (event) => {
   const data = event.data?.json() || {};
@@ -150,29 +143,3 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Sync offline queue
-async function syncOfflineQueue() {
-  try {
-    const response = await fetch("/api/proxy/sync-offline", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Sync failed");
-    }
-
-    // Notify clients
-    const clients = await self.clients.matchAll();
-    clients.forEach((client) => {
-      client.postMessage({
-        type: "SYNC_COMPLETE",
-        timestamp: Date.now(),
-      });
-    });
-  } catch (error) {
-    console.error("Background sync failed:", error);
-  }
-}

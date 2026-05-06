@@ -202,6 +202,8 @@ Apply to all immutable models: `AuditLog`, `PDPAConsentLog`, `CommunicationLog`.
 - **WhatsApp Placeholder:** Return `"status": "FAILED"` instead of fake `"SENT"` for unintegrated services. False-positive success responses mask operational gaps.
 - **pytest-xdist Database Contention:** Parallel test processes share the same PostgreSQL test database, causing deadlocks, missing-table errors, and `IntegrityError: duplicate key`. Use `-p no:xdist` for reliable sequential execution in development.
 - **Customer Unique Constraints:** `Customer.mobile` has `unique=True` without `null=True` or `blank=True`. Multiple test-created `Customer` objects with default empty-string mobile collide. Always assign unique mobile values in tests.
+- need to set env variable 'DJANGO_SECRET_KEY="test-key"' before executing `backend/` scripts
+- export BACKEND_INTERNAL_URL='http://127.0.0.1:8000' before `npm run build` in `frontend/`
 
 ---
 

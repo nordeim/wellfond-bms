@@ -247,11 +247,11 @@ def cleanup_old_nparks_drafts(days: int = 90):
         
         old_drafts = NParksSubmission.objects.filter(
             status=NParksStatus.DRAFT,
-            created_at__lt=cutoff,
+            generated_at__lt=cutoff,
         )
-        
-        count = old_drafts.count()
-        old_drafts.delete()
+
+        # Soft delete - update is_active=False (C-006 fix)
+        count = old_drafts.update(is_active=False)
         
         logger.info(f"Cleaned up {count} old NParks draft submissions")
         

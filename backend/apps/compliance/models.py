@@ -34,10 +34,12 @@ class PDPAAction(models.TextChoices):
 class NParksSubmission(models.Model):
     """
     NParks monthly submission tracking.
-
+    
     Tracks the generation, submission, and locking of NParks reports.
     Once LOCKED, the submission is immutable.
     """
+    objects = ImmutableManager()
+
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     # Entity (multi-tenancy)
@@ -64,6 +66,12 @@ class NParksSubmission(models.Model):
     generated_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     locked_at = models.DateTimeField(null=True, blank=True)
+
+    # Soft delete flag (C-006 fix)
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Soft delete flag - False means deleted"
+    )
 
     # Audit
     generated_by = models.ForeignKey(
@@ -95,14 +103,34 @@ class NParksSubmission(models.Model):
         """Check if submission is locked."""
         return self.status == NParksStatus.LOCKED
 
+    def save(self, *args, **kwargs):
+        """Prevent updates for LOCKED submissions - allow transition to LOCKED."""
+        if not self._state.adding:
+            # Check if already LOCKED in DB
+            try:
+                old = NParksSubmission.objects.get(pk=self.pk)
+                if old.status == NParksStatus.LOCKED:
+                    raise ValueError("NParksSubmission is immutable - cannot update LOCKED submission")
+            except NParksSubmission.DoesNotExist:
+                pass  # New record, allow
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Prevent deletion of LOCKED submissions."""
+        if self.status == NParksStatus.LOCKED:
+            raise ValueError("NParksSubmission is immutable - cannot delete LOCKED submission")
+        super().delete(*args, **kwargs)
+
 
 class GSTLedger(models.Model):
     """
     GST transaction ledger.
-
+    
     Records GST components for each sales agreement.
     Immutable once created.
     """
+    objects = ImmutableManager()
+
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     # Entity (multi-tenancy)
@@ -151,6 +179,16 @@ class GSTLedger(models.Model):
 
     def __str__(self) -> str:
         return f"GST {self.period} - {self.entity.name} - ${self.gst_component}"
+
+    def save(self, *args, **kwargs):
+        """Prevent updates - immutable once created."""
+        if not self._state.adding:
+            raise ValueError("GSTLedger is immutable - cannot update")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Prevent deletion - immutable."""
+        raise ValueError("GSTLedger is immutable - cannot delete")
 
 
 class PDPAConsentLog(models.Model):

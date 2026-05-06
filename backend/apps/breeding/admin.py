@@ -213,7 +213,7 @@ class PuppyAdmin(admin.ModelAdmin):
             "fields": ("status",),
         }),
         ("Buyer", {
-            "fields": (("buyer_name", "buyer_contact"), "sale_date"),
+            "fields": ("sale_date",),
             "classes": ("collapse",),
         }),
         ("Metadata", {

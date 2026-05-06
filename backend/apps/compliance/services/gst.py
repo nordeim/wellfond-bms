@@ -194,8 +194,8 @@ class GSTService:
 
         quarter = GSTService.get_quarter_from_date(agreement.completed_at.date())
 
-        # Create or update ledger entry
-        entry, created = GSTLedger.objects.update_or_create(
+        # Create or get ledger entry (immutable - use get_or_create)
+        entry, created = GSTLedger.objects.get_or_create(
             entity=agreement.entity,
             source_agreement=agreement,
             defaults={

@@ -118,8 +118,10 @@ class IdempotencyMiddleware:
                     timeout=86400,  # 24 hours
                 )
             except (json.JSONDecodeError, AttributeError):
-                # Non-JSON response — clear processing marker so retries work
-                idempotency_cache.delete(fingerprint)
+                # Non-JSON response (file download, SSE, etc.)
+                # Do NOT cache, but also do NOT delete processing marker
+                # Let it expire naturally (30s) to prevent re-execution
+                pass
         else:
             # Remove processing marker on error so retry works
             idempotency_cache.delete(fingerprint)

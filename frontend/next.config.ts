@@ -1,5 +1,13 @@
 import type { NextConfig } from "next";
 
+// Build-time validation: Ensure BACKEND_INTERNAL_URL is set
+if (!process.env.BACKEND_INTERNAL_URL) {
+  throw new Error(
+    "BACKEND_INTERNAL_URL is required but not set. " +
+    "Please set this environment variable before building."
+  );
+}
+
 /**
  * Wellfond BMS - Next.js Configuration
  * =====================================
@@ -68,7 +76,7 @@ const nextConfig: NextConfig = {
         // Proxy API requests to Django backend
         {
           source: "/api/proxy/:path*",
-          destination: `${process.env.BACKEND_INTERNAL_URL || "http://127.0.0.1:8000"}/api/v1/:path*`,
+          destination: `${process.env.BACKEND_INTERNAL_URL}/api/v1/:path*`,
         },
       ],
     };

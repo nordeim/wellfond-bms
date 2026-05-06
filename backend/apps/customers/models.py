@@ -54,7 +54,13 @@ class Customer(models.Model):
     # Personal Information
     name = models.CharField(max_length=255)
     nric = models.CharField(max_length=20, blank=True, db_index=True)
-    mobile = models.CharField(max_length=20, unique=True, db_index=True)
+    mobile = models.CharField(max_length=20, unique=True, blank=True, null=True, db_index=True)
+
+    def save(self, *args, **kwargs):
+        """Convert empty string to None for unique=True with null=True."""
+        if self.mobile == "":
+            self.mobile = None
+        super().save(*args, **kwargs)
     email = models.EmailField(blank=True)
     address = models.TextField(blank=True)
 
@@ -263,4 +269,33 @@ class Segment(models.Model):
         self.customer_count = 0
         self.count_updated_at = None
         self.save(update_fields=["customer_count", "count_updated_at"])
+
+    def clean(self):
+        """Validate filters_json structure."""
+        super().clean()
+        
+        # Validate filters_json is a dict
+        if not isinstance(self.filters_json, dict):
+            from django.core.exceptions import ValidationError
+            raise ValidationError({
+                'filters_json': 'Must be a dictionary',
+            })
+        
+        # Validate keys
+        valid_keys = {'breed', 'entity', 'pdpa', 'date_range', 'housing_type'}
+        invalid_keys = set(self.filters_json.keys()) - valid_keys
+        if invalid_keys:
+            from django.core.exceptions import ValidationError
+            raise ValidationError({
+                'filters_json': f'Invalid keys: {invalid_keys}',
+            })
+        
+        # Validate date_range structure if present
+        if 'date_range' in self.filters_json:
+            date_range = self.filters_json['date_range']
+            if not isinstance(date_range, dict) or 'start' not in date_range or 'end' not in date_range:
+                from django.core.exceptions import ValidationError
+                raise ValidationError({
+                    'filters_json': 'date_range must have "start" and "end" keys',
+                })
 

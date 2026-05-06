@@ -286,8 +286,6 @@ class Puppy(models.Model):
         help_text="Current puppy status",
     )
 
-    buyer_name = models.CharField(max_length=100, blank=True, help_text="Buyer's name")
-    buyer_contact = models.CharField(max_length=100, blank=True, help_text="Buyer's contact")
     sale_date = models.DateField(null=True, blank=True, help_text="Date of sale/rehoming")
 
     entity = models.ForeignKey(
@@ -350,7 +348,7 @@ class DogClosure(models.Model):
 
     entity = models.ForeignKey(
         Entity,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="closure_entries",
         db_index=True,
     )

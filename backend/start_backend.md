@@ -311,3 +311,5 @@ $ python -m pytest backend/apps/compliance/tests/test_gst.py -v --tb=short 2>&1
 # Run all compliance tests
 $ cd /home/project/wellfond-bms && python -m pytest backend/apps/compliance/tests/ -v 2>&1 | tail -30
 
+$ kill $(cat django.pid) 2>/dev/null; sleep 1 && DJANGO_SECRET_KEY="test-key" nohup python manage.py runserver 0.0.0.0:8000 > nohup.out 2>&1 & echo $! > django.pid && sleep 3 && echo "✅ Django restarted with PID: $(cat django.pid)"
+
