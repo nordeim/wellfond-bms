@@ -592,21 +592,21 @@ erDiagram
         string name
         string breed
         date dob
-        gender "M|F"
+        string gender "M|F"
         string colour
         uuid entity_id FK
-        status "ACTIVE|RETIRED|REHOMED|DECEASED"
+        string status "ACTIVE|RETIRED|REHOMED|DECEASED"
         uuid dam_id FK "self-ref"
         uuid sire_id FK "self-ref"
         string unit
-        dna_status "PENDING|SUBMITTED|RESULTS_RECEIVED|EXCLUDED"
+        string dna_status "PENDING|SUBMITTED|RESULTS_RECEIVED|EXCLUDED"
     }
 
     HealthRecord {
         uuid id PK
         uuid dog_id FK
         date date
-        category "VET_VISIT|TREATMENT|OBSERVATION|EMERGENCY"
+        string category "VET_VISIT|TREATMENT|OBSERVATION|EMERGENCY"
         text description
         decimal temperature
         decimal weight
@@ -620,14 +620,14 @@ erDiagram
         string vaccine_name
         date date_given
         date due_date "auto-calculated"
-        status "UP_TO_DATE|DUE_SOON|OVERDUE"
+        string status "UP_TO_DATE|DUE_SOON|OVERDUE"
     }
 
     DogPhoto {
         uuid id PK
         uuid dog_id FK
-        url url
-        category "PROFILE|HEALTH|BREEDING|GENERAL"
+        string url
+        string category "PROFILE|HEALTH|BREEDING|GENERAL"
         bool customer_visible
     }
 
@@ -635,21 +635,21 @@ erDiagram
         uuid id PK
         uuid dog_id FK
         int draminski_reading
-        mating_window "EARLY|RISING|FAST|PEAK|MATE_NOW"
+        string mating_window "EARLY|RISING|FAST|PEAK|MATE_NOW"
     }
 
     MatedLog {
         uuid id PK
         uuid dog_id FK
         uuid sire_id FK
-        method "NATURAL|ASSISTED"
+        string method "NATURAL|ASSISTED"
         uuid sire2_id FK "optional dual-sire"
     }
 
     WhelpedLog {
         uuid id PK
         uuid dog_id FK
-        method "NATURAL|C_SECTION"
+        string method "NATURAL|C_SECTION"
         int alive_count
         int stillborn_count
     }
@@ -658,7 +658,7 @@ erDiagram
         uuid id PK
         uuid whelped_log_id FK
         uuid entity_id FK
-        gender "M|F"
+        string gender "M|F"
         string colour
         decimal birth_weight
     }
@@ -666,7 +666,7 @@ erDiagram
     HealthObsLog {
         uuid id PK
         uuid dog_id FK
-        category "LIMPING|SKIN|NOT_EATING|EYE_EAR|INJURY|OTHER"
+        string category "LIMPING|SKIN|NOT_EATING|EYE_EAR|INJURY|OTHER"
         text description
         decimal temperature
         decimal weight
@@ -682,9 +682,9 @@ erDiagram
     NursingFlagLog {
         uuid id PK
         uuid dog_id FK
-        section "MUM|PUP"
-        flag_type "NO_MILK|REJECTING_PUP|PUP_NOT_FEEDING|OTHER"
-        severity "SERIOUS|MONITORING"
+        string section "MUM|PUP"
+        string flag_type "NO_MILK|REJECTING_PUP|PUP_NOT_FEEDING|OTHER"
+        string severity "SERIOUS|MONITORING"
     }
 
     NotReadyLog {
@@ -692,6 +692,10 @@ erDiagram
         uuid dog_id FK
         text notes
         date expected_date
+    }
+
+    Entity {
+        uuid id PK
     }
 
     Dog ||--o{ HealthRecord : "has"
