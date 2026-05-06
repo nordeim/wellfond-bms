@@ -332,8 +332,6 @@ def add_puppy(request, litter_id: UUID, data: PuppyCreate):
         "confirmed_sire": puppy.confirmed_sire,
         "paternity_method": puppy.paternity_method,
         "status": puppy.status,
-        "buyer_name": puppy.buyer_name,
-        "buyer_contact": puppy.buyer_contact,
         "sale_date": puppy.sale_date,
         "created_at": puppy.created_at.isoformat(),
         "updated_at": puppy.updated_at.isoformat(),
@@ -385,10 +383,6 @@ def update_puppy(
         puppy.paternity_method = data.paternity_method
     if data.status is not None:
         puppy.status = data.status
-    if data.buyer_name is not None:
-        puppy.buyer_name = data.buyer_name
-    if data.buyer_contact is not None:
-        puppy.buyer_contact = data.buyer_contact
     if data.sale_date is not None:
         puppy.sale_date = data.sale_date
 
@@ -421,8 +415,6 @@ def update_puppy(
         "confirmed_sire": puppy.confirmed_sire,
         "paternity_method": puppy.paternity_method,
         "status": puppy.status,
-        "buyer_name": puppy.buyer_name,
-        "buyer_contact": puppy.buyer_contact,
         "sale_date": puppy.sale_date,
         "created_at": puppy.created_at.isoformat(),
         "updated_at": puppy.updated_at.isoformat(),
@@ -443,7 +435,6 @@ def get_litter_detail(litter: Litter) -> dict:
             "confirmed_sire": puppy.confirmed_sire,
             "paternity_method": puppy.paternity_method,
             "status": puppy.status,
-            "buyer_name": puppy.buyer_name,
             "sale_date": puppy.sale_date,
         })
 
