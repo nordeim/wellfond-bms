@@ -1015,7 +1015,7 @@ sequenceDiagram
     DJ->>DJ: "django_authenticate(email, password)"
     DJ->>R: "SessionManager.create_session()"
     R-->>DJ: "session_key, csrf_token"
-    DJ-->>BFF: "Set-Cookie: sessionid=xxx; HttpOnly; Secure; SameSite=Lax"
+    DJ-->>BFF: "Set-Cookie: sessionid=xxx#59; HttpOnly#59; Secure#59; SameSite=Lax"
     BFF-->>B: "Forward Set-Cookie + {user, csrf_token}"
     B->>B: "Store user in memory, csrf_token in memory"
 
