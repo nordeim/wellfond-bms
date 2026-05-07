@@ -869,13 +869,13 @@ erDiagram
         uuid id PK
         uuid entity_id FK
         date month
-        status "DRAFT|SUBMITTED|LOCKED"
+        string status "DRAFT|SUBMITTED|LOCKED"
         bool is_active
         datetime generated_at
         datetime locked_at
-        url mating_sheet_url
-        url puppy_movement_url
-        url vet_treatments_url
+        string mating_sheet_url
+        string puppy_movement_url
+        string vet_treatments_url
     }
 
     GSTLedger {
@@ -889,8 +889,8 @@ erDiagram
 
     PDPAConsentLog {
         uuid id PK
-        uuid customer_id
-        action "OPT_IN|OPT_OUT"
+        uuid customer_id FK
+        string action "OPT_IN|OPT_OUT"
         bool previous_state
         bool new_state
         uuid actor_id FK
@@ -903,7 +903,7 @@ erDiagram
         string nric
         string mobile UK
         string email
-        housing_type "HDB|CONDO|LANDED|OTHER"
+        string housing_type "HDB|CONDO|LANDED|OTHER"
         bool pdpa_consent
         uuid entity_id FK
     }
@@ -913,8 +913,8 @@ erDiagram
         uuid customer_id FK
         string campaign_id
         uuid blast_id
-        channel "EMAIL|WA"
-        status "PENDING|SENT|DELIVERED|BOUNCED|FAILED"
+        string channel "EMAIL|WA"
+        string status "PENDING|SENT|DELIVERED|BOUNCED|FAILED"
         string subject
         text message_preview
     }
@@ -925,6 +925,14 @@ erDiagram
         json filters_json
         int customer_count "cached"
         uuid entity_id FK
+    }
+
+    Entity {
+        uuid id PK
+    }
+
+    SalesAgreement {
+        uuid id PK
     }
 
     Customer ||--o{ CommunicationLog : "receives"
