@@ -795,22 +795,22 @@ erDiagram
 erDiagram
     SalesAgreement {
         uuid id PK
-        type "B2C|B2B|REHOME"
-        status "DRAFT|SIGNED|COMPLETED|CANCELLED"
+        string type "B2C|B2B|REHOME"
+        string status "DRAFT|SIGNED|COMPLETED|CANCELLED"
         uuid entity_id FK
         string buyer_name
         string buyer_nric
         string buyer_mobile
         string buyer_email
-        housing_type "HDB|CONDO|LANDED|OTHER"
+        string housing_type "HDB|CONDO|LANDED|OTHER"
         bool pdpa_consent
         decimal total_amount
         decimal gst_component
         decimal deposit
         decimal balance
-        payment_method "CASH|PAYNOW|BANK_TRANSFER|CREDIT_CARD|INSTALLMENT"
+        string payment_method "CASH|PAYNOW|BANK_TRANSFER|CREDIT_CARD|INSTALLMENT"
         string pdf_hash "SHA-256"
-        url pdf_url
+        string pdf_url
         datetime signed_at
     }
 
@@ -828,7 +828,7 @@ erDiagram
         uuid dog_id FK
         string buyer_mobile
         string token UK
-        status "PENDING|SENT|COMPLETED|ESCALATED|EXPIRED"
+        string status "PENDING|SENT|COMPLETED|ESCALATED|EXPIRED"
         datetime reminder_sent_at
         datetime completed_at
     }
@@ -837,8 +837,8 @@ erDiagram
         uuid id PK
         uuid agreement_id FK
         uuid signed_by_id FK
-        signer_type "SELLER|BUYER"
-        method "IN_PERSON|REMOTE|PAPER"
+        string signer_type "SELLER|BUYER"
+        string method "IN_PERSON|REMOTE|PAPER"
         text signature_data "base64"
         json coordinates
         string ip_address
@@ -846,9 +846,13 @@ erDiagram
 
     TCTemplate {
         uuid id PK
-        type "B2C|B2B|REHOME"
+        string type "B2C|B2B|REHOME"
         text content
         int version
+    }
+
+    Dog {
+        uuid id PK
     }
 
     SalesAgreement ||--o{ AgreementLineItem : "contains"
