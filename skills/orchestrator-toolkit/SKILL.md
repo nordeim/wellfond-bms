@@ -1,3 +1,8 @@
+---
+name: orchestrator-toolkit
+description: Pure-Python orchestration toolkit for task management, complexity analysis, decomposition, persistence, and recovery. Use when breaking down complex projects, tracking progress, or building lightweight orchestration systems.
+---
+
 # Orchestrator Toolkit Skill
 
 A pure-Python orchestration toolkit built from patterns extracted from the OpenCode Industrial Orchestrator. Provides task management, complexity analysis, decomposition, persistence, and recovery capabilities.

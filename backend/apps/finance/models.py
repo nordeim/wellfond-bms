@@ -59,7 +59,7 @@ class Transaction(models.Model):
     )
     entity = models.ForeignKey(
         "core.Entity",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="transactions",
         db_index=True,
     )
@@ -117,13 +117,13 @@ class IntercompanyTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     from_entity = models.ForeignKey(
         "core.Entity",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="transfers_out",
         db_index=True,
     )
     to_entity = models.ForeignKey(
         "core.Entity",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="transfers_in",
         db_index=True,
     )
@@ -136,7 +136,7 @@ class IntercompanyTransfer(models.Model):
     description = models.TextField(default="")
     created_by = models.ForeignKey(
         "core.User",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="intercompany_transfers",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -211,7 +211,7 @@ class GSTReport(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     entity = models.ForeignKey(
         "core.Entity",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="gst_reports",
         db_index=True,
     )
@@ -221,7 +221,7 @@ class GSTReport(models.Model):
     generated_at = models.DateTimeField(auto_now_add=True)
     generated_by = models.ForeignKey(
         "core.User",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="generated_gst_reports",
     )
 
@@ -259,7 +259,7 @@ class PNLSnapshot(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     entity = models.ForeignKey(
         "core.Entity",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="pnl_snapshots",
         db_index=True,
     )

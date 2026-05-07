@@ -1,3 +1,8 @@
+---
+name: browser-automation
+description: Fast browser automation CLI for AI agents using Chrome/Chromium via CDP. Use when automating web interactions, taking snapshots, filling forms, navigating pages, or testing web applications without Playwright/Puppeteer dependency.
+---
+
 # browser-automation
 
 **Skill:** `/home/pete/.openclaw/workspace/skills/browser-automation/SKILL.md`

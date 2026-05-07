@@ -1,5 +1,5 @@
 ---
-name: Framework Templates
+name: framework-templates
 description: Deep reference library for framework-specific CLAUDE.md sections. Contains production-ready templates for Next.js, Laravel, Rails, Django, React Native, Flutter, Go, Rust, and more. Use alongside the claude-md skill for complete CLAUDE.md generation.
 version: 2.0.0
 skills:

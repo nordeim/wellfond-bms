@@ -3,21 +3,13 @@ name: claude-design
 description: >-
   Produce thoughtful, high-fidelity design artifacts in HTML — landing pages,
   slide decks, interactive prototypes, animated videos, posters, wireframes,
-  and visual explorations. Use whenever the user asks to design, mock up,
-  prototype, visualize, storyboard, or explore UI options — including phrases
-  like "make a deck", "design a landing page", "prototype this flow",
-  "animate this concept", "turn this into a clickable mockup",
-  "show me options for X", "build a pitch deck", "create a poster",
-  "visualize this idea", "I don't know what style I want", or "design
-  something for <brand>". Enforces fact verification (WebSearch before
-  assuming a product exists or its version), the Core Asset Protocol for
-  branded work (logo and product shots and UI screenshots are first-class,
-  not just colors and fonts), a Design Direction Advisor fallback that
-  offers 3 differentiated directions from 10 design philosophies when the
-  brief is too vague, commits to a visual system up front, presents multiple
-  variations, and avoids AI-design tropes (aggressive gradients, emoji
-  bullets, rounded-card-with-left-border,
-  CSS-silhouettes-as-product-shots).
+  and visual explorations. Use for tasks like "design a landing page,"
+  "make a deck," "prototype this flow," "visualize this idea," or
+  "create a poster." Enforces fact verification (WebSearch before assuming
+  product details), Core Asset Protocol for branded work (logo/product
+  shots/UI screenshots are first-class), Design Direction Advisor offering
+  3 directions when briefs are vague, and avoids AI-design tropes
+  (aggressive gradients, emoji bullets, rounded-card-with-left-border).
 ---
 
 # Claude Design

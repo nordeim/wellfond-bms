@@ -1,5 +1,5 @@
 ---
-name: Claude MD Generator
+name: claude-md
 description: Generate proper CLAUDE.md files for any codebase. Analyzes codebase structure, detects frameworks and languages, and produces a comprehensive CLAUDE.md following the Meticulous Approach framework.
 version: 1.1.0
 skills:

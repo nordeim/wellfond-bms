@@ -5,14 +5,14 @@ Role decorators and entity scoping for Phase 1.
 """
 
 from functools import wraps
-from typing import Callable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Optional, Sequence, TypeVar
 
 from django.db.models import QuerySet
 from django.http import HttpRequest, JsonResponse
 
 from .models import User
 
-F = TypeVar("F", bound=Callable[..., any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def require_role(*required_roles: str) -> Callable[[F], F]:

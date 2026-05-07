@@ -15,7 +15,7 @@ Tags: ["finance"]
 """
 import datetime
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID
 
 from django.db.models import Q
@@ -43,7 +43,7 @@ router = Router(tags=["finance"])
 
 
 @router.get("/pnl", response=PNLResponse)
-def get_pnl(request, entity_id: UUID | None = None, month: datetime.date | None = None):
+def get_pnl(request, entity_id: Optional[UUID] = None, month: Optional[datetime.date] = None):
     """
     Get P&L statement for entity and month.
 
@@ -95,8 +95,8 @@ def get_pnl(request, entity_id: UUID | None = None, month: datetime.date | None 
 @router.get("/gst", response=GSTReportResponse)
 def get_gst_report(
     request,
-    entity_id: UUID | None = None,
-    quarter: str | None = None,
+    entity_id: Optional[UUID] = None,
+    quarter: Optional[str] = None,
 ):
     """
     Get GST report for entity and quarter.
@@ -165,11 +165,11 @@ def get_gst_report(
 @router.get("/transactions", response=TransactionList)
 def list_transactions(
     request,
-    entity_id: UUID | None = None,
-    type: str | None = None,
-    category: str | None = None,
-    date_from: datetime.date | None = None,
-    date_to: datetime.date | None = None,
+    entity_id: Optional[UUID] = None,
+    type: Optional[str] = None,
+    category: Optional[str] = None,
+    date_from: Optional[datetime.date] = None,
+    date_to: Optional[datetime.date] = None,
     page: int = 1,
     per_page: int = 25,
 ):
@@ -260,7 +260,7 @@ def create_intercompany_transfer(request, payload: IntercompanyCreate):
 @router.get("/intercompany", response=IntercompanyList)
 def list_intercompany_transfers(
     request,
-    entity_id: UUID | None = None,
+    entity_id: Optional[UUID] = None,
     page: int = 1,
     per_page: int = 25,
 ):

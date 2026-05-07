@@ -8,6 +8,7 @@ Ground Log models for Phase 3.
 import uuid
 from datetime import date
 import logging
+from decimal import Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -132,10 +133,10 @@ class Dog(models.Model):
         return f"{self.name} ({self.microchip})"
 
     @property
-    def age_years(self) -> float:
-        """Calculate age in years."""
+    def age_years(self):
+        """Calculate age in years with precise Decimal division."""
         today = date.today()
-        return (today - self.dob).days / 365.25
+        return Decimal((today - self.dob).days) / Decimal("365.25")
 
     @property
     def age_display(self) -> str:

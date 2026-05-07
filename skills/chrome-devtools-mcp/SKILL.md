@@ -1,3 +1,8 @@
+---
+name: chrome-devtools-mcp
+description: Google-official MCP server providing full Chrome DevTools Protocol access (29 tools). Use for Lighthouse audits, performance traces, network inspection, console log access, JavaScript evaluation, mobile emulation, and memory snapshots.
+---
+
 # chrome-devtools-mcp
 
 **Skill:** `/home/pete/.openclaw/workspace/skills/chrome-devtools-mcp/SKILL.md`

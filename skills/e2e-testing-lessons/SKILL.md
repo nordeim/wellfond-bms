@@ -1,3 +1,8 @@
+---
+name: e2e-testing-lessons
+description: Condensed experience from 15-phase E2E testing initiative covering authentication, API contracts, tool selection, and hybrid testing methodology. Use when planning E2E tests, selecting testing tools, or debugging test failures.
+---
+
 # E2E Testing Lessons Learned
 
 **Source:** LedgerSG E2E Testing Experience Report (2026-03-14)

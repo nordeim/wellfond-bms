@@ -1,5 +1,5 @@
 ---
-name: nextjs-tailwind-v4-luxe
+name: nextjs16-tailwind4
 description: Comprehensive skill for building luxury-grade Next.js applications with Tailwind CSS v4, Radix UI (shadcn), and Framer Motion. Covers CSS-first theming, avant-garde UI design, code review, security audits, performance optimisation, and advanced debugging for high‑end web experiences.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, SearchWeb, FetchURL or similar tools available to you
 ---

@@ -1,3 +1,8 @@
+---
+name: tools-cli-guide
+description: Standalone CLI wrapper exposing Claude Code's core file operations (read, glob, grep, edit, write) as command-line utilities. Use for scripting and automation without requiring a full Claude session.
+---
+
 # Tools CLI — Standalone File Operations Wrapper
 
 > **Status:** ✅ Production Ready | **Version:** 1.0.0 | **Binary:** 20.1 MB

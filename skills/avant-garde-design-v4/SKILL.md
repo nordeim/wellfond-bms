@@ -1,3 +1,15 @@
+---
+name: avant-garde-design-v4
+description: >
+  Elite web design skill for producing distinctive, production-grade frontend interfaces.
+  Use when: (1) Building new web UI from scratch, (2) Creating luxury/premium brand experiences,
+  (3) Designing landing pages, marketing sites, or product showcases, (4) Reviewing UI designs for Anti-Generic compliance,
+  (5) Establishing design direction for a project, (6) Migrating from Tailwind v3 to v4,
+  (7) Debugging mobile navigation issues, (8) User asks for "avant-garde", "distinctive", "non-generic", "luxury", or "premium" design.
+  Triggers on phrases like "create a beautiful website", "design a landing page", "build a luxury UI",
+  "make it distinctive", "avoid generic design", "mobile nav not working", "tailwind v4 migration".
+---
+
 # Avant-Garde Web Design Skill v4.0
 ## The Comprehensive Guide to Intentional, Production-Grade Interface Design
 

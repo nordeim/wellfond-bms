@@ -36,7 +36,7 @@ class User(AbstractUser):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
-    mobile = models.CharField(max_length=20, blank=True)
+    mobile = models.CharField(max_length=20, blank=True, default="")
 
     # Primary role (RBAC)
     role = models.CharField(
@@ -106,7 +106,7 @@ class Entity(models.Model):
     is_holding = models.BooleanField(default=False)
 
     # Singapore AVS License
-    avs_license_number = models.CharField(max_length=50, blank=True)
+    avs_license_number = models.CharField(max_length=50, blank=True, default="")
     avs_license_expiry = models.DateField(null=True, blank=True)
 
     # Singapore GST rate (default 9%)
@@ -119,7 +119,7 @@ class Entity(models.Model):
 
     # Contact
     address = models.TextField(blank=True)
-    phone = models.CharField(max_length=20, blank=True)
+    phone = models.CharField(max_length=20, blank=True, default="")
     email = models.EmailField(blank=True)
 
     # Metadata
