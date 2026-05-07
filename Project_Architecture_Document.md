@@ -725,8 +725,8 @@ erDiagram
         uuid sire1_id FK
         uuid sire2_id FK "optional"
         date date
-        method "NATURAL|ASSISTED"
-        confirmed_sire "SIRE1|SIRE2|UNCONFIRMED"
+        string method "NATURAL|ASSISTED"
+        string confirmed_sire "SIRE1|SIRE2|UNCONFIRMED"
         date expected_whelp_date "auto: date+63"
         uuid entity_id FK
     }
@@ -735,7 +735,7 @@ erDiagram
         uuid id PK
         uuid breeding_record_id FK "1:1"
         date whelp_date
-        delivery_method "NATURAL|C_SECTION"
+        string delivery_method "NATURAL|C_SECTION"
         int alive_count
         int stillborn_count
         int total_count "auto: alive+stillborn"
@@ -746,12 +746,12 @@ erDiagram
         uuid id PK
         uuid litter_id FK
         string microchip UK "assigned later"
-        gender "M|F"
+        string gender "M|F"
         string colour
         decimal birth_weight
-        confirmed_sire "SIRE1|SIRE2|UNCONFIRMED"
-        paternity_method "VISUAL|DNA|UNCONFIRMED"
-        status "ALIVE|REHOMED|DECEASED"
+        string confirmed_sire "SIRE1|SIRE2|UNCONFIRMED"
+        string paternity_method "VISUAL|DNA|UNCONFIRMED"
+        string status "ALIVE|REHOMED|DECEASED"
         date sale_date
         uuid entity_id FK
     }
@@ -771,10 +771,14 @@ erDiagram
         uuid sire2_id FK "optional"
         decimal coi_pct
         decimal saturation_pct
-        verdict "SAFE|CAUTION|HIGH_RISK"
+        string verdict "SAFE|CAUTION|HIGH_RISK"
         string override_reason
         uuid staff_id FK
         uuid entity_id FK
+    }
+
+    Dog {
+        uuid id PK
     }
 
     BreedingRecord ||--|| Litter : "produces"
