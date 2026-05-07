@@ -76,16 +76,27 @@ export function setCsrfToken(token: string | null): void {
 
 /**
  * Check if user is authenticated.
- * Checks memory cache first.
- * Note: document.cookie check removed as HttpOnly cookies are not accessible.
+ * Checks memory cache first, then falls back to sessionid cookie.
+ * HttpOnly cookies cannot be read, but we can check for `sessionid` existence.
  */
 export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
 
-  // Check memory cache
-  return !!cachedUser;
+  // Check memory cache (fast path after login/hydration)
+  if (cachedUser) {
+    return true;
+  }
+
+  // Fallback: check for sessionid cookie (survives browser refresh)
+  const hasSessionId = document.cookie.split(';').
+    some(c => c.trim().startsWith('sessionid='));
+  if (hasSessionId) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
