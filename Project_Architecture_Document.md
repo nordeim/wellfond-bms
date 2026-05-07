@@ -1010,23 +1010,23 @@ sequenceDiagram
 
     Note over B,R: Login Flow
     B->>MW: POST /api/proxy/auth/login
-    MW->>BFF: Forward (cookie check skipped for /auth/*)
-    BFF->>DJ: POST /api/v1/auth/login {email, password}
-    DJ->>DJ: django_authenticate(email, password)
+    MW->>BFF: "Forward (cookie check skipped for /auth/*)"
+    BFF->>DJ: "POST /api/v1/auth/login {email, password}"
+    DJ->>DJ: "django_authenticate(email, password)"
     DJ->>R: SessionManager.create_session()
-    R-->>DJ: session_key, csrf_token
-    DJ-->>BFF: Set-Cookie: sessionid=xxx; HttpOnly; Secure; SameSite=Lax
-    BFF-->>B: Forward Set-Cookie + {user, csrf_token}
-    B->>B: Store user in memory, csrf_token in memory
+    R-->>DJ: "session_key, csrf_token"
+    DJ-->>BFF: "Set-Cookie: sessionid=xxx; HttpOnly; Secure; SameSite=Lax"
+    BFF-->>B: "Forward Set-Cookie + {user, csrf_token}"
+    B->>B: "Store user in memory, csrf_token in memory"
 
     Note over B,R: Authenticated Request Flow
-    B->>MW: GET /api/proxy/dogs (with sessionid cookie)
-    MW->>MW: Check cookie exists → proceed
+    B->>MW: "GET /api/proxy/dogs (with sessionid cookie)"
+    MW->>MW: "Check cookie exists -> proceed"
     MW->>BFF: Forward request
-    BFF->>DJ: GET /api/v1/dogs (with cookies)
+    BFF->>DJ: "GET /api/v1/dogs (with cookies)"
     DJ->>DJ: AuthenticationMiddleware reads sessionid cookie
-    DJ->>R: SessionManager.get_session(session_key)
-    R-->>DJ: {user_id, role, entity_id}
+    DJ->>R: "SessionManager.get_session(session_key)"
+    R-->>DJ: "{user_id, role, entity_id}"
     DJ->>DJ: Load User from DB
     DJ->>DJ: EntityScopingMiddleware attaches entity_filter
     DJ-->>BFF: 200 OK + data
@@ -1037,7 +1037,7 @@ sequenceDiagram
     BFF->>DJ: POST /api/v1/auth/refresh
     DJ->>R: get_session + extend TTL
     DJ->>DJ: rotate CSRF token
-    DJ-->>BFF: {user, csrf_token} + Set-Cookie
+    DJ-->>BFF: "{user, csrf_token} + Set-Cookie"
     BFF-->>B: Forward
 ```
 
