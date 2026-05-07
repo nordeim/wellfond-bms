@@ -385,3 +385,13 @@ Migrations Created:
 - apps/finance/migrations/0002_change_on_delete_to_protect.py
 The remaining fixes (FIX-07/08 AVS integration, FIX-09 Service Worker) are larger infrastructure tasks that would require external API keys and significant architectural work. README documentation and remediation plan have been updated to reflect the completed status.
 
+# Todos
+[✓] FIX-106: Clean up lib/auth.test.ts
+[✓] FIX-107: Re-run full frontend build to verify TypeScript passes
+Both tasks are completed. Let me provide a summary.</think>## ✅ Frontend Build Fixed
+Issue: lib/auth.test.ts:4 had an unused vi import from vitest.
+Fix: Removed the unused vi import from the test file.
+Verification:
+- npm run typecheck passes cleanly (no errors)
+- lib/auth.test.ts import statement now reads: import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
