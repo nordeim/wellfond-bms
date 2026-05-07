@@ -946,12 +946,12 @@ erDiagram
 erDiagram
     Transaction {
         uuid id PK
-        type "REVENUE|EXPENSE|TRANSFER"
+        string type "REVENUE|EXPENSE|TRANSFER"
         decimal amount
         uuid entity_id FK
         decimal gst_component
         date date
-        category "SALE|VET|MARKETING|OPERATIONS|OTHER"
+        string category "SALE|VET|MARKETING|OPERATIONS|OTHER"
         text description
         uuid source_agreement_id FK "optional"
     }
@@ -983,6 +983,10 @@ erDiagram
         decimal cogs
         decimal expenses
         decimal net
+    }
+
+    SalesAgreement {
+        uuid id PK
     }
 
     IntercompanyTransfer ||--|| Transaction : "creates debit"
