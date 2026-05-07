@@ -313,3 +313,5 @@ $ cd /home/project/wellfond-bms && python -m pytest backend/apps/compliance/test
 
 kill $(cat django.pid) 2>/dev/null; sleep 1 && DJANGO_SECRET_KEY="test-key" nohup python manage.py runserver 0.0.0.0:8000 > nohup.out 2>&1 & echo $! > django.pid && sleep 3 && echo "✅ Django restarted with PID: $(cat django.pid)"
 
+cd /home/project/wellfond-bms/backend && export DJANGO_SECRET_KEY="test-key" && python -m pytest -p no:xdist apps/core/tests/test_settings.py apps/customers/tests/test_customer_mobile.py apps/breeding/tests/test_puppy_pii.py apps/compliance/tests/test_nparks.py apps/core/tests/test_idempotency_non_json.py apps/compliance/tests/test_gst_entity_scoping.py apps/operations/tests/test_vaccination_importerror.py apps/operations/tests/test_whelpedpup_entity.py apps/customers/tests/test_segment_filters_json.py apps/finance/tests/test_pnl.py -v --no-cov 2>&1 | grep -E "(PASSED|FAILED|passed)"
+
